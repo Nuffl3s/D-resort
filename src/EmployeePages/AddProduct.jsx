@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/EmployeeSidebar';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 function AddProduct() {
     const [products, setProducts] = useState([]);
@@ -15,8 +16,31 @@ function AddProduct() {
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-
     const productsPerPage = 10;
+    const inputRef = useRef(null);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        // Event handler to detect clicks outside the input or suggestions dropdown
+        const handleClickOutside = (event) => {
+            if (
+                inputRef.current &&
+                !inputRef.current.contains(event.target) && 
+                dropdownRef.current && 
+                !dropdownRef.current.contains(event.target)
+            ) {
+                setShowSuggestions(false); // Hide suggestions if click is outside
+            }
+        };
+
+        // Attach the event listener
+        document.addEventListener('mousedown', handleClickOutside);
+
+        // Clean up the event listener on component unmount
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Calculate indices for slicing the product array
     const indexOfLastProduct = currentPage * productsPerPage;
@@ -128,11 +152,30 @@ function AddProduct() {
     
             if (response.status === 200) {
                 console.log('Products uploaded successfully');
+                
+                // Show SweetAlert success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Uploaded!',
+                    text: 'Products have been uploaded successfully.',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    setProducts([]);  
+                });
             }
         } catch (error) {
             console.error('Error uploading products', error);
+    
+            // Show SweetAlert error message
+            Swal.fire({
+                icon: 'error',
+                title: 'Upload Failed!',
+                text: 'There was an error uploading the products. Please try again.',
+                confirmButtonText: 'OK'
+            });
         }
     };
+    
 
     // Handle product name change and trigger autocomplete
     const handleProductNameChange = async (e) => {
@@ -142,19 +185,20 @@ function AddProduct() {
             try {
                 const response = await axios.get(`http://localhost:8000/api/product-autocomplete/?query=${value}`);
                 setSuggestions(response.data);  // Update suggestions state with the API response
-                setShowSuggestions(true);  // Show the suggestions dropdown
+                setShowSuggestions(response.data.length > 0); // Show suggestions dropdown if there are suggestions
             } catch (error) {
                 console.error('Error fetching product suggestions:', error);
             }
         } else {
-            setShowSuggestions(false);
+            setShowSuggestions(false); // Hide suggestions if input length is less than 2
         }
     };
-    
+
     const handleSuggestionClick = (suggestion) => {
         setProductName(suggestion.name);  // Set the clicked suggestion as the product name
         setShowSuggestions(false);  // Hide the suggestions dropdown
     };
+
 
     return (
         <div className="flex">
@@ -172,26 +216,31 @@ function AddProduct() {
                                         className="w-full p-2 border border-gray-300 rounded"
                                         value={productName}
                                         onChange={handleProductNameChange}
+                                        ref={inputRef}
                                         autoComplete="off"
                                     />
 
                                     {showSuggestions && (
-                                                    <div className="absolute z-20 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow">
-                                                        <ul className="p-3 space-y-1 text-sm text-gray-700">
-                                                            {suggestions.map((suggestion, index) => (
-                                                                <li key={index}>
-                                                                    <div
-                                                                        className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer"
-                                                                        onClick={() => handleSuggestionClick(suggestion)}
-                                                                    >
-                                                                        <span className="w-full ms-2 text-sm font-medium text-gray-900">{suggestion.name}</span>
-                                                                    </div>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-
+                                        <div 
+                                            className="absolute top-[163px] left-[355px] z-20 w-[758px] border-gray-400 border bg-white divide-y divide-gray-100 rounded-lg shadow-md"
+                                            ref={dropdownRef} // Reference to the dropdown
+                                        >
+                                            <ul className="p-3 space-y-1 text-sm text-gray-700">
+                                                {suggestions.map((suggestion, index) => (
+                                                    <li key={index}>
+                                                        <div
+                                                            className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer"
+                                                            onClick={() => handleSuggestionClick(suggestion)}
+                                                        >
+                                                            <span className="w-full ms-2 text-sm font-medium text-gray-900">
+                                                                {suggestion.name}
+                                                            </span>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex justify-between space-x-2">

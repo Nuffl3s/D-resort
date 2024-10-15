@@ -1,11 +1,9 @@
 import AdminSidebar from '../components/AdminSidebar';
 import { useState, useEffect} from 'react';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import TextField from '@mui/material/TextField';
 import { handleDownloadExcel, handleDownloadWord } from '../AdminUtils';
 import axios from 'axios';
+import DownloadModal from '../Modal/DownloadModal';
+import AddScheduleModal from '../Modal/AddScheduleModal'
 
 function AdminSchedule () {
     const [tableRows, setTableRows] = useState([]);
@@ -115,6 +113,7 @@ function AdminSchedule () {
         }
         setShowModal(false);
     };
+
     return (
         <div className="flex">
             <AdminSidebar />
@@ -123,20 +122,26 @@ function AdminSchedule () {
                 <div className="bg-white p-8 rounded-md w-full border-2 border-gray-400 mt-[50px]">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center justify-around">
-                            <div className="lg:ml-30 space-x-8 mr-3">
+                            <div className="mr-3">
                                 <button className="flex items-center gap-2 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
                                 onClick={() => setShowModal(true)}>
                                     <i><img src="./src/assets/download.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Download
                                 </button>
+                                
+                                <DownloadModal 
+                                    showModal={showModal} 
+                                    handleDownloadChoice={handleDownloadChoice} 
+                                    setShowModal={setShowModal} 
+                                />
                             </div>
 
-                            <div className="lg:ml-30 space-x-8 mr-3">
+                            <div className="mr-3">
                                 <button className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
                                     <i><img src="./src/assets/plus.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Print
                                 </button>
                             </div>
 
-                            <div className="lg:ml-30 space-x-8 mr-3">
+                            <div className="mr-3">
                                 <button className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
                                 onClick={handleClearTable}>
                                     <i><img src="./src/assets/clear.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Clear
@@ -153,13 +158,13 @@ function AdminSchedule () {
                                     <tr>
                                         <th className="clmn">#</th>
                                         <th className="clmn">Name</th>
-                                        <th className="clmn">Monday</th>
-                                        <th className="clmn">Tuesday</th>
-                                        <th className="clmn">Wednesday</th>
-                                        <th className="clmn">Thursday</th>
-                                        <th className="clmn">Friday</th>
-                                        <th className="clmn">Saturday</th>
-                                        <th className="clmn">Sunday</th>
+                                        <th className="clmn">Mon</th>
+                                        <th className="clmn">Tue</th>
+                                        <th className="clmn">Wed</th>
+                                        <th className="clmn">Thu</th>
+                                        <th className="clmn">Fri</th>
+                                        <th className="clmn">Sat</th>
+                                        <th className="clmn">Sun</th>
                                         <th className="clmn">Action</th>
                                     </tr>
                                 </thead>
@@ -209,6 +214,15 @@ function AdminSchedule () {
                                     className="w-full flex uppercase justify-center items-center gap-2 rounded-m font-semibold tracking-wide cursor-pointer"
                                 >
                                     <i><img src="./src/assets/tab.png" className="fill-current w-4 h-4" /></i>Add
+
+                                    <AddScheduleModal 
+                                        isModalOpen={isModalOpen} 
+                                        closeModal={closeModal} 
+                                        handleModalSubmit={handleModalSubmit} 
+                                        modalData={modalData} 
+                                        setModalData={setModalData} 
+                                        employee={employee} 
+                                    />
                                 </button>
                             </div>
                         </div>
@@ -246,150 +260,6 @@ function AdminSchedule () {
                     </div>
                 </div>
             </div>
-
-                {showModal && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
-                        <div className="bg-white p-8 rounded-md shadow-lg w-80">
-                            <h2 className="text-xl font-semibold mb-4">Choose Download Type</h2>
-                            <div className="flex space-x-4">
-                                <button
-                                    className=""
-                                    onClick={() => handleDownloadChoice('excel')}
-                                >
-                                    <img src="./src/assets/excel2.png" className="fill-current w-8 h-8" />
-                                </button>
-                                <button
-                                    className=""
-                                    onClick={() => handleDownloadChoice('word')}
-                                >
-                                <img src="./src/assets/word.png" className="fill-current w-8 h-8" />
-                                </button>
-                            </div>
-                            <button
-                                className="bg-[#ED6565] hover:bg-[#F24E4E] text-white px-4 py-2 rounded mt-5"
-                                onClick={() => setShowModal(false)}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Inline Modal Component */}
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    {isModalOpen && (
-                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                            <div className="bg-white p-6 rounded-lg shadow-lg w-[1600px]">
-                                <h2 className="text-2xl font-bold mb-4">Add Schedule</h2>
-                                <form onSubmit={handleModalSubmit}>
-                                    <div className="mb-3">
-                                        <label className="block font-semibold text-lg mb-1">Name</label>
-                                            <select
-                                                value={modalData.name}
-                                                onChange={(e) => setModalData({ ...modalData, name: e.target.value })}
-                                                className="border border-gray-300 p-2 w-full rounded"
-                                                required
-                                            >
-                                                <option value="">Select Employee</option>
-                                                {employee.map((emp) => (
-                                                    <option key={emp.id} value={emp.name}>
-                                                        {emp.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {Object.keys(modalData.schedule).map(day => (
-                                            <div key={day}>
-                                                <label className="block font-semibold text-lg mb-3">{day.charAt(0).toUpperCase() + day.slice(1)}</label>
-                                                <div className="flex items-center mb-2">
-                                                    <div className="flex-col">
-                                                        <div className="flex items-center mr-4">
-                                                            <label className="mr-[20px]">Start Time</label>
-                                                            <TimePicker
-                                                                value={modalData.schedule[day].startTime}
-                                                                onChange={(newValue) => setModalData({
-                                                                    ...modalData,
-                                                                    schedule: {
-                                                                        ...modalData.schedule,
-                                                                        [day]: { ...modalData.schedule[day], startTime: newValue }
-                                                                    }
-                                                                })}
-                                                                renderInput={(params) => <TextField {...params} />}
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center mt-2">
-                                                            <label className="mr-[25px]">End Time</label>
-                                                            <TimePicker
-                                                                value={modalData.schedule[day].endTime}
-                                                                onChange={(newValue) => setModalData({
-                                                                    ...modalData,
-                                                                    schedule: {
-                                                                        ...modalData.schedule,
-                                                                        [day]: { ...modalData.schedule[day], endTime: newValue }
-                                                                    }
-                                                                })}
-                                                                renderInput={(params) => <TextField {...params} />}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                
-                                                    <select
-                                                        value={modalData.schedule[day].duty}
-                                                        onChange={(e) => setModalData({
-                                                            ...modalData,
-                                                            schedule: {
-                                                                ...modalData.schedule,
-                                                                [day]: { ...modalData.schedule[day], duty: e.target.value }
-                                                            }
-                                                        })}
-                                                        className="border border-gray-300 p-2 w-32 rounded mr-4"
-                                                    >
-                                                        <option value="">Select Duty</option>
-                                                        <option value="Store Duty">Store Duty</option>
-                                                        <option value="Cleaning Duty">Cleaning Duty</option>
-                                                    </select>
-                                                    <label className="inline-flex items-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={modalData.schedule[day].dayOff}
-                                                            onChange={(e) => setModalData({
-                                                                ...modalData,
-                                                                schedule: {
-                                                                    ...modalData.schedule,
-                                                                    [day]: { ...modalData.schedule[day], dayOff: e.target.checked }
-                                                                }
-                                                            })}
-                                                            className="form-checkbox"
-                                                        />
-                                                        <span className="ml-2">Day Off</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="flex justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={closeModal}
-                                            className="bg-[#ED6565] hover:bg-[#F24E4E] text-white px-4 py-2 rounded mr-2"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white px-4 py-2 rounded"
-                                        >
-                                            Add
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-            </LocalizationProvider>
         </div>
     );
 }

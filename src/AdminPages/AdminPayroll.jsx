@@ -8,7 +8,8 @@ const formatDate = (dateString) => {
 };
 
 function AdminPayroll() {
-    const payrollData = [
+
+    const PayrollData = [
         { id: 1, name: 'John Doe', status: 'Calculated' },
         { id: 2, name: 'Jane Smith', status: 'Not yet' },
         { id: 3, name: 'Michael Brown', status: 'Calculated' },
@@ -30,10 +31,10 @@ function AdminPayroll() {
     const [payrollType, setPayrollType] = useState('weekly');
     const [payrollRange, setPayrollRange] = useState({ from: '', to: '' });
     const [payrollEntries, setPayrollEntries] = useState([]);
-    const [selectedDateRange, setSelectedDateRange] = useState("Last 30 days"); 
-    const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-
+    const [payrollData, setPayrollData] = useState(PayrollData);
+    const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+    const [sortOption, setSortOption] = useState(''); 
 
     const handleCalculate = () => {
         let payment;
@@ -44,7 +45,6 @@ function AdminPayroll() {
             payment = (totalHours * hourlyRate) * 4;
         }
 
-        // Update payroll entries with the calculated data
         const newEntry = {
             name: selectedEmployee,
             hours: totalHours,
@@ -58,10 +58,21 @@ function AdminPayroll() {
         setTotalPayment(payment);
     };
 
-     // Function to handle date selection
-     const handleChange = (label) => {
-        setSelectedDateRange(label); 
-        setDateDropdownOpen(false); 
+    const handleSort = (option) => {
+        setSortOption(option);
+        setSortDropdownOpen(false);
+
+        let sortedData;
+
+        if (option === 'All') {
+            // Show all data
+            sortedData = PayrollData;
+        } else {
+            // Filter based on the selected status
+            sortedData = PayrollData.filter(employee => employee.status === option);
+        }
+
+        setPayrollData(sortedData);
     };
 
         // Function to toggle dropdown visibility
@@ -95,13 +106,13 @@ function AdminPayroll() {
                             <div className="flex space-x-2">
                                 <div className="relative">
                                     <button
-                                        onClick={() => setDateDropdownOpen(!dateDropdownOpen)} // Toggle date dropdown
-                                        className="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none font-medium rounded-md text-sm px-3 py-2"
+                                        onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+                                        className="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none font-medium rounded-md text-sm px-3 py-1.5"
                                         type="button"
                                     >
-                                        {selectedDateRange} {/* Reflect selected date range */}
+                                        {sortOption || "Sort By"}
                                         <svg
-                                            className={`w-2.5 h-2.5 ms-2.5 transform transition-transform ${dateDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
+                                            className={`w-2.5 h-2.5 ms-2.5 transform transition-transform ${sortDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
                                             aria-hidden="true"
                                             xmlns="http://www.w3.org/2000/svg"
                                             fill="none"
@@ -117,25 +128,16 @@ function AdminPayroll() {
                                         </svg>
                                     </button>
 
-                                    {/* Date Dropdown menu */}
-                                    {dateDropdownOpen && (
+                                    {sortDropdownOpen && (
                                         <div className="absolute z-20 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow">
                                             <ul className="p-3 space-y-1 text-sm text-gray-700">
-                                                {['Today', 'Last day', 'Last 7 days', 'Last 30 days', 'Last month', 'Last year'].map((label, index) => (
-                                                    <li key={index}>
-                                                        <div className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer" onClick={() => handleChange(label)}>
-                                                            <input
-                                                                id={`filter-radio-example-${index + 1}`}
-                                                                type="radio"
-                                                                name="filter-radio"
-                                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
-                                                            />
-                                                            <label
-                                                                htmlFor={`filter-radio-example-${index + 1}`}
-                                                                className="w-full ms-2 text-sm font-medium text-gray-900"
-                                                            >
-                                                                {label}
-                                                            </label>
+                                                {['All', 'Calculated', 'Not yet'].map((option) => (
+                                                    <li key={option}>
+                                                        <div
+                                                            className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer"
+                                                            onClick={() => handleSort(option)}
+                                                        >
+                                                            <span className="w-full ms-2 text-sm font-medium text-gray-900">{option}</span>
                                                         </div>
                                                     </li>
                                                 ))}
@@ -187,28 +189,23 @@ function AdminPayroll() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {payrollData.map((payroll) => (
+                                    {payrollData.map((payroll, index) => (
                                         <tr key={payroll.id} className="border-b hover:bg-gray-50">
-                                            <td className="w-4 p-4">
-                                                <div className="flex items-center">
-                                                    <input
-                                                        id={`checkbox-table-search-${payroll.id}`}
-                                                        type="checkbox"
-                                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                                                    />
-                                                    <label htmlFor={`checkbox-table-search-${payroll.id}`} className="sr-only">checkbox</label>
-                                                </div>
+                                            <td className="p-4">
+                                                <input
+                                                    type="checkbox"
+                                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                                />
                                             </td>
-                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{payroll.id}</th>
-                                            <td className="px-4 py-4">{payroll.name}</td>
-                                            <td className="px-4 py-4">
+                                            <td className="px-6 py-3">{index + 1}</td>
+                                            <td className="px-6 py-3">{payroll.name}</td>
+                                            <td className="px-6 py-3">
                                                 <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 
                                                                     payroll.status === 'Not yet' ? 'text-[#FF6767]' : 
                                                                     'bg-transparent'} py-2 rounded`}>
                                                     {payroll.status}
                                                 </span>
                                             </td>
-                                            
                                             <td className="px-4 py-3 space-x-1">
                                                 <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full">
                                                     <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />

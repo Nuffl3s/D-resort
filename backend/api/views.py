@@ -80,7 +80,6 @@ class ProductAutocompleteView(APIView):
     def get(self, request):
         query = request.GET.get('query', '')
         if query:
-            products = Product.objects.filter(name__icontains=query)  # Case-insensitive search
-            product_names = [{"name": product.name} for product in products]
-            return Response(product_names)
-        return Response([])
+            products = Product.objects.filter(name__icontains=query).values_list('name', flat=True)
+            return Response(products, status=status.HTTP_200_OK)
+        return Response([], status=status.HTTP_200_OK)

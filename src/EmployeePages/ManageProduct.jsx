@@ -74,7 +74,7 @@ function ManageProduct() {
                                         <td className="px-6 py-4 font-medium text-black whitespace-nowrap">{product.name}</td>
                                         <td className="px-6 py-4">{product.date_added}</td> {/* Render date */}
                                         <td className="px-6 py-4">{product.quantity}</td>
-                                        <td className="px-6 py-4">{product.avg_price}</td>
+                                        <td className="px-6 py-4">{product.avgPrice}</td>
                                         <td className="space-x-2">
                                             {editProductId === product.id ? (
                                                 <button

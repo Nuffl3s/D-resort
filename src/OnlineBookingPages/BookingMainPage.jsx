@@ -17,17 +17,13 @@ function BookingMainPage() {
     const [loading, setLoading] = useState(true);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
-    const [showDatePicker, setShowDatePicker] = useState(false);
     const [showGuestDropdown, setShowGuestDropdown] = useState(false);
     const [persons, setPersons] = useState(0);
-    const [numChildren, setNumChildren] = useState(0);
-    const [rooms, setRooms] = useState(1);
-    const [cottages, setCottages] = useState(1);
-    const [flexibleDays, setFlexibleDays] = useState(null);
-    const [selectedOption, setSelectedOption] = useState('');
-    const [tab, setTab] = useState('calendar'); 
     const datePickerRef = useRef(null);
     const guestDropdownRef = useRef(null);
+    
+    const [showScrollButton, setShowScrollButton] = useState(false); // For scroll-to-top button
+    const [scrollProgress, setScrollProgress] = useState(0); // To track the scroll progress
 
     const handleOutsideClick = (e) => {
         if (
@@ -35,7 +31,6 @@ function BookingMainPage() {
             !datePickerRef.current.contains(e.target) &&
             !guestDropdownRef.current.contains(e.target)
         ) {
-            setShowDatePicker(false);
             setShowGuestDropdown(false);
         }
     };
@@ -46,13 +41,10 @@ function BookingMainPage() {
     }, []);
 
     const handleSearch = () => {
-        if (selectedOption === 'Cottage') {
-            navigate('/cottage');
-        } else if (selectedOption === 'Lodge') {
-            navigate('/lodge');
-        } else {
-            alert('Please select an option');
-        }
+        navigate('/book', { state: { startDate, endDate, persons } });
+        setStartDate(null);
+        setEndDate(null);
+        setPersons(0);
     };
 
     const handleAboutUs = () => {
@@ -60,12 +52,40 @@ function BookingMainPage() {
     };
 
     useEffect(() => {
-        // Simulate loading delay
         const timer = setTimeout(() => {
             setLoading(false);
         }, 2000); 
         return () => clearTimeout(timer);
     }, []);
+
+    // Scroll button visibility logic and scroll progress tracking
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = (scrollTop / docHeight) * 100;
+
+            setScrollProgress(scrollPercent); // Update progress percentage
+
+            if (scrollTop > 300) {
+                setShowScrollButton(true);
+            } else {
+                setShowScrollButton(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
 
     if (loading) {
         return <Loader />;
@@ -73,7 +93,7 @@ function BookingMainPage() {
 
     return (
         <div className="min-h-screen flex-col bg-white">
-            <div className="w-full relative flex justify-center mt-auto">
+            <div className="w-full relative flex justify-center mt-auto con">
                 <Header isMainPage={true} />
                 <Swiper
                     centeredSlides={true}
@@ -89,58 +109,45 @@ function BookingMainPage() {
                         <div className="absolute inset-0 bg-black opacity-30" />
                     </SwiperSlide>
                     <SwiperSlide>
-                        <img src="./src/assets/sample2.jpg" alt="Slideshow Image 2" className="w-full h-full object-cover" />
+                        <img src="./src/assets/c1.jpg" alt="Slideshow Image 2" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black opacity-30" />
                     </SwiperSlide>
                     <SwiperSlide>
-                        <img src="./src/assets/sample3.jpg" alt="Slideshow Image 3" className="w-full h-full object-cover" />
+                        <img src="./src/assets/c2.jpg" alt="Slideshow Image 3" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black opacity-30" />
+                    </SwiperSlide>
+                    <SwiperSlide>
+                        <img src="./src/assets/sample6.jpg" alt="Slideshow Image 3" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black opacity-30" />
                     </SwiperSlide>
                 </Swiper>
 
-                {/* Overlay Text - centered over the slider */}
                 <div className="absolute inset-0 flex items-center justify-center z-10">
-                    <h1 className="text-white font-bold text-4xl md:text-6xl px-4 py-2 rounded-lg text-center font-lemon">
+                    <h1 className="text-white font-bold text-4xl md:text-6xl px-4 py-2 rounded-lg text-center font-lemon front-text">
                         Enjoy your stay at D.Yasay <br />
                         <a className="mt-2 block">Beach Resort</a>
-
                         <a className="text-[20px] font-sans font-normal">Experience the perfect blend of relaxation and adventure by the sea. <span className="font-bold">Book now!</span></a>
                     </h1>
                 </div>
 
-
-
-                <div className="absolute bottom-[-100px] bg-white border shadow mt-auto p-[70px] rounded-md z-20">
-                    <Input
+                <div className="absolute bottom-[-100px] bg-white border shadow mt-auto p-[70px] rounded-md z-20 input-con">
+                    <Input 
                         startDate={startDate}
                         endDate={endDate}
                         setStartDate={setStartDate}
                         setEndDate={setEndDate}
-                        showDatePicker={showDatePicker}
-                        setShowDatePicker={setShowDatePicker}
-                        flexibleDays={flexibleDays}
-                        setFlexibleDays={setFlexibleDays}
                         persons={persons}
                         setPersons={setPersons}
-                        numChildren={numChildren}
-                        setNumChildren={setNumChildren}
-                        selectedOption={selectedOption}
-                        setSelectedOption={setSelectedOption}
                         showGuestDropdown={showGuestDropdown}
                         setShowGuestDropdown={setShowGuestDropdown}
-                        rooms={rooms}
-                        setRooms={setRooms}
-                        cottages={cottages}
-                        setCottages={setCottages}
                         handleSearch={handleSearch}
-                        datePickerRef={datePickerRef}
                         guestDropdownRef={guestDropdownRef}
-                        tab={tab} 
-                        setTab={setTab} 
                     />
                 </div>
             </div>
+            
 
+            {/* Content */}
             <div className="mx-auto mt-40">
                 <div className="bg-gradient-to-r from-[#1089D3] to-[#12B1D1] p-6 rounded-lg flex space-x-6 items-center justify-between w-full max-w-[1200px] mx-auto mt-16">
                     <div className="flex flex-col justify-center">
@@ -157,11 +164,9 @@ function BookingMainPage() {
                 </div>
                 <div>
                     <CottageSlider />
-
                     <div className="mt-20">
                         <ImgSlider />
                     </div>
-                    
                     <LodgeSlider />
                 </div>
                 <div className="bg-white rounded-[20px] shadow-md p-4 flex items-center w-full max-w-[1200px] mx-auto mt-20">
@@ -181,6 +186,26 @@ function BookingMainPage() {
                     </div>
                 </div>                    
             </div>
+            
+            {/* Scroll-to-Top Button with Circular Progress */}
+            {showScrollButton && (
+                <div
+                    className="fixed bottom-5 right-5 z-50"
+                    onClick={scrollToTop}
+                >
+                    <div className="relative w-14 h-14 flex items-center justify-center">
+                        <div
+                            style={{
+                                background: `conic-gradient(#ffdeba ${scrollProgress}%, #f7f5f5 ${scrollProgress}% 100%)`
+                            }}
+                            className="absolute inset-0 rounded-full"
+                        />
+                        <button className="bg-[#12B1D1] text-white p-3 w-[70%] h-[70%] rounded-full shadow-lg hover:bg-[#3ebae7] transition-colors z-10 flex justify-center items-center">
+                            <img src="/src/assets/up2.png" alt="Up Arrow" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
+                        </button>
+                    </div>
+                </div>
+            )}
             <Footer />
         </div>
     );

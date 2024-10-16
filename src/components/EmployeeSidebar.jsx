@@ -87,7 +87,7 @@ function EmployeeSidebar() {
                         <li key={index} className="mb-2">
                             <div>
                                 <a
-                                    className={`menu-item cursor-pointer ${activeMenu === menu.src ? "active" : "inactive"}`}
+                                    className={`menu-item cursor-pointer flex items-center ${activeMenu === menu.src ? "active" : "inactive"} ${menu.submenu ? "justify-between" : ""}`}
                                     onClick={() => {
                                         if (menu.title === "Product") {
                                             toggleProductSubmenu(); // Open/close product submenu
@@ -104,8 +104,16 @@ function EmployeeSidebar() {
                                         />
                                     </span>
                                     <span className={`text-md font-semibold ml-1 ${!open && "hidden"}`}>{menu.title}</span>
+
+                                    {menu.submenu && open && (
+                                        <img
+                                            src={`./src/assets/${productSubmenuOpen ? 'up.png' : 'down.png'}`}
+                                            alt="Toggle Submenu"
+                                            className="ml-auto w-4 h-4 mr-2"
+                                        />
+                                    )}
                                 </a>
-                                
+
                                 {/* Submenu rendering for Product */}
                                 {menu.title === "Product" && productSubmenuOpen && (
                                     <ul className={`ml-6 mt-2 space-y-2 ${!open && "hidden"}`}>

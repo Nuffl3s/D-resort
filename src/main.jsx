@@ -18,8 +18,7 @@ import AddProduct from './EmployeePages/AddProduct.jsx';
 import EmployeeReport from './EmployeePages/EmployeeReport.jsx';
 import BookingMainPage from './OnlineBookingPages/BookingMainPage.jsx';
 import BillingPage from './OnlineBookingPages/BillingPage.jsx';
-import Cottage from './OnlineBookingPages/CottagePage.jsx'
-import Lodge from './OnlineBookingPages/LodgePage.jsx'
+import CottageAndLodge from './OnlineBookingPages/CottageAndLodgePage.jsx'
 import SignIn from './OnlineBookingPages/LoginForm.jsx'
 import Register from './OnlineBookingPages/RegisterForm.jsx'
 import Payment from './OnlineBookingPages/PaymentPage.jsx'
@@ -50,15 +49,14 @@ root.render(
         <Route path="/AddProduct" element={<AddProduct />}/>
         <Route path="/EmployeeReport" element={<EmployeeReport />}/>
         <Route path="/booking" element={<BookingMainPage />}/>
-        <Route path="/cottage" element={<Cottage />}/>
-        <Route path="/lodge" element={<Lodge />}/>
+        <Route path="/book" element={<CottageAndLodge />}/>
         <Route path="/sign-in" element={<SignIn />}/>
         <Route path="/register" element={<Register />}/>
         <Route path="/payment" element={<Payment />}/>
         <Route path="/billing" element={<BillingPage />}/>
         <Route path="/about-us" element={<About />}/>
         <Route path="/terms" element={<Terms />}/>
-        <Route path="/calendar/:type" element={<CalendarView />} />
+        <Route path="/calendar/:title" element={<CalendarView />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

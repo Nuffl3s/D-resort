@@ -61,3 +61,34 @@
 }
 
 
+/* Mobile */
+@media (max-width: 480px) {
+    .con {
+        width: 100% !important;
+        max-width: none !important;
+    }
+    .front-text {
+        font-size: 35px;
+    }
+    .input-con {
+        width: 90%; 
+        height: auto; 
+        bottom: -160px;
+        z-index: 2;
+    }
+    .input {
+        flex-direction: column;
+        min-width: 0;
+    }
+    .checkIn-Out{
+        width: 384px;
+        margin-bottom: 10px;
+    }
+
+    .searchBtn {
+        width: 384px;
+        margin-top: 10px;
+    }
+}
+
+

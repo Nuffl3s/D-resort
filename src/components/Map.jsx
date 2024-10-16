@@ -1,10 +1,8 @@
-// src/components/MapComponent.js
-
 import { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import MapModal from '../Modal/MapModal';
-import PropTypes from 'prop-types'; // Import PropTypes
+import PropTypes from 'prop-types'; 
 
 const MapComponent = ({ showViewMapButton = true }) => {
   const mapRef = useRef(null);
@@ -20,7 +18,6 @@ const MapComponent = ({ showViewMapButton = true }) => {
     
     mapRef.current = { map, marker };
 
-    // Add custom control if showViewMapButton is true
     if (showViewMapButton) {
       const customControl = L.control({ position: 'bottomleft' });
       
@@ -47,7 +44,7 @@ const MapComponent = ({ showViewMapButton = true }) => {
       map.remove(); 
       mapRef.current = null;
     };
-  }, [showViewMapButton]); // Add showViewMapButton to dependencies
+  }, [showViewMapButton]);
 
   const closeModal = () => {
     if (mapRef.current) {
@@ -82,7 +79,7 @@ const MapComponent = ({ showViewMapButton = true }) => {
 };
 
 MapComponent.propTypes = {
-  showViewMapButton: PropTypes.bool, // Define prop type
+  showViewMapButton: PropTypes.bool,
 };
 
 const LargeMap = () => {

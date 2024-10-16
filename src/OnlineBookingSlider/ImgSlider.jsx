@@ -8,6 +8,9 @@ const ImgSlider = () => {
         "./src/assets/sample3.jpg",
         "./src/assets/sample4.jpg",
         "./src/assets/sample5.jpg",
+        "./src/assets/sample6.jpg",
+        "./src/assets/c3.jpg",
+
     ];
 
     const [currentIndex, setCurrentIndex] = useState(0);

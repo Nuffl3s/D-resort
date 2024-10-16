@@ -176,7 +176,6 @@ function AddProduct() {
         }
     };
     
-
     // Handle product name change and trigger autocomplete
     const handleProductNameChange = async (e) => {
         const value = e.target.value;
@@ -184,16 +183,17 @@ function AddProduct() {
         if (value.length >= 2) {
             try {
                 const response = await axios.get(`http://localhost:8000/api/product-autocomplete/?query=${value}`);
-                setSuggestions(response.data);  // Update suggestions state with the API response
-                setShowSuggestions(response.data.length > 0); // Show suggestions dropdown if there are suggestions
+                console.log(response.data); // Check the structure of the data received
+                setSuggestions(response.data);
+                setShowSuggestions(response.data.length > 0);
             } catch (error) {
                 console.error('Error fetching product suggestions:', error);
             }
         } else {
-            setShowSuggestions(false); // Hide suggestions if input length is less than 2
+            setShowSuggestions(false);
         }
     };
-
+    
     const handleSuggestionClick = (suggestion) => {
         setProductName(suggestion.name);  // Set the clicked suggestion as the product name
         setShowSuggestions(false);  // Hide the suggestions dropdown
@@ -233,7 +233,7 @@ function AddProduct() {
                                                             onClick={() => handleSuggestionClick(suggestion)}
                                                         >
                                                             <span className="w-full ms-2 text-sm font-medium text-gray-900">
-                                                                {suggestion.name}
+                                                                {suggestion.name}  {/* Ensure this matches the API response structure */}
                                                             </span>
                                                         </div>
                                                     </li>

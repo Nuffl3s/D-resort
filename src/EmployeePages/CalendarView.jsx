@@ -4,7 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 
 const CalendarView = () => {
-    const { type } = useParams();
+    const { title } = useParams();
     const [events, setEvents] = useState([]);
     const navigate = useNavigate();
 
@@ -46,7 +46,7 @@ const CalendarView = () => {
                 <img src="/src/assets/back.png" alt="" className="w-8 h-8" />
             </button>
             <div className="flex flex-col h-screen p-16">
-                <h2 className="text-2xl font-semibold mb-4">Events for {type}</h2>
+                <h2 className="text-2xl font-semibold mb-4">Events for {title}</h2>
                 <div className="flex-grow overflow-hidden">
                     <FullCalendar
                         plugins={[dayGridPlugin]}
@@ -89,7 +89,7 @@ const CalendarView = () => {
                                             className="relative top-9 right-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md self-end"
                                             onClick={() => handleBookNow(eventInfo.event.id)}
                                         >
-                                            Book Now
+                                            Available
                                         </button>
                                     )}
                                 </div>

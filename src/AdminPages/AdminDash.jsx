@@ -5,12 +5,14 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import CottageModal from '../Modal/CottageModal';
 import LodgeModal from '../Modal/LodgeModal';
 import AdminSidebar from '../components/AdminSidebar';
+import axios from 'axios';
 
 function AdminDash () {
 
     const [cottageModalOpen, setCottageModalOpen] = useState(false);
     const [lodgeModalOpen, setLodgeModalOpen] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [products, setProducts] = useState([]);
     const [date, setDate] = useState(); 
 
     // New state for filtering attendance
@@ -20,6 +22,19 @@ function AdminDash () {
     const attendanceData = [
         { id: 1, name: 'John Doe', date: '2024-09-10', timeIn: '08:00 AM', timeOut: '05:00 PM' },
     ];
+    
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await axios.get('http://localhost:8000/api/products/'); // Adjust the API URL as needed
+                console.log("Fetched products:", response.data);  // Log API response to check if it contains data
+                setProducts(response.data);
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        };
+        fetchProducts();
+    }, []);
 
     // Update the current time every second
     useEffect(() => {
@@ -121,17 +136,23 @@ function AdminDash () {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {salesData.map((sale, index) => (
-                                                <tr key={index} className="text-center">
-                                                    <td className="text-left px-5 py-5 border-b border-gray-200 bg-white text-sm">{sale.productName}</td>
-                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{sale.date}</td>
-                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{sale.quantity}</td>
-                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">${sale.price.toFixed(2)}</td>
-                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">${(sale.quantity * sale.price).toFixed(2)}</td>
+                                            {products.length > 0 ? (
+                                                products.map((product, index) => (
+                                                    <tr key={index}>
+                                                        <td className="px-5 py-5 border-b border-gray-200">{product.name}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200">{product.date_added}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200">{product.quantity}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200">${product.avgPrice}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200">${(product.quantity * product.avgPrice).toFixed(2)}</td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="5" className="px-5 py-5 text-center">No Products Available</td>
                                                 </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                            )}
+                                        </tbody>
+                                    </table>
                                     </div>
                                 </div>
                             </div>

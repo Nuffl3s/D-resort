@@ -20,7 +20,10 @@ function CottagePage() {
     });
 
     const [sortOption, setSortOption] = useState('recommended');
-    const [zoomedImage, setZoomedImage] = useState(null); // New state for zoom control
+    const [zoomedImage, setZoomedImage] = useState(null); 
+    const [showScrollButton, setShowScrollButton] = useState(false); // For scroll-to-top button
+    const [scrollProgress, setScrollProgress] = useState(0); // To track the scroll progress
+
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -29,9 +32,26 @@ function CottagePage() {
         return () => clearTimeout(timer);
     }, []);
 
-    if (loading) {
-        return <Loader />;
-    }
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = (scrollTop / docHeight) * 100;
+
+            setScrollProgress(scrollPercent); // Update progress percentage
+
+            if (scrollTop > 300) {
+                setShowScrollButton(true);
+            } else {
+                setShowScrollButton(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
 
     const handleBook = () => {
         navigate('/payment');
@@ -41,6 +61,17 @@ function CottagePage() {
         navigate(`/calendar/${title}`);
     };
 
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
+    // Return the loader if still loading
+    if (loading) {
+        return <Loader />;
+    }
 
      // Array of cottage data
      const Data = [
@@ -87,7 +118,7 @@ function CottagePage() {
 
     // Filter the displayed data based on the selected filters
     const filteredData = Data.filter(item => {
-        if (selectedTypes.cottage && selectedTypes.lodge) return true; // Show both if both are selected
+        if (selectedTypes.cottage && selectedTypes.lodge) return true;
         if (selectedTypes.cottage) return item.type === "cottage";
         if (selectedTypes.lodge) return item.type === "lodge";
         return true; // Default: show all
@@ -117,7 +148,7 @@ function CottagePage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-white">
+        <div className="min-h-screen flex flex-col bg-white parent">
             <Header />
             <Input
                 startDate={startDate}
@@ -127,8 +158,8 @@ function CottagePage() {
                 setShowGuestDropdown={setShowGuestDropdown}
             />
             <div className="flex-grow">
-                <div className="w-full max-w-[1200px] mx-auto mt-10 flex justify-end">
-                    <div className="w-1/3 relative">
+                <div className="w-full max-w-[1200px] mx-auto mt-10 flex justify-end sort-con">
+                    <div className="w-1/3 relative sort">
                         <select 
                             id="sort-by" 
                             className="w-full px-3 py-2 border border-gray-300 rounded-md pr-10 appearance-none"
@@ -151,62 +182,64 @@ function CottagePage() {
                     </div>
                 </div>
 
-                <div className="w-full max-w-[1200px] flex items-start mx-auto mt-5 space-x-4">
+                <div className="w-full max-w-[1200px] flex items-start mx-auto mt-5 space-x-4 con3">
                     {/* Sidebar for filters */}
-                    <div className="w-1/4 p-4 bg-gray-100 rounded-lg shadow-md">
+                    <div className="w-1/4 p-4 bg-gray-100 rounded-lg shadow-md fil">
                         <h3 className="text-lg font-semibold mb-4">Filter by</h3>
-                        <div className="mb-4">
-                            <h4 className="font-semibold mb-2">Type</h4>
-                            <div className="space-y-2">
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        className="mr-2"
-                                        checked={selectedTypes.cottage}
-                                        onChange={() => handleTypeChange('cottage')}
-                                    />
-                                    Cottage
-                                </label>
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        className="mr-2"
-                                        checked={selectedTypes.lodge}
-                                        onChange={() => handleTypeChange('lodge')}
-                                    />
-                                    Lodge
-                                </label>
+                        <div className="sub-filter">
+                            <div className="mb-4">
+                                <h4 className="font-semibold mb-2">Type</h4>
+                                <div className="space-y-2">
+                                    <label className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            className="mr-2"
+                                            checked={selectedTypes.cottage}
+                                            onChange={() => handleTypeChange('cottage')}
+                                        />
+                                        Cottage
+                                    </label>
+                                    <label className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            className="mr-2"
+                                            checked={selectedTypes.lodge}
+                                            onChange={() => handleTypeChange('lodge')}
+                                        />
+                                        Lodge
+                                    </label>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="mb-4">
-                            <h4 className="font-semibold mb-2">Price Range</h4>
-                            <div className="space-y-2">
-                                <label className="flex items-center">
-                                    <input type="checkbox" name="price" className="mr-2" />
-                                    Under 100 per night
-                                </label>
-                                <label className="flex items-center">
-                                    <input type="checkbox" name="price" className="mr-2" />
-                                    100 - 200 per night
-                                </label>
-                                <label className="flex items-center">
-                                    <input type="checkbox" name="price" className="mr-2" />
-                                    200 and above
-                                </label>
+                            <div className="mb-4">
+                                <h4 className="font-semibold mb-2">Price Range</h4>
+                                <div className="space-y-2">
+                                    <label className="flex items-center">
+                                        <input type="checkbox" name="price" className="mr-2" />
+                                        Under 100 per night
+                                    </label>
+                                    <label className="flex items-center">
+                                        <input type="checkbox" name="price" className="mr-2" />
+                                        100 - 200 per night
+                                    </label>
+                                    <label className="flex items-center">
+                                        <input type="checkbox" name="price" className="mr-2" />
+                                        200 and above
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Main content */}
-                    <div className="w-3/4 flex flex-col space-y-4">
+                    <div className="w-3/4 flex flex-col space-y-4 cards">
                         {sortedData.map((cottageAndlodge) => (
-                            <div key={cottageAndlodge.id} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto">
+                            <div key={cottageAndlodge.id} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto sub-card">
                                 <div className="w-1/3">
                                     <img
                                         src={cottageAndlodge.imgSrc}
                                         alt={cottageAndlodge.title}
-                                        className={`rounded-lg transition-transform duration-300 ${zoomedImage === cottageAndlodge.id ? 'scale-150' : ''} cursor-zoom-in`}
+                                        className={`md:w-[230px]  img rounded-lg transition-transform duration-300 ${zoomedImage === cottageAndlodge.id ? 'scale-150' : ''} cursor-zoom-in`}
                                         onMouseDown={() => handleZoomStart(cottageAndlodge.id)}
                                         onMouseUp={handleZoomEnd}
                                         onMouseLeave={handleZoomEnd} 
@@ -231,6 +264,25 @@ function CottagePage() {
                             </div>
                         ))}
                     </div>
+
+                    {showScrollButton && (
+                        <div
+                            className="fixed bottom-5 right-5 z-50"
+                            onClick={scrollToTop}
+                        >
+                            <div className="relative w-14 h-14 flex items-center justify-center">
+                                <div
+                                    style={{
+                                        background: `conic-gradient(#ffdeba ${scrollProgress}%, #f7f5f5 ${scrollProgress}% 100%)`
+                                    }}
+                                    className="absolute inset-0 rounded-full"
+                                />
+                                <button className="bg-[#12B1D1] text-white p-3 w-[70%] h-[70%] rounded-full shadow-lg hover:bg-[#3ebae7] transition-colors z-10 flex justify-center items-center">
+                                    <img src="/src/assets/up2.png" alt="Up Arrow" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
             <Footer />

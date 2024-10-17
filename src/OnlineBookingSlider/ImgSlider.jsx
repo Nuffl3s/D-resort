@@ -42,7 +42,7 @@ const ImgSlider = () => {
 
     return (
         <div
-            className="relative w-full max-w-[1200px] mx-auto"
+            className="relative w-full max-w-[1200px] mx-auto slider"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
             {...handlers}

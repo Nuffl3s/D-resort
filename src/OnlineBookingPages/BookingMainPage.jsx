@@ -21,7 +21,6 @@ function BookingMainPage() {
     const [persons, setPersons] = useState(0);
     const datePickerRef = useRef(null);
     const guestDropdownRef = useRef(null);
-    
     const [showScrollButton, setShowScrollButton] = useState(false); // For scroll-to-top button
     const [scrollProgress, setScrollProgress] = useState(0); // To track the scroll progress
 
@@ -149,13 +148,13 @@ function BookingMainPage() {
 
             {/* Content */}
             <div className="mx-auto mt-40">
-                <div className="bg-gradient-to-r from-[#1089D3] to-[#12B1D1] p-6 rounded-lg flex space-x-6 items-center justify-between w-full max-w-[1200px] mx-auto mt-16">
+                <div className="bg-gradient-to-r from-[#1089D3] to-[#12B1D1] p-6 rounded-lg flex space-x-6 items-center justify-between w-full max-w-[1200px] mx-auto mt-16 con2">
                     <div className="flex flex-col justify-center">
                         <h2 className="text-white font-semibold font-lemon text-xl">
                             Find and book your perfect stay
                         </h2>
                     </div>
-                    <div>
+                    <div className="cal">
                         <div className="bg-[#ebf6f8] p-4 rounded-lg flex items-center space-x-2 h-[80px]">
                             <img src="./src/assets/calendar.png" className="w-10 h-10" />
                             <p className="text-black text-[15px] p-2">Free cancellation options if plans change</p>
@@ -169,13 +168,13 @@ function BookingMainPage() {
                     </div>
                     <LodgeSlider />
                 </div>
-                <div className="bg-white rounded-[20px] shadow-md p-4 flex items-center w-full max-w-[1200px] mx-auto mt-20">
-                    <div className="w-1/3">
+                <div className="bg-white rounded-[20px] shadow-md p-4 flex items-center w-full max-w-[1200px] mx-auto mt-20 map-con">
+                    <div className="w-1/3 map">
                         <div className="">
                             <MapComponent />
                         </div>
                     </div>
-                    <div className="w-2/3 ml-10">
+                    <div className="w-2/3 ml-10 map">
                         <h2 className="text-2xl font-bold mb-2">Enjoy your stay at our Resort</h2>
                         <p className="text-gray-600 mb-4">
                             Experience luxurious amenities and breathtaking views at our exclusive resort.

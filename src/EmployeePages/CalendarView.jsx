@@ -12,10 +12,6 @@ const CalendarView = () => {
         navigate(-1);
     };
 
-    const handleBookNow = (eventId) => {
-        console.log(`Booking for event ID: ${eventId}`);
-    };
-
     const generateEvents = () => {
         const currentDate = new Date();
         const eventsArray = [];
@@ -41,11 +37,11 @@ const CalendarView = () => {
     }, []);
 
     return (
-        <div className="flex-row">
+        <div className="flex-row calendar-con">
             <button onClick={handleGoBack} className="absolute top-4 left-5">
                 <img src="/src/assets/back.png" alt="" className="w-8 h-8" />
             </button>
-            <div className="flex flex-col h-screen p-16">
+            <div className="flex flex-col h-screen p-16 calendar">
                 <h2 className="text-2xl font-semibold mb-4">Events for {title}</h2>
                 <div className="flex-grow overflow-hidden">
                     <FullCalendar
@@ -85,12 +81,11 @@ const CalendarView = () => {
                                 <div className="event-content flex justify-end">
                                     <div>{eventInfo.event.title}</div>
                                     {showBookNowButton && ( // Conditionally render the Book Now button
-                                        <button
-                                            className="relative top-9 right-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md self-end"
-                                            onClick={() => handleBookNow(eventInfo.event.id)}
+                                        <p
+                                            className="relative top-9 right-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md self-end avail-text"
                                         >
                                             Available
-                                        </button>
+                                        </p>
                                     )}
                                 </div>
                             );

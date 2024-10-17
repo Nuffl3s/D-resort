@@ -50,7 +50,7 @@ const Input = ({
                         />
                         {/* Check-in Date Picker Popup */}
                         {checkInDatePickerOpen && (
-                            <div className="absolute top-full mt-2 p-4 border rounded-lg shadow-md bg-white z-10">
+                            <div className="absolute top-full mt-2 p-4 border rounded-lg shadow-md bg-white z-10 ">
                                 <p className="text-gray-400 mb-1">Check in:</p>
                                 <DatePicker
                                     selected={startDate}
@@ -121,7 +121,7 @@ const Input = ({
                             readOnly
                             onClick={() => setShowGuestDropdown((prev) => !prev)}
                             value={`${persons} Persons`}
-                            className="bg-white border border-gray-300 text-gray-900 text-md rounded-md focus:ring-blue-500 focus:border-blue-500 block w-96 p-4 cursor-pointer"
+                            className="bg-white border border-gray-300 text-gray-900 text-md rounded-md focus:ring-blue-500 focus:border-blue-500 block w-96 p-4 cursor-pointer person"
                         />
                         {showGuestDropdown && (
                             <div ref={guestDropdownRef} className="absolute top-full mt-2 bg-white border border-gray-300 rounded-md shadow-md z-10 w-full">

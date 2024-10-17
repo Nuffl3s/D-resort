@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // eslint-disable-next-line react/prop-types
 function Header({ isMainPage }) {
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false); // State to manage the mobile menu visibility
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768); // Track if the screen is mobile size
 
     const handleHome = () => {
         navigate('/booking');
@@ -19,6 +20,19 @@ function Header({ isMainPage }) {
         navigate('/book');
     };
 
+    // Handle window resize to update menu state
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+            if (window.innerWidth > 768) {
+                setMenuOpen(false); // Close menu on larger screens
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     return (
         <header className={`w-full ${isMainPage ? 'absolute' : 'relative'} z-20 ${isMainPage ? 'bg-transparent' : 'bg-gradient-to-r from-[#1089D3] to-[#12B1D1] mb-10'}`}>
             <div className="max-w-7xl mx-auto flex justify-between items-center p-3 px-8">
@@ -31,27 +45,34 @@ function Header({ isMainPage }) {
                 </div>
                 
                 <div className="relative">
-                    {/* Navigation buttons visible only on larger screens */}
-                    <div className="hidden md:flex space-x-4 items-center">
-                        <button onClick={handleHome} className="shadow-sm border hover:bg-gray-100 hover:text-gray-600 text-white font-semibold px-4 py-2 rounded-lg">
-                            Home
+                    {/* Show mobile menu button if on mobile */}
+                    {isMobile ? (
+                        <button 
+                            className="text-white" 
+                            onClick={() => setMenuOpen(!menuOpen)} 
+                            aria-controls="drawer-navigation" 
+                            data-drawer-target="drawer-navigation"
+                        >
+                            <span className="material-icons">
+                                <img src="/src/assets/menu.png" alt="" className='w-8 h-8' style={{ filter: 'invert(100%)' }} />
+                            </span>
                         </button>
-                        <button onClick={handleAboutUs} className="shadow-sm border hover:bg-gray-100 hover:text-gray-600 text-white font-semibold px-4 py-2 rounded-lg">
-                            About Us
-                        </button>
-                        {isMainPage && (
-                            <button onClick={handleBook} className="shadow-sm border hover:bg-gray-100 hover:text-gray-600 text-white font-semibold px-4 py-2 rounded-lg">
-                                Book
+                    ) : (
+                        // Navigation buttons visible only on larger screens
+                        <div className="flex space-x-4 items-center">
+                            <button onClick={handleHome} className="shadow-sm border hover:bg-gray-100 hover:text-gray-600 text-white font-semibold px-4 py-2 rounded-lg">
+                                Home
                             </button>
-                        )}
-                    </div>
-
-                    {/* Mobile menu button */}
-                    <button 
-                        className="md:hidden text-white" 
-                        onClick={() => setMenuOpen(!menuOpen)} aria-controls="drawer-navigation" data-drawer-target="drawer-navigation">
-                        <span className="material-icons"><img src="/src/assets/menu.png" alt="" className='w-8 h-8' style={{ filter: 'invert(100%)' }}/></span>
-                    </button>
+                            <button onClick={handleAboutUs} className="shadow-sm border hover:bg-gray-100 hover:text-gray-600 text-white font-semibold px-4 py-2 rounded-lg">
+                                About Us
+                            </button>
+                            {isMainPage && (
+                                <button onClick={handleBook} className="shadow-sm border hover:bg-gray-100 hover:text-gray-600 text-white font-semibold px-4 py-2 rounded-lg">
+                                    Book
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     {/* Drawer component */}
                     <div id="drawer-navigation" className={`drawer fixed top-0 left-0 z-40 w-64 h-screen p-4 overflow-y-auto transition-transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'} bg-white dark:bg-gray-800`} tabIndex="-1" aria-labelledby="drawer-navigation-label">

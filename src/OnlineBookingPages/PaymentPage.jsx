@@ -52,8 +52,8 @@ function Payment({ startDate, endDate }) {
                 </div>
             </header>
             <div className="flex-grow flex justify-center mt-10">
-                <div className="w-full max-w-[1200px] flex">
-                    <div className="w-2/3 p-4">
+                <div className="w-full max-w-[1200px] flex con4">
+                    <div className="w-2/3 p-4 sub-con4">
                         <div className="border rounded-md p-4">
                             <h2 className="text-2xl font-bold mb-4">Personal Information</h2>
                             <form className="space-y-4">
@@ -144,7 +144,7 @@ function Payment({ startDate, endDate }) {
 
                     {/* Accommodation Details on the Right */}
                     <div className="flex">
-                        <div className="w-[400px] p-4 flex flex-col ">
+                        <div className="w-[400px] p-4 flex flex-col">
                             <div className="w-full border p-4 rounded-md">
                                 <div>
                                     {/* Image of the Accommodation */}

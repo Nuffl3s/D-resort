@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,9 +36,26 @@ const CottageSlider = () => {
     const [selectedCardIndex, setSelectedCardIndex] = useState(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showAll, setShowAll] = useState(false); // State to toggle between showing all cards or limited
+    const [cardsToShow, setCardsToShow] = useState(3);
 
-    const cardsToShow = showAll ? cards.length : 3;
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth <= 480) {
+                setCardsToShow(1);
+            } else if (window.innerWidth <= 768) {
+                setCardsToShow(2);
+            } else {
+                setCardsToShow(showAll ? cards.length : 3);
+            }
+        };
 
+        handleResize(); // Call once on mount
+        window.addEventListener('resize', handleResize); // Add event listener
+
+        return () => {
+            window.removeEventListener('resize', handleResize); // Clean up on unmount
+        };
+    }, [showAll]); // Dependency on showAll to handle toggling
     const handlePrevious = () => {
         setCurrentIndex(prevIndex => Math.max(prevIndex - 1, 0));
     };
@@ -90,11 +107,11 @@ const CottageSlider = () => {
     };
 
     return (
-        <div className="relative w-full max-w-[1200px] mx-auto overflow-hidden mt-16">
+        <div className="relative w-full max-w-[1200px] mx-auto overflow-hidden mt-16 slider">
         <div className="flex w-full justify-between items-end mt-2 ">
-            <h1 className="font-semibold text-[28px] p-2">Browse your lodge types</h1>
+            <h1 className="font-semibold text-[28px] p-2 title">Browse your cottage types</h1>
             <p 
-                className="cursor-pointer p-2" 
+                className="cursor-pointer p-2 text" 
                 onClick={toggleShowAll}
             >
                 {showAll ? 'Show less' : 'View all'}
@@ -107,9 +124,10 @@ const CottageSlider = () => {
             {...handlers}
         >
             {cards.map((card, index) => (
-                <div key={card.id} className={`flex-shrink-0 ${showAll ? 'w-full md:w-1/3' : 'w-full md:w-1/3'} p-2`}>
+                <div key={card.id} 
+                    className={`flex-shrink-0 w-full sm:w-1/2 md:w-1/2 lg:w-1/3 p-2`}> {/* Adjust widths for responsive behavior */}
                     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                        <img src={card.imgSrc} alt={card.title} className="w-full h-48 object-cover" loading="lazy"/>
+                        <img src={card.imgSrc} alt={card.title} className="w-full h-48 object-cover" loading="lazy" />
                         <div className="p-4">
                             <h2 className="text-xl font-semibold mb-2">{card.title}</h2>
                             <p className="text-gray-700 mb-4">{card.description.slice(0, 50)}...</p>
@@ -124,6 +142,8 @@ const CottageSlider = () => {
                 </div>
             ))}
         </div>
+
+
 
         {/* Show arrows only when not in "View all" mode */}
         {!showAll && (
@@ -147,7 +167,7 @@ const CottageSlider = () => {
 
         {showModal && selectedCardIndex !== null && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                <div className="bg-white p-6 rounded-lg shadow-lg w-[50%] h-[80%] relative">
+                <div className="bg-white p-6 rounded-lg shadow-lg w-[50%] h-[80%] relative modal">
                     <h2 className="text-2xl font-bold mb-4">{cards[selectedCardIndex].title}</h2>
                     <div className="relative flex items-center">
                         <button 

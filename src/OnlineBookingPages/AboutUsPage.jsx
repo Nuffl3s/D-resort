@@ -22,7 +22,7 @@ function AboutUsPage() {
     return (
         <div className="min-h-screen flex flex-col bg-white">
             <Header />
-            <div className="flex-grow">
+            <div className="flex-grow page">
                 <div className="max-w-[1200px] mx-auto mt-10">
                     <div className="text-justify space-y-2">
                         <h1 className="text-[20px] font-bold">Welcome to D.Yasay Resort!</h1>

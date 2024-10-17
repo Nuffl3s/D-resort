@@ -89,7 +89,7 @@ function BillingPage() {
                 </div>
 
                 <div className="w-full flex flex-col justify-center items-center mt-10">
-                    <div className="w-[500px] text-center space-y-5">
+                    <div className="w-[500px] text-center space-y-5 text-con">
                         <p>For online payment transactions, please call 0917 708 4368. We only accept GCASH payments through this number.</p>
                         <p>For walk-in payments, please download the receipt below to serve as proof of your booking for this property.</p>
 

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
+import axios from 'axios';
 
 // Function to format dates
 const formatDate = (dateString) => {
@@ -8,37 +9,44 @@ const formatDate = (dateString) => {
 };
 
 function AdminPayroll() {
-
-    const PayrollData = [
-        { id: 1, name: 'John Doe', status: 'Calculated' },
-        { id: 2, name: 'Jane Smith', status: 'Not yet' },
-        { id: 3, name: 'Michael Brown', status: 'Calculated' },
-        { id: 4, name: 'Emily White', status: 'Not yet' },
-        { id: 5, name: 'Sarah Johnson', status: 'Calculated' },
-        { id: 6, name: 'Robert Davis', status: 'Not yet' },
-        { id: 7, name: 'Linda Green', status: 'Calculated' },
-        { id: 8, name: 'Chris Black', status: 'Not yet' },
-        { id: 9, name: 'Alex Johnson', status: 'Calculated' },
-        { id: 10, name: 'Anna Taylor', status: 'Not yet' },
-        { id: 11, name: 'Tom Brown', status: 'Calculated' },
-        { id: 12, name: 'Tom Brown', status: 'Calculated' },
-    ];
-
+    const [employees, setEmployees] = useState([]);
     const [selectedEmployee, setSelectedEmployee] = useState('');
     const [totalHours, setTotalHours] = useState(0);
     const [hourlyRate, setHourlyRate] = useState(0);
-    const [setTotalPayment] = useState(0);
     const [payrollType, setPayrollType] = useState('weekly');
     const [payrollRange, setPayrollRange] = useState({ from: '', to: '' });
     const [payrollEntries, setPayrollEntries] = useState([]);
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-    const [payrollData, setPayrollData] = useState(PayrollData);
+    const [payrollData, setPayrollData] = useState([]);
     const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
-    const [sortOption, setSortOption] = useState(''); 
+    const [filteredData, setFilteredData] = useState([]); // Filtered data
+    const [sortOption, setSortOption] = useState('All'); // Default is "All"
+    const [searchTerm, setSearchTerm] = useState(''); // Search term
+    const [selectAll, setSelectAll] = useState(false); // For the "select all" checkbox
+    const [checkedItems, setCheckedItems] = useState({}); // Tracks which items are checked
 
+    
+
+    // Fetch employees from the API and set their initial payroll status as 'Not yet'
+    useEffect(() => {
+        axios.get('http://localhost:8000/api/employees/')
+            .then((response) => {
+                const employeeData = response.data.map(emp => ({
+                    ...emp,
+                    status: 'Not yet' // Initialize status to 'Not yet'
+                }));
+                setEmployees(employeeData);
+                setPayrollData(employeeData); // Set payroll data for display
+                setFilteredData(employeeData); // Initialize filtered data
+            })
+            .catch((error) => {
+                console.error("There was an error fetching the employee data!", error);
+            });
+    }, []);
+
+    // Handle payroll calculation (just calculate, don't change status yet)
     const handleCalculate = () => {
         let payment;
-
         if (payrollType === 'weekly') {
             payment = totalHours * hourlyRate;
         } else if (payrollType === 'monthly') {
@@ -54,45 +62,96 @@ function AdminPayroll() {
             type: payrollType
         };
 
+        // Add calculated entry to the temporary payroll entries
         setPayrollEntries([...payrollEntries, newEntry]);
-        setTotalPayment(payment);
     };
 
+    // Handle the "Done" button click, this will update the employee status
+    const handleDone = () => {
+        // Update the status of all employees for whom the payroll has been calculated
+        const updatedPayrollData = payrollData.map(emp => {
+            const entry = payrollEntries.find(e => e.name === emp.name);
+            if (entry) {
+                return { ...emp, status: 'Calculated' }; // Change status to "Calculated"
+            }
+            return emp;
+        });
+
+        setPayrollData(updatedPayrollData);
+        setFilteredData(updatedPayrollData); // Update filtered data
+
+        // Optionally, you can also save this to your backend by sending the updated data to your API
+        // axios.post('/api/savePayroll', updatedPayrollData);
+    };
+
+    // Handle sorting/filtering based on status
     const handleSort = (option) => {
         setSortOption(option);
-        setSortDropdownOpen(false);
-
-        let sortedData;
-
+        setSortDropdownOpen(false); // Close the dropdown after selecting an option
+    
+        // Filter payroll data by sort option
         if (option === 'All') {
-            // Show all data
-            sortedData = PayrollData;
+            setFilteredData(payrollData.filter(emp => emp.name.toLowerCase().includes(searchTerm)));
         } else {
-            // Filter based on the selected status
-            sortedData = PayrollData.filter(employee => employee.status === option);
+            const sortedData = payrollData.filter(emp => emp.status === option);
+    
+            // Also apply search term if present
+            const finalFiltered = sortedData.filter(emp => emp.name.toLowerCase().includes(searchTerm));
+            setFilteredData(finalFiltered);
         }
-
-        setPayrollData(sortedData);
     };
 
-        // Function to toggle dropdown visibility
-        const toggleDropdown = () => {
-            setIsDropdownVisible(!isDropdownVisible);
-        };
+    // Handle search by name
+    const handleSearch = (event) => {
+        const value = event.target.value.toLowerCase();
+        setSearchTerm(value);
     
-        // Function to handle print action
-        const handlePrint = () => {
-            window.print(); // Simple print functionality
-            setIsDropdownVisible(false); // Hide dropdown after action
-        };
+        // First, apply search to the full payroll data
+        const filtered = payrollData.filter(emp => emp.name.toLowerCase().includes(value));
     
-        // Function to handle download action
-        const handleDownload = () => {
-            // Implementation for downloading (for example, a PDF or CSV)
-            alert('Download functionality not implemented yet.'); // Placeholder
-            setIsDropdownVisible(false); // Hide dropdown after action
-        };
+        // Then, apply any active sorting/filter to the searched data
+        if (sortOption !== 'All') {
+            setFilteredData(filtered.filter(emp => emp.status === sortOption));
+        } else {
+            setFilteredData(filtered); // if no sorting, use searched results
+        }
+    };
     
+
+    // Handle "select all" checkbox
+    const handleSelectAll = () => {
+        const newSelectAll = !selectAll;
+        setSelectAll(newSelectAll);
+        const newCheckedItems = {};
+        filteredData.forEach(item => {
+            newCheckedItems[item.id] = newSelectAll;
+        });
+        setCheckedItems(newCheckedItems);
+    };
+
+    // Handle individual checkbox change
+    const handleCheckboxChange = (id) => {
+        setCheckedItems(prevCheckedItems => ({
+            ...prevCheckedItems,
+            [id]: !prevCheckedItems[id]
+        }));
+    };
+
+    const toggleDropdown = () => {
+        setIsDropdownVisible(!isDropdownVisible);
+    };
+
+    // Function to handle print action
+    const handlePrint = () => {
+        window.print(); // Simple print functionality
+        setIsDropdownVisible(false); // Hide dropdown after action
+    };
+
+    // Function to handle download action
+    const handleDownload = () => {
+        alert('Download functionality not implemented yet.'); // Placeholder
+        setIsDropdownVisible(false); // Hide dropdown after action
+    };
 
     return (
         <div className="flex h-screen overflow-hidden">
@@ -147,22 +206,13 @@ function AdminPayroll() {
                                 </div>
 
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none">
-                                        <svg
-                                            className="w-5 h-5 text-gray-500"
-                                            aria-hidden="true"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
                                     <input
                                         type="text"
                                         id="table-search"
+                                        value={searchTerm}
+                                        onChange={handleSearch}
                                         className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-white focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Search"
+                                        placeholder="Search by name"
                                     />
                                 </div>
                             </div>
@@ -175,8 +225,9 @@ function AdminPayroll() {
                                         <th scope="col" className="p-4">
                                             <div className="flex items-center">
                                                 <input
-                                                    id="checkbox-all-search"
                                                     type="checkbox"
+                                                    checked={selectAll}
+                                                    onChange={handleSelectAll}
                                                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                                                 />
                                                 <label htmlFor="checkbox-all-search" className="sr-only">checkbox</label>
@@ -189,20 +240,20 @@ function AdminPayroll() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {payrollData.map((payroll, index) => (
+                                    {filteredData.map((payroll, index) => (
                                         <tr key={payroll.id} className="border-b hover:bg-gray-50">
                                             <td className="p-4">
                                                 <input
                                                     type="checkbox"
+                                                    checked={checkedItems[payroll.id] || false}
+                                                    onChange={() => handleCheckboxChange(payroll.id)}
                                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                                 />
                                             </td>
                                             <td className="px-6 py-3">{index + 1}</td>
                                             <td className="px-6 py-3">{payroll.name}</td>
                                             <td className="px-6 py-3">
-                                                <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 
-                                                                    payroll.status === 'Not yet' ? 'text-[#FF6767]' : 
-                                                                    'bg-transparent'} py-2 rounded`}>
+                                                <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : payroll.status === 'Not yet' ? 'text-[#FF6767]' : 'bg-transparent'} py-2 rounded`}>
                                                     {payroll.status}
                                                 </span>
                                             </td>
@@ -233,7 +284,7 @@ function AdminPayroll() {
                                     className="block w-full p-2 border border-gray-300 rounded-lg"
                                 >
                                     <option value="" disabled>Select Employee</option>
-                                    {payrollData.map(employee => (
+                                    {employees.map(employee => (
                                         <option key={employee.id} value={employee.name}>
                                             {employee.name}
                                         </option>
@@ -321,9 +372,9 @@ function AdminPayroll() {
                                     </div>
                                 )}
                             </div>
-                            
+
                             <div className="shadow p-4 h-[280px]">
-                                <table className="w-full text-sm text-left text-gray-500 ">
+                                <table className="w-full text-sm text-left text-gray-500">
                                     <caption className="p-5 text-[20px] font-semibold text-gray-900 bg-white">
                                         Payroll Form
                                         <p className="mt-5 text-[16px] text-left font-normal text-gray-500">
@@ -354,7 +405,9 @@ function AdminPayroll() {
                                 </table>
                             </div>
                             <div className="flex w-full mt-5 justify-end">
-                                <button  className="bg-[#12B1D1] hover:bg-[#51b5da] text-white p-2 w-[80px] rounded-md">
+                                <button 
+                                    onClick={handleDone}  // Now updating status when 'Done' is clicked
+                                    className="bg-[#12B1D1] hover:bg-[#51b5da] text-white p-2 w-[80px] rounded-md">
                                     Done
                                 </button>
                             </div>

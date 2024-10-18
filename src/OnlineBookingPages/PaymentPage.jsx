@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import Loader from '../components/Loader';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom'; // Add this import
 
-function Payment({ startDate, endDate }) {
+function Payment({ startDate: propStartDate, endDate: propEndDate }) { // Rename props here
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         firstName: '',
@@ -14,11 +16,12 @@ function Payment({ startDate, endDate }) {
         mobile: '',
     });
 
+    // Destructure location.state and rename to avoid conflicts
+    const { title, price, imgSrc, persons, description, startDate = propStartDate, endDate = propEndDate } = location.state || {};
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
-   
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -38,6 +41,7 @@ function Payment({ startDate, endDate }) {
     const handleConfirm = () => {
         navigate('/billing');
     };
+
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
@@ -144,23 +148,24 @@ function Payment({ startDate, endDate }) {
 
                     {/* Accommodation Details on the Right */}
                     <div className="flex">
-                        <div className="w-[400px] p-4 flex flex-col">
+                        <div className="w-[400px] p-4 flex flex-col accom-con">
                             <div className="w-full border p-4 rounded-md">
                                 <div>
+                                    {/* The image here */}
                                     {/* Image of the Accommodation */}
-                                    <img src="./src/assets/sample1.jpg" className="w-full h-[250px] rounded-md mb-4" />
+                                    <img src={imgSrc} className="w-full h-[250px] rounded-md mb-4" alt={title} />
                                 </div>
                                 
                                 {/* Main Details Block */}
                                 <div className="border p-4 rounded-md shadow-sm">
-                                    <h3 className="text-xl font-bold mb-2">Cottage A</h3>
-                                    <p className="text-sm text-gray-500">Good for 10 persons</p>
+                                    <h3 className="text-xl font-bold mb-2">{title}</h3>
+                                    <p className="text-sm text-gray-500">{description}</p>
 
                                     {/* Check-in and Check-out details */}
                                     <div className="mt-4">
-                                        <p className="text-md">Check-in: <span className="font-semibold">{formatDate(startDate)}</span></p>
+                                        <p className="text-md mb-2">Number of persons: <span className="font-semibold">{persons}</span></p>                                         <p className="text-md">Check-in: <span className="font-semibold">{formatDate(startDate)}</span></p>
                                         <p className="text-md">Check-out: <span className="font-semibold">{formatDate(endDate)}</span></p>
-                                        <p className="text-sm text-gray-500 mt-1">2 nights, 1 unit</p>
+                                        <p className="text-sm text-gray-500 mt-1">{(endDate - startDate) / (1000 * 60 * 60 * 24)} nights, 1 unit</p>
                                     </div>
                                 </div>
 
@@ -171,17 +176,9 @@ function Payment({ startDate, endDate }) {
                                         <span>Avg Rate:</span>
                                         <span>₱7,371.51</span>
                                     </div>
-                                    <div className="flex justify-between text-sm mt-2">
-                                        <span>2 nights:</span>
-                                        <span>₱14,743.02</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm mt-2">
-                                        <span>Taxes and Fees:</span>
-                                        <span>₱1,769.16</span>
-                                    </div>
                                     <div className="flex justify-between text-lg font-semibold mt-4 border-t pt-2">
                                         <span>Total Price:</span>
-                                        <span>₱16,512.18</span>
+                                        <span>{price}</span>
                                     </div>
                                     
                                 </div>

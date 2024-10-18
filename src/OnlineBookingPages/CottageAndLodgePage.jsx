@@ -6,12 +6,10 @@ import Loader from '../components/Loader';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 
-function CottagePage() {
+function BookingPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    
     const { startDate, endDate, persons } = location.state || { startDate: null, endDate: null, persons: 0 };
-    
     const [loading, setLoading] = useState(true);
     const [showGuestDropdown, setShowGuestDropdown] = useState(false);
     const [selectedTypes, setSelectedTypes] = useState({
@@ -21,8 +19,8 @@ function CottagePage() {
 
     const [sortOption, setSortOption] = useState('recommended');
     const [zoomedImage, setZoomedImage] = useState(null); 
-    const [showScrollButton, setShowScrollButton] = useState(false); // For scroll-to-top button
-    const [scrollProgress, setScrollProgress] = useState(0); // To track the scroll progress
+    const [showScrollButton, setShowScrollButton] = useState(false); 
+    const [scrollProgress, setScrollProgress] = useState(0);
 
 
     useEffect(() => {
@@ -53,8 +51,18 @@ function CottagePage() {
         };
     }, []);
 
-    const handleBook = () => {
-        navigate('/payment');
+    const handleBook = (cottageAndLodge) => {
+        navigate('/payment', {
+            state: {
+                title: cottageAndLodge.title,
+                price: cottageAndLodge.price,
+                imgSrc: cottageAndLodge.imgSrc,
+                description: cottageAndLodge.description,
+                startDate, // pass the check-in/check-out date if needed
+                endDate,
+                persons, 
+            },
+        });
     };
 
     const handleCheckAvailability = (title) => {
@@ -75,7 +83,7 @@ function CottagePage() {
 
      // Array of cottage data
      const Data = [
-        { id: 1, imgSrc: "./src/assets/c-A.jpg", title: "Cottage A - FUNCTION HALL", type: "cottage", description: "Experience luxurious amenities at Cottage 1.", price: "$150 per night" },
+        { id: 1, imgSrc: "./src/assets/c-A.jpg", title: "Cottage A - FUNCTION HALL", type: "cottage", description: "Good for 5-10 person", price: "$150 per night" },
         { id: 2, imgSrc: "./src/assets/c-B.jpg", title: "Cottage B", type: "cottage", description: "Enjoy breathtaking views from Cottage 2.", price: "$200 per night" },
         { id: 3, imgSrc: "./src/assets/c-C.jpg", title: "Cottage C", type: "cottage", description: "Relax and unwind in Cottage 3's serene environment.", price: "$180 per night" },
         { id: 4, imgSrc: "./src/assets/c-D.jpg", title: "Cottage D", type: "cottage", description: "Secluded and peaceful stay.", price: "$220 per night" },
@@ -250,7 +258,7 @@ function CottagePage() {
                                     <p className="text-gray-600 mb-4">{cottageAndlodge.description}</p>
                                     <p className="text-lg font-semibold mb-2">{cottageAndlodge.price}</p>
                                     <div className="flex space-x-2">
-                                        <button onClick={handleBook} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
+                                        <button onClick={() => handleBook(cottageAndlodge)} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
                                             Book
                                         </button>
                                         <button
@@ -290,4 +298,4 @@ function CottagePage() {
     );
 }
 
-export default CottagePage
+export default BookingPage

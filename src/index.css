@@ -432,7 +432,7 @@
     }
 
     .modal {
-        width: 90%;
+        width: 50%;
     }
 
     /* book */
@@ -461,9 +461,12 @@
         height: 380px;
     }
 
-    .sub-filter{
+    .sub-filter {
         flex-direction: column;
+        display: flex; 
+        gap: 20px; 
     }
+    
 
     .cards {
         display: flex;
@@ -512,8 +515,6 @@
 
 }
 
-
-
 @media (min-width: 1440px) {
     .con3 {
         width: 100%;
@@ -556,5 +557,8 @@
         font-size: 16px;
         display: flex;
         justify-content: center;
+    }
+    .modal {
+        width: 50%;
     }
 }

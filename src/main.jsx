@@ -10,6 +10,7 @@ import AdminAttendance from './AdminPages/AdminAttendance.jsx';
 import AdminSchedule from './AdminPages/AdminSchedule.jsx';
 import AdminReport from './AdminPages/AdminReport.jsx';
 import AdminPayroll from './AdminPages/AdminPayroll.jsx';
+import AuditLog from './AdminPages/AuditLog.jsx'
 import EmployeeSidebar from './components/EmployeeSidebar.jsx';
 import EmployeeDash from './EmployeePages/EmployeeDash.jsx';
 import EmployeeReservation from './EmployeePages/EmployeeReservation.jsx';
@@ -42,6 +43,7 @@ root.render(
         <Route path="/AdminSchedule" element={<AdminSchedule/>}/>
         <Route path="/AdminReport" element={<AdminReport/>}/>
         <Route path="/AdminPayroll" element={<AdminPayroll/>}/>
+        <Route path="/AuditLog" element={<AuditLog/>}/>
         <Route path="/employeeSidebar" element={<EmployeeSidebar />}/>
         <Route path="/EmployeeDash" element={<EmployeeDash />}/>
         <Route path="/EmployeeReservation" element={<EmployeeReservation />}/>

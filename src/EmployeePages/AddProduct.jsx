@@ -16,7 +16,7 @@ function AddProduct() {
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    const productsPerPage = 10;
+    const productsPerPage = 7;
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
 
@@ -205,9 +205,9 @@ function AddProduct() {
             <Sidebar />
             <div id="dashboard" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4">PRODUCT</h1>
-                <div className="bg-white  rounded-md w-full mt-[50px] overflow-x-hidden">
-                    <div className="lg:ml-30 mb-5 space-x-8">
-                        <div className="w-[50%]">
+                <div className="bg-white  rounded-md w-full mt-8 overflow-x-hidden flex justify-between">
+                    <div className="lg:ml-30 space-x-8">
+                        <div className="w-[700px] rounded-md border p-5">
                             <form className="grid grid-cols-1 gap-3" onSubmit={handleSubmit}>
                                 <div className="flex space-x-4">
                                     <input
@@ -289,185 +289,186 @@ function AddProduct() {
                             </form>
                         </div>
                     </div>
+                    
+                    <div className="bg-white rounded-md p-6 min-h-[800px] w-full ml-5 border">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 text-xs xs:text-sm text-gray-900">
+                                <span className="text-[13px] font-semibold text-gray-600 uppercase">No. of entries</span>
+                                <div className="relative inline-block">
+                                    <div className="appearance-none border border-gray-300 bg-white py-1 px-3 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                        <span value="1">{products.length}</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div className="flex items-center justify-between">
-                        {/* show entries */}
-                        <div className="flex items-center space-x-2 text-xs xs:text-sm text-gray-900">
-                            <span className="text-[13px] font-semibold text-gray-600 uppercase">No. of entries</span>
-                            <div className="relative inline-block">
-                                <div className="appearance-none border border-gray-300 bg-white py-1 px-3 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
-                                    <span value="1">{products.length}</span>
+                            <div className="flex items-center justify-around space-x-2">
+                                <div className="flex bg-white items-center p-2 rounded-md border">
+                                    <img src="./src/assets/search.png" className="fill-current w-5 h-5"/>
+                                    <input
+                                        className="bg-white outline-none ml-1 block"
+                                        type="text"
+                                        placeholder="search..."
+                                        value={searchQuery}
+                                        onChange={handleSearchChange} 
+                                    />
+                                </div>
+                                <div className="flex space-x-2">
+                                    <button onClick={handleUpload} className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
+                                        <i><img src="./src/assets/upload.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Upload
+                                    </button>
+                                    <button onClick={handleClearProducts} className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
+                                        <i><img src="./src/assets/clear.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Clear
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-around space-x-2">
-                            <div className="flex bg-white items-center p-2 rounded-md border">
-                                <img src="./src/assets/search.png" className="fill-current w-5 h-5"/>
-                                <input
-                                    className="bg-white outline-none ml-1 block"
-                                    type="text"
-                                    placeholder="search..."
-                                    value={searchQuery}
-                                    onChange={handleSearchChange} 
-                                />
-                            </div>
-                            <div className="flex space-x-2">
-                                <button onClick={handleUpload} className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
-                                    <i><img src="./src/assets/upload.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Upload
-                                </button>
-                                <button onClick={handleClearProducts} className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
-                                    <i><img src="./src/assets/clear.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Clear
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto">
-                        <div className="inline-block min-w-full shadow rounded-lg overflow-hidden">
-                            <table className="min-w-full bg-white">
-                                <thead>
-                                    <tr>
-                                        <th className="thDesign">NO.</th>
-                                        <th className="thDesign">Product Name</th>
-                                        <th className="thDesign">Quantity</th>
-                                        <th className="thDesign">Average Price</th>
-                                        <th className="thDesign">Amount</th>
-                                        <th className="thDesign">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentProducts.map((product) => (
-                                        <tr key={product.id}>
-                                            <td className="px-5 py-5 border-b border-r border-l border-gray-200 bg-white text-sm">{product.id}</td>
-                                            <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
-                                                {editProductId === product.id ? (
-                                                    <input
-                                                        type="text"
-                                                        name="name"
-                                                        value={editedProduct.name}
-                                                        onChange={handleEditChange}
-                                                        className="w-full p-2 border border-gray-300 rounded"
-                                                    />
-                                                ) : (
-                                                    product.name
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
-                                                {editProductId === product.id ? (
-                                                    <input
-                                                        type="number"
-                                                        name="quantity"
-                                                        value={editedProduct.quantity}
-                                                        onChange={handleEditChange}
-                                                        className="w-full p-2 border border-gray-300 rounded"
-                                                    />
-                                                ) : (
-                                                    product.quantity
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
-                                                {editProductId === product.id ? (
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        name="avgPrice"
-                                                        value={editedProduct.avgPrice}
-                                                        onChange={handleEditChange}
-                                                        className="w-full p-2 border border-gray-300 rounded"
-                                                    />
-                                                ) : (
-                                                    product.avgPrice
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
-                                                {editProductId === product.id ? (
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        name="amount"
-                                                        value={editedProduct.amount}
-                                                        readOnly
-                                                        className="w-full p-2 border border-gray-300 rounded"
-                                                    />
-                                                ) : (
-                                                    product.amount
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
-                                                <div className="space-x-2">
+                        <div className="-mx-4 sm:-mx-8 px-8  py-2 overflow-x-auto">
+                            <div className="inline-block min-w-full shadow overflow-hidden">
+                                <table className="min-w-full bg-white">
+                                    <thead>
+                                        <tr>
+                                            <th className="thDesign">NO.</th>
+                                            <th className="thDesign">Product Name</th>
+                                            <th className="thDesign">Quantity</th>
+                                            <th className="thDesign">Average Price</th>
+                                            <th className="thDesign">Amount</th>
+                                            <th className="thDesign">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {currentProducts.map((product) => (
+                                            <tr key={product.id}>
+                                                <td className="px-5 py-5 border-b border-r  border-gray-200 bg-white text-sm">{product.id}</td>
+                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
                                                     {editProductId === product.id ? (
-                                                        <button
-                                                            className="px-3 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#1089D3] hover:bg-[#3d9fdb]"
-                                                            onClick={handleSaveClick}
-                                                        >
-                                                            Save
-                                                        </button>
+                                                        <input
+                                                            type="text"
+                                                            name="name"
+                                                            value={editedProduct.name}
+                                                            onChange={handleEditChange}
+                                                            className="w-full p-2 border border-gray-300 "
+                                                        />
                                                     ) : (
+                                                        product.name
+                                                    )}
+                                                </td>
+                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                    {editProductId === product.id ? (
+                                                        <input
+                                                            type="number"
+                                                            name="quantity"
+                                                            value={editedProduct.quantity}
+                                                            onChange={handleEditChange}
+                                                            className="w-full p-2 border border-gray-300 "
+                                                        />
+                                                    ) : (
+                                                        product.quantity
+                                                    )}
+                                                </td>
+                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                    {editProductId === product.id ? (
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            name="avgPrice"
+                                                            value={editedProduct.avgPrice}
+                                                            onChange={handleEditChange}
+                                                            className="w-full p-2 border border-gray-300 "
+                                                        />
+                                                    ) : (
+                                                        product.avgPrice
+                                                    )}
+                                                </td>
+                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                    {editProductId === product.id ? (
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            name="amount"
+                                                            value={editedProduct.amount}
+                                                            readOnly
+                                                            className="w-full p-2 border border-gray-300 rounded"
+                                                        />
+                                                    ) : (
+                                                        product.amount
+                                                    )}
+                                                </td>
+                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                    <div className="space-x-2">
+                                                        {editProductId === product.id ? (
+                                                            <button
+                                                                className="px-3 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#1089D3] hover:bg-[#3d9fdb]"
+                                                                onClick={handleSaveClick}
+                                                            >
+                                                                Save
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
+                                                                onClick={() => handleEditClick(product)}
+                                                            >
+                                                                <img
+                                                                    src="./src/assets/edit.png"
+                                                                    className="fill-current w-4 h-4"
+                                                                    style={{ filter: 'invert(100%)' }}
+                                                                    alt="Edit"
+                                                                />
+                                                            </button>
+                                                        )}
                                                         <button
-                                                            className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
-                                                            onClick={() => handleEditClick(product)}
+                                                            className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"
+                                                            onClick={() => handleDeleteProduct(product.id)}
                                                         >
                                                             <img
-                                                                src="./src/assets/edit.png"
+                                                                src="./src/assets/delete.png"
                                                                 className="fill-current w-4 h-4"
                                                                 style={{ filter: 'invert(100%)' }}
-                                                                alt="Edit"
+                                                                alt="Delete"
                                                             />
                                                         </button>
-                                                    )}
-                                                    <button
-                                                        className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"
-                                                        onClick={() => handleDeleteProduct(product.id)}
-                                                    >
-                                                        <img
-                                                            src="./src/assets/delete.png"
-                                                            className="fill-current w-4 h-4"
-                                                            style={{ filter: 'invert(100%)' }}
-                                                            alt="Delete"
-                                                        />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            
-                            {/* pagination */}
-                            <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-end justify-between">
-                                <div className="inline-flex mt-2 xs:mt-0">
-                                    <button
-                                        className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-l"
-                                        onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : currentPage)}
-                                        disabled={currentPage === 1}
-                                    >
-                                        Prev
-                                    </button>
-                                    
-                                    {/* Page numbers */}
-                                    {pageNumbers.map(number => (
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                
+                                {/* pagination */}
+                                <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-end justify-between">
+                                    <div className="inline-flex mt-2 xs:mt-0">
                                         <button
-                                            key={number}
-                                            onClick={() => setCurrentPage(number)}
-                                            className={`text-sm px-3 py-2 mx-1 ${currentPage === number ? 'bg-[#70b8d3] text-white' : 'bg-gray-200 text-gray-700'} hover:bg-[#09B0EF] rounded`}
+                                            className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-l"
+                                            onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : currentPage)}
+                                            disabled={currentPage === 1}
                                         >
-                                            {number}
+                                            Prev
                                         </button>
-                                    ))}
-                                    
-                                    <button
-                                        className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r"
-                                        onClick={() => setCurrentPage(currentPage < totalPages ? currentPage + 1 : currentPage)}
-                                        disabled={currentPage === totalPages}
-                                    >
-                                        Next
-                                    </button>
-                                </div>
+                                        
+                                        {/* Page numbers */}
+                                        {pageNumbers.map(number => (
+                                            <button
+                                                key={number}
+                                                onClick={() => setCurrentPage(number)}
+                                                className={`text-sm px-3 py-2 mx-1 ${currentPage === number ? 'bg-[#70b8d3] text-white' : 'bg-gray-200 text-gray-700'} hover:bg-[#09B0EF] rounded`}
+                                            >
+                                                {number}
+                                            </button>
+                                        ))}
+                                        
+                                        <button
+                                            className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r"
+                                            onClick={() => setCurrentPage(currentPage < totalPages ? currentPage + 1 : currentPage)}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
 
-                                {/* Showing current page and total pages */}
-                                <div className="mt-2 xs:mt-0 text-gray-600">
-                                    Page {currentPage} of {totalPages}
+                                    {/* Showing current page and total pages */}
+                                    <div className="mt-2 xs:mt-0 text-gray-600">
+                                        Page {currentPage} of {totalPages}
+                                    </div>
                                 </div>
                             </div>
                         </div>

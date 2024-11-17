@@ -4,13 +4,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './Login.jsx';
 import AdminSidebar from './components/AdminSidebar.jsx';
 import AdminDash from './AdminPages/AdminDash.jsx';
-import AdminRegister from './AdminPages/AdminRegister.jsx';
-import AdminList from './AdminPages/AdminList.jsx';
+import AdminManagement from './AdminPages/AdminManagement.jsx';
 import AdminAttendance from './AdminPages/AdminAttendance.jsx';
 import AdminSchedule from './AdminPages/AdminSchedule.jsx';
 import AdminReport from './AdminPages/AdminReport.jsx';
 import AdminPayroll from './AdminPages/AdminPayroll.jsx';
 import AuditLog from './AdminPages/AuditLog.jsx'
+import Settings from './AdminPages/Settings.jsx'
 import EmployeeSidebar from './components/EmployeeSidebar.jsx';
 import EmployeeDash from './EmployeePages/EmployeeDash.jsx';
 import EmployeeReservation from './EmployeePages/EmployeeReservation.jsx';
@@ -37,13 +37,13 @@ root.render(
         <Route path="/" element={<Login />}/>
         <Route path="/adminSidebar" element={<AdminSidebar/>}/>
         <Route path="/AdminDash" element={<AdminDash/>}/>
-        <Route path="/AdminRegister" element={<AdminRegister/>}/>
-        <Route path="/AdminList" element={<AdminList/>}/>
+        <Route path="/AdminManagement" element={<AdminManagement/>}/>
         <Route path="/AdminAttendance" element={<AdminAttendance/>}/>
         <Route path="/AdminSchedule" element={<AdminSchedule/>}/>
         <Route path="/AdminReport" element={<AdminReport/>}/>
         <Route path="/AdminPayroll" element={<AdminPayroll/>}/>
         <Route path="/AuditLog" element={<AuditLog/>}/>
+        <Route path="/Settings" element={<Settings/>}/>
         <Route path="/employeeSidebar" element={<EmployeeSidebar />}/>
         <Route path="/EmployeeDash" element={<EmployeeDash />}/>
         <Route path="/EmployeeReservation" element={<EmployeeReservation />}/>

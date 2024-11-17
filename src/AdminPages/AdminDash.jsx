@@ -5,6 +5,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import CottageModal from '../Modal/CottageModal';
 import LodgeModal from '../Modal/LodgeModal';
 import AdminSidebar from '../components/AdminSidebar';
+
 import axios from 'axios';
 
 function AdminDash () {
@@ -52,19 +53,8 @@ function AdminDash () {
         return record.date === '2024-09-10'; 
     });
 
-    const salesData = [
-        { productName: "Product A", date: "2024-09-10", quantity: 2, price: 50.0 },
-        { productName: "Product B", date: "2024-09-11", quantity: 1, price: 30.0 },
-        { productName: "Product C", date: "2024-09-11", quantity: 1, price: 30.0 },
-        { productName: "Product D", date: "2024-09-11", quantity: 1, price: 30.0 },
-        { productName: "Product E", date: "2024-09-11", quantity: 1, price: 30.0 },
-        { productName: "Product F", date: "2024-09-11", quantity: 1, price: 30.0 },
-        { productName: "Product G", date: "2024-09-11", quantity: 1, price: 30.0 },
-        { productName: "Product H", date: "2024-09-11", quantity: 1, price: 30.0 },
-        { productName: "Product I", date: "2024-09-11", quantity: 1, price: 30.0 },
-    ];
     return (
-        <div className="flex">
+        <div className="flex ">
             <AdminSidebar />
             <div id="dashboard" className="p-6 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4">DASHBOARD</h1>

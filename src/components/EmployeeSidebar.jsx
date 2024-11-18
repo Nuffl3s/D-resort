@@ -1,31 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function EmployeeSidebar() {
     const navigate = useNavigate();
-    const [open, setOpen] = useState(
-        JSON.parse(localStorage.getItem("sidebarOpen")) ?? true
-    );
-    const [activeMenu, setActiveMenu] = useState(
-        localStorage.getItem("activeMenu") || "dashboard"
-    );
+    
+    // Initialize `open` state from localStorage, defaulting to true if not set
+    const [open, setOpen] = useState(true);  
+    const [activeMenu, setActiveMenu] = useState(localStorage.getItem("activeMenu") || "dashboard");
     const [hoveredMenu, setHoveredMenu] = useState(null);
 
-    // For handling the submenus of the Product menu
-    const [productMenuOpen, setProductMenuOpen] = useState(false); // Track Product menu state
-    const [productSubmenuOpen, setProductSubmenuOpen] = useState(null); // Track specific submenu open state
+    // Handle the product menu state and submenu tracking
+    const [productMenuOpen, setProductMenuOpen] = useState(false);
+    const [productSubmenuOpen, setProductSubmenuOpen] = useState(null);
 
-    // Fetch stored profile image and sidebar state on mount
-   
+    // Read from localStorage on component mount
+    useEffect(() => {
+        const storedSidebarState = localStorage.getItem("sidebarOpen");
+        if (storedSidebarState) {
+            setOpen(JSON.parse(storedSidebarState)); // Set the sidebar state if available in localStorage
+        }
+    }, []);
+
+    // Save the sidebar state to localStorage whenever `open` changes
+    useEffect(() => {
+        localStorage.setItem("sidebarOpen", JSON.stringify(open));
+    }, [open]);
 
     const toggleSidebar = () => {
-        const newState = !open;
-        setOpen(newState);
-        localStorage.setItem("sidebarOpen", JSON.stringify(newState));
+        setOpen(prevOpen => !prevOpen); // Toggle the sidebar
     };
 
     const handleMenuClick = (src, path) => {
-        setActiveMenu(path); // Update the active menu when any menu is clicked
+        setActiveMenu(path); // Set the active menu
         localStorage.setItem("activeMenu", path);
         navigate(`/${path}`);
     };
@@ -37,7 +43,6 @@ function EmployeeSidebar() {
         { title: "Sales Report", path: "EmployeeReport", src: "report" },
     ];
 
-
     const handleLogout = () => {
         navigate('/');
     };
@@ -46,29 +51,31 @@ function EmployeeSidebar() {
         navigate('/AdminDash');
     };
 
+    const handleTempoBtnToBooking = () => {
+        navigate('/booking');
+    };
+
     const toggleProductMenu = () => {
-        setProductMenuOpen(!productMenuOpen);
+        setProductMenuOpen(prev => !prev);
         if (!productMenuOpen) {
-            setActiveMenu("Product"); 
+            setActiveMenu("Product");
         } else {
-            setActiveMenu(""); 
+            setActiveMenu("");
         }
     };
 
-    // Handle submenu click and keep the submenu open
     const handleSubmenuClick = (submenu) => {
         if (submenu === "submenu1") {
-            setProductSubmenuOpen("submenu1");  // Keep submenu open
-            setActiveMenu("Product");  // Ensure the "Product" menu remains active
+            setProductSubmenuOpen("submenu1");
+            setActiveMenu("Product");
             navigate("/AddProduct");
         } else if (submenu === "submenu2") {
-            setProductSubmenuOpen("submenu2");  // Keep submenu open
-            setActiveMenu("Product");  // Ensure the "Product" menu remains active
+            setProductSubmenuOpen("submenu2");
+            setActiveMenu("Product");
             navigate("/ManageProduct");
         }
     };
-    
-    
+
     return (
         <div className="min-h-screen flex flex-row bg-white">
             {/* Sidebar */}
@@ -80,18 +87,11 @@ function EmployeeSidebar() {
                     src="./src/assets/control.png"
                     alt="Toggle Sidebar"
                     className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 ${!open && "rotate-180"}`}
-                    onClick={toggleSidebar}
+                    onClick={toggleSidebar}  // Use toggleSidebar for consistent state updates
                 />
 
                 {/* Employee Profile Section */}
                 <div className="flex gap-x-5 items-center bg-gradient-to-r from-[#1089D3] to-[#12B1D1] w-full p-5 shadow-md">
-                    <img
-                        src="./src/assets/control.png"
-                        className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 ${!open && "rotate-180"}`}
-                        onClick={() => setOpen(!open)}
-                        alt="Toggle Sidebar"
-                    />
-
                     <img
                         src="./src/assets/logo.png"
                         className={`cursor-pointer duration-500 w-20 ${!open && "rotate-[360deg]"}`}
@@ -113,8 +113,8 @@ function EmployeeSidebar() {
                         >
                             {menu.src === "product" ? (
                                 <>
-                                   <button
-                                        onClick={toggleProductMenu}  // Toggle the product menu
+                                    <button
+                                        onClick={toggleProductMenu} // Toggle the product menu
                                         className={`menu-item 
                                             ${productMenuOpen || activeMenu === "Product" ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""} 
                                             ${hoveredMenu === menu.path ? "w-full hover:bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:text-white" : ""} 
@@ -133,7 +133,7 @@ function EmployeeSidebar() {
                                                 }}
                                             />
                                         </span>
-                                        {open && <span className="text-md font-semibold">{menu.title}</span>}  
+                                        {open && <span className="text-md font-semibold">{menu.title}</span>}
                                         {open && ( 
                                             <span className="inline-flex items-center justify-end ml-[60px] h-12 w-12">
                                                 <img
@@ -152,9 +152,9 @@ function EmployeeSidebar() {
                                         )}
                                     </button>
 
-                                    {/* Product Submenus (Only outside sidebar when minimized) */}
-                                    {productMenuOpen && (
-                                        <ul className={`pl-6 mt-4 ${!open ? "absolute left-[120px] top-[250px] transition-all duration-300 w-[220px] p-3 shadow-md bg-white rounded-md z-50" : "relative"}`}>
+                                   {/* Product Submenus */}
+                                   {productMenuOpen && (
+                                        <ul className="pl-6">
                                             <li>
                                                 <button
                                                     onClick={() => handleSubmenuClick("submenu1")}
@@ -220,7 +220,7 @@ function EmployeeSidebar() {
                     ))}
 
                     {/* Logout Button */}
-                    <div className="flex w-full justify-center relative top-[200px]">
+                    <div className="flex w-full justify-center relative top-[500px]">
                         <div onClick={handleLogout} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:to-[#0f8bb1] cursor-pointer">
                             <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
                             {open && (
@@ -230,11 +230,21 @@ function EmployeeSidebar() {
                     </div>
 
                     {/* Tempo Button */}
-                    <div className="flex w-full justify-center relative top-[100px]">
+                    <div className="flex w-full justify-center relative top-[190px]">
                         <div onClick={handleTempoBtnToAdmin} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
                             <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
                             {open && (
                                 <button className="rounded-md text-white font-semibold tracking-wide cursor-pointer">Tempo to Admin</button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Tempo Button */}
+                    <div className="flex w-full justify-center relative top-[200px]">
+                        <div onClick={handleTempoBtnToBooking} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
+                            <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
+                            {open && (
+                                <button className="rounded-md text-white font-semibold tracking-wide cursor-pointer">Tempo to Booking</button>
                             )}
                         </div>
                     </div>

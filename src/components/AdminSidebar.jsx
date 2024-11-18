@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function AdminSidebar() {
+// eslint-disable-next-line react/prop-types
+function AdminSidebar({ displayName: propDisplayName }) {
     const navigate = useNavigate();
     const [open, setOpen] = useState(
         JSON.parse(localStorage.getItem("sidebarOpen")) ?? true
@@ -12,11 +13,52 @@ function AdminSidebar() {
     const [profileImage, setProfileImage] = useState(null);
     const [hoveredMenu, setHoveredMenu] = useState(null);
 
-    // Fetch stored profile image and sidebar state on mount
+    // State for displayName
+    const [displayName, setDisplayName] = useState(
+        propDisplayName || localStorage.getItem("displayName") || "Admin"
+    );
+
+    // Function to extract initials from the display name
+    const getInitials = (name) => {
+        if (!name) return ''; // Handle null, undefined, or empty strings
+        const nameParts = name.trim().split(' ').filter(Boolean); // Split and filter empty parts
+        const initials = nameParts
+            .map(part => part.charAt(0).toUpperCase())
+            .join('');
+        return initials;
+    };
+
+    // Fetch profile picture and displayName from localStorage on mount
     useEffect(() => {
-        const storedImage = localStorage.getItem("profileImage");
-        if (storedImage) setProfileImage(storedImage);
-    }, []);
+        const savedProfilePicture = localStorage.getItem("profilePicture");
+        if (savedProfilePicture) {
+            setProfileImage(savedProfilePicture);
+        }
+
+        const savedDisplayName = localStorage.getItem("displayName");
+        if (!propDisplayName && savedDisplayName) {
+            setDisplayName(savedDisplayName);
+        }
+
+        // Function to handle localStorage changes
+        const handleStorageChange = (event) => {
+            if (event.key === "profilePicture") {
+                const updatedProfilePicture = event.newValue;
+                setProfileImage(updatedProfilePicture || null);
+            }
+            if (event.key === "displayName") {
+                setDisplayName(event.newValue || "Admin");
+            }
+        };
+
+        // Add event listener for localStorage changes across tabs
+        window.addEventListener("storage", handleStorageChange);
+
+        // Cleanup event listener when component unmounts
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+        };
+    }, [propDisplayName]); // Run on mount and when propDisplayName changes
 
     const toggleSidebar = () => {
         const newState = !open;
@@ -25,10 +67,17 @@ function AdminSidebar() {
     };
 
     const handleMenuClick = (src, path) => {
-        // Navigate without changing the sidebar's open state
         setActiveMenu(path);
         localStorage.setItem("activeMenu", path);
         navigate(`/${path}`);
+    };
+
+    const handleLogout = () => {
+        navigate('/');
+    };
+
+    const handleTempoBtn = () => {
+        navigate('/EmployeeDash');
     };
 
     const Menus = [
@@ -42,80 +91,51 @@ function AdminSidebar() {
         { title: "Settings", src: "settings", path: "Settings" },
     ];
 
-    const getInitials = (name) => {
-        return name
-            .split(" ")
-            .map((n) => n.charAt(0).toUpperCase())
-            .join("");
-    };
-
-    const handleLogout = () => {
-        navigate('/');
-    };
-
-    const handleTempoBtn = () => {
-        navigate('/EmployeeDash');
-    };
-
     return (
         <div className="min-h-screen flex flex-row bg-white">
-            {/* Sidebar */}
             <div
-                className={`${
-                    open ? "w-[300px]" : "w-[110px]"
-                } duration-300 h-screen bg-white relative shadow-lg`}
+                className={`${open ? "w-[300px]" : "w-[110px]"} duration-300 h-screen bg-white relative shadow-lg`}
             >
-                {/* Sidebar Toggle Button */}
                 <img
                     src="./src/assets/control.png"
                     alt="Toggle Sidebar"
-                    className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 ${
-                        !open && "rotate-180"
-                    }`}
+                    className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 ${!open && "rotate-180"}`}
                     onClick={toggleSidebar}
                 />
-
-                {/* Admin Profile Section */}
                 <div className="flex gap-x-5 items-center bg-gradient-to-r from-[#1089D3] to-[#12B1D1] w-full p-5 shadow-md">
-                    <div className="w-20 h-20 rounded-full bg-white flex justify-center items-center">
+                    <div className="w-[70px] h-[70px] rounded-full bg-white flex justify-center items-center">
+                        {/* Display either profile image or initials */}
                         {profileImage ? (
                             <img
                                 src={profileImage}
-                                alt="Admin Profile"
+                                alt="Profile"
                                 className="w-full h-full object-cover rounded-full"
                             />
                         ) : (
-                            <span className="text-2xl font-bold text-[#1089D3]">
-                                {getInitials("Angelo Yasay")}
-                            </span>
+                            <div className="w-full h-full bg-gray-400 text-white flex items-center justify-center rounded-full font-bold">
+                                {getInitials(displayName)}
+                            </div>
                         )}
                     </div>
-
                     {open && (
                         <div className="flex flex-col">
                             <h2 className="text-white font-semibold text-md">Admin</h2>
-                            <h1 className="text-white font-bold text-xl">Angelo Yasay</h1>
+                            <h1 className="text-white font-bold text-xl">{displayName}</h1>
                         </div>
                     )}
                 </div>
 
-                {/* Sidebar Menu */}
                 <ul className="flex flex-col pt-6 p-8 mt-3">
                     {Menus.map((menu, index) => (
                         <li
                             key={index}
-                            className={`mb-2 ${
-                                menu.isSeparated ? "border-t border-gray-300 mt-4 pt-4" : ""
-                            }`}
+                            className={`mb-2 ${menu.isSeparated ? "border-t border-gray-300 mt-4 pt-4" : ""}`}
                             onMouseEnter={() => setHoveredMenu(menu.path)}
                             onMouseLeave={() => setHoveredMenu(null)}
                         >
                             <button
                                 onClick={() => handleMenuClick(menu.src, menu.path)}
-                                className={`menu-item 
-                                    ${activeMenu === menu.path ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""} 
-                                    ${hoveredMenu === menu.path ? "w-full hover:bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:text-white" : ""} 
-                                    rounded-md flex items-center gap-x-2`}
+                                className={`menu-item ${activeMenu === menu.path ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""} ${hoveredMenu === menu.path ? "w-full hover:bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:text-white" : ""} rounded-md flex items-center gap-x-2`}
                             >
                                 <span className="inline-flex items-center justify-center h-12 w-12 text-lg">
                                     <img
@@ -126,7 +146,7 @@ function AdminSidebar() {
                                             filter:
                                                 hoveredMenu === menu.path || activeMenu === menu.path
                                                     ? "invert(100%)"
-                                                    : "none", 
+                                                    : "none",
                                         }}
                                     />
                                 </span>

@@ -81,7 +81,7 @@ const CottageModal = ({ isOpen, onClose }) => {
 
                         <div className="lg:ml-30 ml-4 space-x-8">
                             <button className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
-                                <i><img src="./src/assets/plus.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Add
+                                Check
                             </button>
                         </div>
                     </div>

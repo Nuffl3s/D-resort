@@ -24,81 +24,105 @@ function AdminPayroll() {
     const [searchTerm, setSearchTerm] = useState(''); // Search term
     const [selectAll, setSelectAll] = useState(false); // For the "select all" checkbox
     const [checkedItems, setCheckedItems] = useState({}); // Tracks which items are checked
-
     
-
-    // Fetch employees from the API and set their initial payroll status as 'Not yet'
     useEffect(() => {
-        axios.get('http://localhost:8000/api/employees/')
+        axios.get('http://localhost:8000/api/payroll/')
             .then((response) => {
-                const employeeData = response.data.map(emp => ({
-                    ...emp,
-                    status: 'Not yet' // Initialize status to 'Not yet'
-                }));
-                setEmployees(employeeData);
-                setPayrollData(employeeData); // Set payroll data for display
-                setFilteredData(employeeData); // Initialize filtered data
+                console.log('Payroll Data:', response.data); // Log the data to debug
+                setPayrollData(response.data);
+                setFilteredData(response.data); // Initialize filtered data
             })
             .catch((error) => {
-                console.error("There was an error fetching the employee data!", error);
+                console.error("Error fetching payroll data!", error);
             });
     }, []);
 
+    useEffect(() => {
+        axios.get('http://localhost:8000/api/employees/')
+            .then((response) => {
+                // Log the response to verify data
+                console.log('Employee Data:', response.data);
+                setEmployees(response.data); // Set the employees in state
+            })
+            .catch((error) => {
+                console.error("Error fetching employee data:", error);
+            });
+    }, []);
+
+    
     // Handle payroll calculation (just calculate, don't change status yet)
     const handleCalculate = () => {
-        let payment;
-        if (payrollType === 'weekly') {
-            payment = totalHours * hourlyRate;
-        } else if (payrollType === 'monthly') {
-            payment = (totalHours * hourlyRate) * 4;
+        if (!selectedEmployee) {
+            alert("Please select an employee before calculating.");
+            return;
         }
-
+    
+        if (totalHours <= 0 || hourlyRate <= 0) {
+            alert("Please enter valid Total Hours and Hourly Rate.");
+            return;
+        }
+    
+        let payment = totalHours * hourlyRate;
+    
         const newEntry = {
             name: selectedEmployee,
-            hours: totalHours,
-            rate: hourlyRate,
+            hours: totalHours, // Add hours
+            rate: hourlyRate, // Add hourly rate
             net: payment,
-            range: `${formatDate(payrollRange.from)} to ${formatDate(payrollRange.to)}`,
-            type: payrollType
+            status: 'Not yet'
         };
-
-        // Add calculated entry to the temporary payroll entries
+    
         setPayrollEntries([...payrollEntries, newEntry]);
     };
 
     // Handle the "Done" button click, this will update the employee status
-    const handleDone = () => {
-        // Update the status of all employees for whom the payroll has been calculated
-        const updatedPayrollData = payrollData.map(emp => {
-            const entry = payrollEntries.find(e => e.name === emp.name);
-            if (entry) {
-                return { ...emp, status: 'Calculated' }; // Change status to "Calculated"
-            }
-            return emp;
-        });
-
-        setPayrollData(updatedPayrollData);
-        setFilteredData(updatedPayrollData); // Update filtered data
-
-        // Optionally, you can also save this to your backend by sending the updated data to your API
-        // axios.post('/api/savePayroll', updatedPayrollData);
+    const handleDone = async () => {
+        if (payrollEntries.length === 0) {
+            alert("No payroll entries to save.");
+            return;
+        }
+    
+        const updatedEntries = payrollEntries.map(entry => ({
+            employee_name: entry.name,
+            net_pay: entry.net,
+            status: 'Calculated'
+        }));
+    
+        try {
+            await axios.post('http://localhost:8000/api/payroll/', updatedEntries);
+            alert('Payroll data saved successfully!');
+            setPayrollEntries([]); // Clear entries after saving
+    
+            // Fetch updated payroll list
+            axios.get('http://localhost:8000/api/payroll/')
+                .then((response) => {
+                    console.log('Updated Payroll Data:', response.data); // Log updated data
+                    setPayrollData(response.data);
+                    setFilteredData(response.data);
+                })
+                .catch((error) => console.error("Error refetching payroll data:", error));
+        } catch (error) {
+            console.error("Error saving payroll data:", error);
+            alert('Failed to save payroll data.');
+        }
     };
+    
 
     // Handle sorting/filtering based on status
     const handleSort = (option) => {
         setSortOption(option);
-        setSortDropdownOpen(false); // Close the dropdown after selecting an option
+        setSortDropdownOpen(false);
     
-        // Filter payroll data by sort option
-        if (option === 'All') {
-            setFilteredData(payrollData.filter(emp => emp.name.toLowerCase().includes(searchTerm)));
-        } else {
-            const sortedData = payrollData.filter(emp => emp.status === option);
+        const filteredByStatus = option === 'All'
+            ? payrollData
+            : payrollData.filter(emp => emp.status === option);
     
-            // Also apply search term if present
-            const finalFiltered = sortedData.filter(emp => emp.name.toLowerCase().includes(searchTerm));
-            setFilteredData(finalFiltered);
-        }
+        // Apply search filter if searchTerm is present
+        const finalFiltered = filteredByStatus.filter(emp =>
+            emp.employee.toLowerCase().includes(searchTerm)
+        );
+    
+        setFilteredData(finalFiltered);
     };
 
     // Handle search by name
@@ -106,17 +130,33 @@ function AdminPayroll() {
         const value = event.target.value.toLowerCase();
         setSearchTerm(value);
     
-        // First, apply search to the full payroll data
-        const filtered = payrollData.filter(emp => emp.name.toLowerCase().includes(value));
+        // Filter payroll data by search term
+        const filtered = payrollData.filter(emp =>
+            emp.employee.toLowerCase().includes(value)
+        );
     
-        // Then, apply any active sorting/filter to the searched data
+        // Apply active sort filter
         if (sortOption !== 'All') {
             setFilteredData(filtered.filter(emp => emp.status === sortOption));
         } else {
-            setFilteredData(filtered); // if no sorting, use searched results
+            setFilteredData(filtered);
         }
     };
-    
+
+    const handleDelete = (id) => {
+        if (window.confirm("Are you sure you want to delete this payroll entry?")) {
+            axios.delete(`http://localhost:8000/api/payroll/${id}/`)
+                .then(() => {
+                    // Refresh the list after deletion
+                    setPayrollData(payrollData.filter(payroll => payroll.id !== id));
+                    setFilteredData(filteredData.filter(payroll => payroll.id !== id));
+                })
+                .catch((error) => {
+                    console.error("Error deleting payroll entry:", error);
+                    alert('Failed to delete payroll entry.');
+                });
+        }
+    };
 
     // Handle "select all" checkbox
     const handleSelectAll = () => {
@@ -235,6 +275,7 @@ function AdminPayroll() {
                                         </th>
                                         <th scope="col" className="px-4">No.</th>
                                         <th scope="col" className="px-4">Name</th>
+                                        <th scope="col" className="px-4">Net Payment</th>
                                         <th scope="col" className="px-4">Status</th>
                                         <th scope="col" className="px-4">Action</th>
                                     </tr>
@@ -251,9 +292,12 @@ function AdminPayroll() {
                                                 />
                                             </td>
                                             <td className="px-6 py-3">{index + 1}</td>
-                                            <td className="px-6 py-3">{payroll.name}</td>
+                                            <td className="px-6 py-3">{payroll.employee}</td> {/* Employee name */}
                                             <td className="px-6 py-3">
-                                                <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : payroll.status === 'Not yet' ? 'text-[#FF6767]' : 'bg-transparent'} py-2 rounded`}>
+                                            {payroll.net_pay ? `$${parseFloat(payroll.net_pay).toFixed(2)}` : 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-3">
+                                                <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 'text-[#FF6767]'} py-2 rounded`}>
                                                     {payroll.status}
                                                 </span>
                                             </td>
@@ -264,7 +308,7 @@ function AdminPayroll() {
                                                 <button className="bg-[#FFC470] hover:bg-[#f8b961] p-2 rounded-full">
                                                     <img src="./src/assets/view.png" className="w-4 h-4 filter brightness-0 invert" alt="View" />
                                                 </button>
-                                                <button className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full">
+                                                <button className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"  onClick={() => handleDelete(payroll.id)}>
                                                     <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
                                                 </button>
                                             </td>
@@ -278,18 +322,18 @@ function AdminPayroll() {
                     <div className="bg-white shadow p-6 w-full">
                         <div className="shadow p-6 rounded-md">
                             <div className="mb-4">
-                                <select
-                                    value={selectedEmployee}
-                                    onChange={(e) => setSelectedEmployee(e.target.value)}
-                                    className="block w-full p-2 border border-gray-300 rounded-lg"
-                                >
-                                    <option value="" disabled>Select Employee</option>
-                                    {employees.map(employee => (
-                                        <option key={employee.id} value={employee.name}>
-                                            {employee.name}
-                                        </option>
-                                    ))}
-                                </select>
+                            <select
+                                value={selectedEmployee}
+                                onChange={(e) => setSelectedEmployee(e.target.value)}
+                                className="block w-full p-2 border border-gray-300 rounded-lg"
+                            >
+                                <option value="" disabled>Select Employee</option>
+                                {employees.map(employee => (
+                                    <option key={employee.id} value={employee.name}>
+                                        {employee.name}
+                                    </option>
+                                ))}
+                            </select>
                             </div>
 
                             <div className="flex space-x-2 mb-2">
@@ -396,9 +440,9 @@ function AdminPayroll() {
                                         {payrollEntries.map((entry, index) => (
                                             <tr key={index} className="border-b hover:bg-gray-50">
                                                 <td className="px-6 py-4">{entry.name}</td>
-                                                <td className="px-6 py-4">{entry.hours}</td>
-                                                <td className="px-6 py-4">${entry.rate.toFixed(2)}</td>
-                                                <td className="px-6 py-4">${entry.net.toFixed(2)}</td>
+                                                <td className="px-6 py-4">{entry.hours || 0}</td>
+                                                <td className="px-6 py-4">${entry.rate ? entry.rate.toFixed(2) : '0.00'}</td>
+                                                <td className="px-6 py-4">${entry.net ? entry.net.toFixed(2) : '0.00'}</td>
                                             </tr>
                                         ))}
                                     </tbody>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from api.views import CreateUserView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView
+from api.views import CreateUserView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView, PayrollListCreate, PayrollDetail
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
@@ -13,5 +13,7 @@ urlpatterns = [
     path('api/uploadproducts/', UploadProductView.as_view(), name="productupload"),
     path('api/products/', ProductListView.as_view(), name="productlist"),
     path('api/product-autocomplete/', ProductAutocompleteView.as_view(), name='product-autocomplete'),
+    path('api/payroll/', PayrollListCreate.as_view(), name='payroll-list-create'),
+    path('api/payroll/<int:pk>/', PayrollDetail.as_view(), name='payroll-detail'),
     path("api-auth/", include("rest_framework.urls")),
 ]

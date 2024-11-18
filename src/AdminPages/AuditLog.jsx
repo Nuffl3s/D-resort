@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
+import axios from 'axios';
 
 function AuditLog() {
     const [selectedOption, setSelectedOption] = useState("All");
@@ -20,6 +21,9 @@ function AuditLog() {
             { name: 'Payroll for October', date: '2024-10-15', time: '09:00 AM' },
         ],
         Report: [
+            { name: 'Monthly Sales Report', date: '2024-10-01', time: '02:00 PM' },
+        ],
+        Inventory: [
             { name: 'Monthly Sales Report', date: '2024-10-01', time: '02:00 PM' },
         ],
         Booking: [
@@ -147,6 +151,18 @@ function AuditLog() {
                                 onChange={handleOptionChange}
                             />
                             <span className="ml-2 text-md">Report</span>
+                        </label>
+
+                        <label className="inline-flex items-center cursor-pointer">
+                            <input
+                                type="radio"
+                                className="form-radio cursor-pointer"
+                                name="auditFilter"
+                                value="Inventory"
+                                checked={selectedOption === "Inventory"}
+                                onChange={handleOptionChange}
+                            />
+                            <span className="ml-2 text-md">Inventory</span>
                         </label>
 
                         <label className="inline-flex items-center cursor-pointer">

@@ -64,3 +64,16 @@ class Product(models.Model):
     def __str__(self):
         return self.name
     
+class Payroll(models.Model):
+    STATUS_CHOICES = [
+        ('Calculated', 'Calculated'),
+        ('Not yet', 'Not yet'),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, default=1)
+    net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.status} - ${self.net_pay:.2f}"
+    

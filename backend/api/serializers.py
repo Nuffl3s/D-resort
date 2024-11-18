@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Employee, Schedule, Product
+from .models import Employee, Schedule, Product, Payroll
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -42,3 +42,9 @@ class ProductSerializer(serializers.ModelSerializer):
             'amount':{'required': False}
         }
 
+class PayrollSerializer(serializers.ModelSerializer):
+    employee = serializers.CharField(source='employee.name')  # Display employee name instead of ID
+
+    class Meta:
+        model = Payroll
+        fields = ['id', 'employee', 'net_pay', 'status']

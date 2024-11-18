@@ -2,8 +2,8 @@ from django.contrib.auth.models import User
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import UserSerializer, EmployeeSerializer, ScheduleSerializer, ProductSerializer
-from .models import Employee, Schedule, Product
+from .serializers import UserSerializer, EmployeeSerializer, ScheduleSerializer, ProductSerializer, PayrollSerializer
+from .models import Employee, Schedule, Product, Payroll
 from rest_framework.permissions import AllowAny
 
 class CreateUserView(generics.CreateAPIView):
@@ -84,3 +84,58 @@ class ProductAutocompleteView(APIView):
             product_names = [{"name": product.name} for product in products]
             return Response(product_names)
         return Response([])
+
+class PayrollListCreate(APIView):
+    def get(self, request):
+        # Retrieve all payroll entries
+        payrolls = Payroll.objects.select_related('employee').all()
+        serializer = PayrollSerializer(payrolls, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        # Handle the creation of payroll entries
+        data = request.data  # Expecting a list of payroll entries
+        if not isinstance(data, list):
+            return Response({"error": "Invalid data format. Expected a list of payroll entries."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        for entry in data:
+            try:
+                employee = Employee.objects.get(name=entry['employee_name'])
+                Payroll.objects.create(
+                    employee=employee,
+                    net_pay=entry['net_pay'],
+                    status=entry['status']
+                )
+            except Employee.DoesNotExist:
+                return Response({"error": f"Employee '{entry['employee_name']}' not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"message": "Payroll entries created successfully!"}, status=status.HTTP_201_CREATED)
+    
+class PayrollDetail(APIView):
+    def delete(self, request, pk):
+        """
+        Handle DELETE request to delete a payroll entry by ID.
+        """
+        try:
+            payroll = Payroll.objects.get(pk=pk)
+            payroll.delete()
+            return Response({"message": "Payroll entry deleted successfully!"}, status=status.HTTP_204_NO_CONTENT)
+        except Payroll.DoesNotExist:
+            return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, pk):
+        """
+        Handle PATCH request to update specific fields of a payroll entry by ID.
+        """
+        try:
+            payroll = Payroll.objects.get(pk=pk)
+            data = request.data
+
+            # Update fields if provided
+            payroll.net_pay = data.get('net_pay', payroll.net_pay)
+            payroll.status = data.get('status', payroll.status)
+
+            payroll.save()
+            return Response({"message": "Payroll entry updated successfully!"}, status=status.HTTP_200_OK)
+        except Payroll.DoesNotExist:
+            return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)

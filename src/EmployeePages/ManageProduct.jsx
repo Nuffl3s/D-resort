@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import Sidebar from '../components/EmployeeSidebar';
 import axios from 'axios';
+import api from '../api';
 
 function ManageProduct() {
     const [products, setProducts] = useState([]);  
@@ -10,7 +11,7 @@ function ManageProduct() {
 
     const fetchProducts = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/api/products/');
+            const response = await api.get('http://localhost:8000/api/products/');
             setProducts(response.data); // Products from backend
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -28,7 +29,7 @@ function ManageProduct() {
 
     const handleSaveClick = async () => {
         try {
-            await axios.put(`http://localhost:8000/api/products/${editProductId}/`, editedProduct);
+            await api.put(`http://localhost:8000/api/products/${editProductId}/`, editedProduct);
             setProducts(products.map(product =>
                 product.id === editProductId ? editedProduct : product
             ));
@@ -42,7 +43,7 @@ function ManageProduct() {
     const handleDeleteProduct = async (id) => {
         console.log("Deleting product with ID:", id); // Add this to check the ID
         try {
-            await axios.delete(`http://localhost:8000/api/products/${id}/`);
+            await api.delete(`http://localhost:8000/api/products/${id}/`);
             setProducts(products.filter(product => product.id !== id));
         } catch (error) {
             console.error("Error deleting product:", error);

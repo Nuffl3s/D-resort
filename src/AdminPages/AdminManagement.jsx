@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import api from '../api';
 import AdminSidebar from '../components/AdminSidebar';
 
 function AdminManagement () {
@@ -18,7 +19,7 @@ function AdminManagement () {
         e.preventDefault();
         console.log("Form Submitted", formData); // Add this to see form data in the console
         try {
-            const response = await axios.post('http://localhost:8000/api/register/', {
+            const response = await api.post('http://localhost:8000/api/register/', {
                 name: formData.name,
                 address: formData.address,
             });
@@ -31,7 +32,7 @@ function AdminManagement () {
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/employees/');
+                const response = await api.get('http://localhost:8000/api/employees/');
                 setEmployees(response.data); // Assuming this endpoint exists and returns employee data
             } catch (error) {
                 console.error('Error fetching employees:', error);

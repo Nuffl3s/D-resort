@@ -5,7 +5,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import CottageModal from '../Modal/CottageModal';
 import LodgeModal from '../Modal/LodgeModal';
 import AdminSidebar from '../components/AdminSidebar';
-
+import api from '../api';
 import axios from 'axios';
 
 function AdminDash () {
@@ -27,12 +27,15 @@ function AdminDash () {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/products/'); // Adjust the API URL as needed
+                const response = await api.get('http://localhost:8000/api/products/'); // Adjust the API URL as needed
                 console.log("Fetched products:", response.data);  // Log API response to check if it contains data
                 setProducts(response.data);
             } catch (error) {
-                console.error('Error fetching products:', error);
-            }
+                console.error("Error fetching products:", error.response?.data || error.message);
+                if (error.response?.status === 401) {
+                    alert("Unauthorized: Please log in again or check permissions.");
+                }
+            } 
         };
         fetchProducts();
     }, []);

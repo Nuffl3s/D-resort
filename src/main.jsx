@@ -26,6 +26,7 @@ import Payment from './OnlineBookingPages/PaymentPage.jsx'
 import About from './OnlineBookingPages/AboutUsPage.jsx'
 import Terms from './OnlineBookingPages/TermsAndConditionPage.jsx'
 import CalendarView from './EmployeePages/CalendarView.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 import './index.css';
 const root = createRoot(document.getElementById('root'));
 
@@ -35,21 +36,26 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />}/>
-        <Route path="/adminSidebar" element={<AdminSidebar/>}/>
-        <Route path="/AdminDash" element={<AdminDash/>}/>
-        <Route path="/AdminManagement" element={<AdminManagement/>}/>
-        <Route path="/AdminAttendance" element={<AdminAttendance/>}/>
-        <Route path="/AdminSchedule" element={<AdminSchedule/>}/>
-        <Route path="/AdminReport" element={<AdminReport/>}/>
-        <Route path="/AdminPayroll" element={<AdminPayroll/>}/>
-        <Route path="/AuditLog" element={<AuditLog/>}/>
-        <Route path="/Settings" element={<Settings/>}/>
-        <Route path="/employeeSidebar" element={<EmployeeSidebar />}/>
-        <Route path="/EmployeeDash" element={<EmployeeDash />}/>
-        <Route path="/EmployeeReservation" element={<EmployeeReservation />}/>
-        <Route path="/ManageProduct" element={<ManageProduct />}/>
-        <Route path="/AddProduct" element={<AddProduct />}/>
-        <Route path="/EmployeeReport" element={<EmployeeReport />}/>
+        <Route path="/adminSidebar" element={ <ProtectedRoute> <AdminSidebar/> </ProtectedRoute>}/>
+         {/* Admin-Only Routes */}
+        <Route path="/AdminDash" element={<ProtectedRoute allowedRoles={["Admin"]}><AdminDash /></ProtectedRoute>} />
+        <Route path="/AdminPayroll" element={<ProtectedRoute allowedRoles={["Admin"]}><AdminPayroll /></ProtectedRoute>} />
+        <Route path="/AdminManagement" element={<ProtectedRoute allowedRoles={["Admin"]}><AdminManagement /></ProtectedRoute>} />
+        <Route path="/AdminAttendance" element={<ProtectedRoute allowedRoles={["Admin"]}> <AdminAttendance/> </ProtectedRoute>}/>
+        <Route path="/AdminSchedule" element={<ProtectedRoute allowedRoles={["Admin"]}> <AdminSchedule/> </ProtectedRoute>}/>
+        <Route path="/AdminReport" element={<ProtectedRoute allowedRoles={["Admin"]}> <AdminReport/> </ProtectedRoute>}/>
+        <Route path="/AuditLog" element={<ProtectedRoute allowedRoles={["Admin"]}> <AuditLog/> </ProtectedRoute>}/>
+        
+        <Route path="/Settings" element={<ProtectedRoute> <Settings/> </ProtectedRoute>}/>
+        <Route path="/employeeSidebar" element={<ProtectedRoute> <EmployeeSidebar /> </ProtectedRoute>}/>
+        
+        {/* Shared Routes (Admin and Employee) */}
+        <Route path="/EmployeeDash" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}><EmployeeDash /></ProtectedRoute>} />
+        <Route path="/EmployeeReservation" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}> <EmployeeReservation /> </ProtectedRoute>}/>
+        <Route path="/ManageProduct" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}><ManageProduct /></ProtectedRoute>} />
+        <Route path="/AddProduct" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}> <AddProduct /> </ProtectedRoute>}/>
+        <Route path="/EmployeeReport" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}> <EmployeeReport /> </ProtectedRoute>}/>
+        
         <Route path="/booking" element={<BookingMainPage />}/>
         <Route path="/book" element={<CottageAndLodge />}/>
         <Route path="/sign-in" element={<SignIn />}/>

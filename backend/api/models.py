@@ -57,4 +57,3 @@ class Payroll(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.status} - ${self.net_pay:.2f}"
-    

@@ -36,6 +36,7 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />}/>
+        <Route path="/login" element={<Login />}/>
         <Route path="/adminSidebar" element={ <ProtectedRoute> <AdminSidebar/> </ProtectedRoute>}/>
          {/* Admin-Only Routes */}
         <Route path="/AdminDash" element={<ProtectedRoute allowedRoles={["Admin"]}><AdminDash /></ProtectedRoute>} />
@@ -46,10 +47,9 @@ root.render(
         <Route path="/AdminReport" element={<ProtectedRoute allowedRoles={["Admin"]}> <AdminReport/> </ProtectedRoute>}/>
         <Route path="/AuditLog" element={<ProtectedRoute allowedRoles={["Admin"]}> <AuditLog/> </ProtectedRoute>}/>
         
-        <Route path="/Settings" element={<ProtectedRoute> <Settings/> </ProtectedRoute>}/>
-        <Route path="/employeeSidebar" element={<ProtectedRoute> <EmployeeSidebar /> </ProtectedRoute>}/>
-        
         {/* Shared Routes (Admin and Employee) */}
+        <Route path="/Settings" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}> <Settings/> </ProtectedRoute>}/>
+        <Route path="/employeeSidebar" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}> <EmployeeSidebar /> </ProtectedRoute>}/>
         <Route path="/EmployeeDash" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}><EmployeeDash /></ProtectedRoute>} />
         <Route path="/EmployeeReservation" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}> <EmployeeReservation /> </ProtectedRoute>}/>
         <Route path="/ManageProduct" element={<ProtectedRoute allowedRoles={["Admin", "Employee"]}><ManageProduct /></ProtectedRoute>} />

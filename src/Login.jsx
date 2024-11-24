@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "./api"; // Import the API instance
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants"; // Import constants
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants"; 
 import axios from "axios";
 
 function Login() {
@@ -29,8 +29,8 @@ function Login() {
       });
 
       // Save JWT tokens to localStorage
-      localStorage.setItem("access", response.data.access);
-      localStorage.setItem("refresh", response.data.refresh);
+      localStorage.setItem(ACCESS_TOKEN, response.data.access);
+      localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
       // Retrieve user details
       const userDetails = await api.get("/user-details/");

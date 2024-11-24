@@ -11,7 +11,6 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import IsAdminOrEmployee, IsAdminOnly
 
-
 class RegisterUserView(APIView):
     permission_classes = [AllowAny] 
 
@@ -61,7 +60,11 @@ class UserDetailsView(APIView):
 class RegisterEmployeeView(generics.CreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
-    permission_classes = [AllowAny]  # Ensure this is set
+    permission_classes = [AllowAny]
+    
+    def perform_create(self, serializer):
+        employee = serializer.save()
+        log_action("Registration", f"Employee {employee.name} registered.")
     
 class EmployeeListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
@@ -71,43 +74,46 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
     
 class UploadProductView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrEmployee]
-    
+
+    def log_action(self, category, action):
+        """Helper function to log an action."""
+        AuditLog.objects.create(category=category, action=action)
+        print(f"Log Action: [{category}] {action}")  # Log to console
+
     def post(self, request, *args, **kwargs):
         uploaded_products = request.data.get('products', [])
         if not uploaded_products:
             return Response({'error': 'No products provided'}, status=status.HTTP_400_BAD_REQUEST)
 
         for product_data in uploaded_products:
-            # Get the product name, quantity, and avg_price from the request
-            product_name = product_data.get('name').lower()  # Convert to lowercase for case-insensitive comparison
+            product_name = product_data.get('name').lower()
             quantity = product_data.get('quantity')
             avg_price = product_data.get('avgPrice')
 
             if not (product_name and quantity and avg_price):
                 return Response({'error': 'Product data is incomplete'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Calculate the amount if not provided
             product_data['amount'] = quantity * avg_price
 
-            # Try to find an existing product by name (case-insensitive)
             try:
+                # Try to find an existing product
                 existing_product = Product.objects.get(name__iexact=product_name)
-
-                # If found, update the quantity and recalculate the avg_price if needed
                 existing_product.quantity += quantity
                 existing_product.save()
-
+                # Call the log_action method with 'self'
+                self.log_action("Product", f"Updated product '{existing_product.name}' with quantity {quantity}.")
             except Product.DoesNotExist:
-                # If product does not exist, create a new one
-                product_data['name'] = product_name  # Ensure the name is lowercase for consistency
+                product_data['name'] = product_name
                 serializer = ProductSerializer(data=product_data)
-
                 if serializer.is_valid():
-                    serializer.save()
+                    new_product = serializer.save()
+                    # Call the log_action method with 'self'
+                    self.log_action("Product", f"Uploaded new product '{new_product.name}' with quantity {new_product.quantity}.")
                 else:
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'message': 'Products uploaded successfully'}, status=status.HTTP_200_OK)
+
 
 class ProductListView(generics.ListAPIView):
     queryset = Product.objects.all()

@@ -1,15 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import api from "./api"; // Import the API instance
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants"; 
 import axios from "axios";
 
 function Login() {
   const navigate = useNavigate();
-  const [isEmployee, setIsEmployee] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false); // Toggle between login and registration
   const [formData, setFormData] = useState({
     username: "",
     password: "",
-    email: "",
     user_type: "Employee", // Default to Employee for registration
   });
 
@@ -22,20 +22,30 @@ function Login() {
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
-      const response = await axios.post("http://localhost:8000/api/token/", {
+      // Send login request
+      const response = await axios.post("http://localhost:8000/api/logtoken/", {
         username: formData.username,
         password: formData.password,
       });
 
-      // Save JWT tokens to local storage
-      localStorage.setItem("access", response.data.access);
-      localStorage.setItem("refresh", response.data.refresh);
+      // Save JWT tokens to localStorage
+      localStorage.setItem(ACCESS_TOKEN, response.data.access);
+      localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
-      // Navigate to appropriate dashboard
-      if (isEmployee) {
+      // Retrieve user details
+      const userDetails = await api.get("/user-details/");
+      const userType = userDetails.data.user_type;
+
+      // Save user role to localStorage
+      localStorage.setItem("user_role", userType);
+
+      // Navigate based on user role
+      if (userType === "Admin") {
+        navigate("/AdminDash");
+      } else if (userType === "Employee") {
         navigate("/EmployeeDash");
       } else {
-        navigate("/AdminDash");
+        alert("Unknown user type!");
       }
     } catch (error) {
       console.error("Login failed:", error.response?.data || error.message);
@@ -48,36 +58,24 @@ function Login() {
     event.preventDefault();
 
     const requestBody = {
-        username: formData.username,
-        password: formData.password,
-        user_type: isEmployee ? 'Employee' : 'Admin',
+      username: formData.username,
+      password: formData.password,
+      user_type: formData.user_type,
     };
 
     try {
-        const response = await fetch('http://localhost:8000/api/user/register/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-        });
+      // Register user using the API instance
+      const response = await api.post("/api/reguser/", requestBody);
 
-        if (response.ok) {
-            const data = await response.json();
-            alert('User registered successfully!');
-        } else {
-            const error = await response.json();
-            console.error('Error:', error);
-            alert('Failed to register user.');
-        }
+      if (response.status === 201) {
+        alert("User registered successfully!");
+      } else {
+        alert("Failed to register user.");
+      }
     } catch (err) {
-        console.error('Network error:', err);
+      console.error("Registration failed:", err.response?.data || err.message);
+      alert("Failed to register user.");
     }
-};
-
-  // Toggle between employee and admin login
-  const handleToggleLoginType = () => {
-    setIsEmployee((prev) => !prev);
   };
 
   // Toggle between login and registration forms
@@ -96,7 +94,7 @@ function Login() {
       <div className="w-1/2 h-full flex justify-center items-center">
         <div className="w-[500px] bg-white p-8 rounded-[5px] shadow-lg">
           <h2 className="text-2xl font-extrabold text-[#1089D3] text-center mb-6">
-            {isRegistering ? "REGISTER" : isEmployee ? "EMPLOYEE LOGIN" : "ADMIN LOGIN"}
+            {isRegistering ? "REGISTER" : "LOGIN"}
           </h2>
           <form className="mt-6" onSubmit={isRegistering ? handleRegister : handleLogin}>
             {/* Username */}
@@ -168,16 +166,6 @@ function Login() {
           >
             {isRegistering ? "Switch to Login" : "Switch to Register"}
           </button>
-
-          {/* Switch between Employee and Admin Login */}
-          {!isRegistering && (
-            <button
-              onClick={handleToggleLoginType}
-              className="w-full mt-4 bg-gray-200 text-gray-800 p-3 rounded-[10px] shadow-md hover:bg-gray-300"
-            >
-              Switch to {isEmployee ? "Admin" : "Employee"} Login
-            </button>
-          )}
         </div>
       </div>
     </div>

@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.urls import path, include
-from api.views import CreateUserView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView, PayrollListCreate, PayrollDetail
+from api.views import RegisterUserView, CustomLoginView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView, PayrollListCreate, PayrollDetail, UserDetailsView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/user/register/", CreateUserView.as_view(), name="register"),
+    path("api/reguser/", RegisterUserView.as_view(), name="register"),
+    path("api/logtoken/", CustomLoginView.as_view(), name="login"),
+    path('api/user-details/', UserDetailsView.as_view(), name='user-details'),
     path("api/token/", TokenObtainPairView.as_view(), name="get_token"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="refresh"),
     path('api/register/', RegisterEmployeeView.as_view(), name='register_employee'),

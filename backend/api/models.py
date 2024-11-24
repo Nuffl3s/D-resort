@@ -1,5 +1,32 @@
+from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 
+class CustomUser(AbstractUser):
+    USER_TYPES = (
+        ('Admin', 'Admin'),
+        ('Employee', 'Employee'),
+    )
+    user_type = models.CharField(max_length=10, choices=USER_TYPES, default='Employee')
+
+    # Avoid conflicts by setting unique related_name
+    groups = models.ManyToManyField(
+        Group,
+        related_name="customuser_groups",  # Unique related name
+        blank=True,
+        help_text="The groups this user belongs to.",
+        verbose_name="groups",
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        related_name="customuser_permissions",  # Unique related name
+        blank=True,
+        help_text="Specific permissions for this user.",
+        verbose_name="user permissions",
+    )
+
+    def __str__(self):
+        return self.username
+    
 class Employee(models.Model):
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
@@ -7,52 +34,6 @@ class Employee(models.Model):
     def __str__(self):
         return self.name
 
-
-class Schedule(models.Model):
-    DUTY_CHOICES = [
-        ('Store Duty', 'Store Duty'),
-        ('Cleaning Duty', 'Cleaning Duty'),
-    ]
-
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='schedules')
-    
-    monday_start = models.TimeField(null=True, blank=True)
-    monday_end = models.TimeField(null=True, blank=True)
-    monday_duty = models.CharField(max_length=100, choices=DUTY_CHOICES, blank=True)
-    monday_day_off = models.BooleanField(default=False)
-
-    tuesday_start = models.TimeField(null=True, blank=True)
-    tuesday_end = models.TimeField(null=True, blank=True)
-    tuesday_duty = models.CharField(max_length=100, choices=DUTY_CHOICES, blank=True)
-    tuesday_day_off = models.BooleanField(default=False)
-    
-    wednesday_start = models.TimeField(null=True, blank=True)
-    wednesday_end = models.TimeField(null=True, blank=True)
-    wednesday_duty = models.CharField(max_length=100, choices=DUTY_CHOICES, blank=True)
-    wednesday_day_off = models.BooleanField(default=False)
-    
-    thursday_start = models.TimeField(null=True, blank=True)
-    thursday_end = models.TimeField(null=True, blank=True)
-    thursday_duty = models.CharField(max_length=100, choices=DUTY_CHOICES, blank=True)
-    thursday_day_off = models.BooleanField(default=False)
-    
-    friday_start = models.TimeField(null=True, blank=True)
-    friday_end = models.TimeField(null=True, blank=True)
-    friday_duty = models.CharField(max_length=100, choices=DUTY_CHOICES, blank=True)
-    friday_day_off = models.BooleanField(default=False)
-    
-    saturday_start = models.TimeField(null=True, blank=True)
-    saturday_end = models.TimeField(null=True, blank=True)
-    saturday_duty = models.CharField(max_length=100, choices=DUTY_CHOICES, blank=True)
-    saturday_day_off = models.BooleanField(default=False)
-    
-    sunday_start = models.TimeField(null=True, blank=True)
-    sunday_end = models.TimeField(null=True, blank=True)
-    sunday_duty = models.CharField(max_length=100, choices=DUTY_CHOICES, blank=True)
-    sunday_day_off = models.BooleanField(default=False)
-    
-    def __str__(self):
-        return f"{self.employee.name}'s schedule"
     
 class Product(models.Model):
     name = models.CharField(max_length=255)
@@ -76,4 +57,3 @@ class Payroll(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.status} - ${self.net_pay:.2f}"
-    

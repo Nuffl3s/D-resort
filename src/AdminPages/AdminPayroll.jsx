@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
+import api from '../api';
 import axios from 'axios';
 
 // Function to format dates
@@ -26,7 +27,7 @@ function AdminPayroll() {
     const [checkedItems, setCheckedItems] = useState({}); // Tracks which items are checked
     
     useEffect(() => {
-        axios.get('http://localhost:8000/api/payroll/')
+        api.get('http://localhost:8000/api/payroll/')
             .then((response) => {
                 console.log('Payroll Data:', response.data); // Log the data to debug
                 setPayrollData(response.data);
@@ -38,7 +39,7 @@ function AdminPayroll() {
     }, []);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/employees/')
+        api.get('http://localhost:8000/api/employees/')
             .then((response) => {
                 // Log the response to verify data
                 console.log('Employee Data:', response.data);

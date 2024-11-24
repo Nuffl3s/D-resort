@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import Employee, Product, Payroll, CustomUser
+from .models import Employee, Product, Payroll, CustomUser, Log
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -42,3 +42,8 @@ class PayrollSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payroll
         fields = ['id', 'employee', 'net_pay', 'status']
+
+class LogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Log
+        fields = ["id", "username", "action", "category", "timestamp"]

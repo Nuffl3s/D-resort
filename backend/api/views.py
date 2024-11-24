@@ -4,22 +4,31 @@ from django.contrib.auth.models import update_last_login
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer
-from .models import Employee, Product, Payroll, CustomUser
+from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer
+from .models import Employee, Product, Payroll, CustomUser, Log
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import IsAdminOrEmployee, IsAdminOnly
 
 class RegisterUserView(APIView):
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()  # Save and create user
+
+            # Log the user registration
+            Log.objects.create(
+                username=user.username,
+                action=f"User {user.username} registered as {user.user_type}.",
+                category="Employee Registration"
+            )
+
             return Response({"message": "User registered successfully!", "user_id": user.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
 class CustomLoginView(APIView):
     permission_classes = [AllowAny]
@@ -29,13 +38,20 @@ class CustomLoginView(APIView):
         username = request.data.get("username")
         password = request.data.get("password")
 
-        print(f"Attempting to authenticate user: {username}")  # Debugging line
         user = authenticate(username=username, password=password)
 
         if user is not None:
             # Successful login
             refresh = RefreshToken.for_user(user)
             update_last_login(None, user)  # Update last login timestamp
+
+            # Log the login action
+            Log.objects.create(
+                username=user.username,
+                action=f"{user.username} logged in.",
+                category="Attendance"
+            )
+
             return Response({
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
@@ -43,8 +59,8 @@ class CustomLoginView(APIView):
             }, status=status.HTTP_200_OK)
         else:
             # Login failed
-            print("Authentication failed. Invalid credentials.")  # Debugging line
             return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserDetailsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -61,10 +77,16 @@ class RegisterEmployeeView(generics.CreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     permission_classes = [AllowAny]
-    
+
     def perform_create(self, serializer):
         employee = serializer.save()
-        log_action("Registration", f"Employee {employee.name} registered.")
+        log_action = f"Employee {employee.name} registered with address {employee.address}."
+        # Log the registration
+        Log.objects.create(
+            username="System",  # Use request.user.username if logged-in user registers the employee
+            action=log_action,
+            category="Employee Registration"
+        )
     
 class EmployeeListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
@@ -75,16 +97,12 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
 class UploadProductView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrEmployee]
 
-    def log_action(self, category, action):
-        """Helper function to log an action."""
-        AuditLog.objects.create(category=category, action=action)
-        print(f"Log Action: [{category}] {action}")  # Log to console
-
     def post(self, request, *args, **kwargs):
         uploaded_products = request.data.get('products', [])
         if not uploaded_products:
             return Response({'error': 'No products provided'}, status=status.HTTP_400_BAD_REQUEST)
 
+        log_entries = []  # To accumulate log entries
         for product_data in uploaded_products:
             product_name = product_data.get('name').lower()
             quantity = product_data.get('quantity')
@@ -96,23 +114,36 @@ class UploadProductView(APIView):
             product_data['amount'] = quantity * avg_price
 
             try:
-                # Try to find an existing product
+                # Update existing product
                 existing_product = Product.objects.get(name__iexact=product_name)
                 existing_product.quantity += quantity
                 existing_product.save()
-                # Call the log_action method with 'self'
-                self.log_action("Product", f"Updated product '{existing_product.name}' with quantity {quantity}.")
+                log_entry = f"Updated product: {product_name}, Quantity added: {quantity}, New total: {existing_product.quantity}"
+                log_entries.append(log_entry)
+                # Log the update
+                Log.objects.create(
+                    username=request.user.username,
+                    action=log_entry,
+                    category="Inventory"
+                )
             except Product.DoesNotExist:
+                # Create a new product
                 product_data['name'] = product_name
                 serializer = ProductSerializer(data=product_data)
                 if serializer.is_valid():
                     new_product = serializer.save()
-                    # Call the log_action method with 'self'
-                    self.log_action("Product", f"Uploaded new product '{new_product.name}' with quantity {new_product.quantity}.")
+                    log_entry = f"Created product: {new_product.name}, Quantity: {new_product.quantity}, Amount: {new_product.amount}"
+                    log_entries.append(log_entry)
+                    # Log the creation
+                    Log.objects.create(
+                        username=request.user.username,
+                        action=log_entry,
+                        category="Inventory"
+                    )
                 else:
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'message': 'Products uploaded successfully'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Products uploaded successfully', 'log_entries': log_entries}, status=status.HTTP_200_OK)
 
 
 class ProductListView(generics.ListAPIView):
@@ -140,50 +171,56 @@ class ProductAutocompleteView(APIView):
 
 class PayrollListCreate(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
-    
+
     def get(self, request):
-        # Retrieve all payroll entries
+        # Handles GET requests
         payrolls = Payroll.objects.select_related('employee').all()
         serializer = PayrollSerializer(payrolls, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        return Response(serializer.data, status=200)
+    
     def post(self, request):
-        # Handle the creation of payroll entries
         data = request.data  # Expecting a list of payroll entries
         if not isinstance(data, list):
             return Response({"error": "Invalid data format. Expected a list of payroll entries."}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         for entry in data:
             try:
                 employee = Employee.objects.get(name=entry['employee_name'])
-                Payroll.objects.create(
+                payroll = Payroll.objects.create(
                     employee=employee,
                     net_pay=entry['net_pay'],
                     status=entry['status']
+                )
+                # Log the payroll creation
+                Log.objects.create(
+                    username=request.user.username,
+                    action=f"Payroll created for {employee.name}, Net Pay: {payroll.net_pay}.",
+                    category="Payroll"
                 )
             except Employee.DoesNotExist:
                 return Response({"error": f"Employee '{entry['employee_name']}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response({"message": "Payroll entries created successfully!"}, status=status.HTTP_201_CREATED)
+
     
 class PayrollDetail(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
-    
+
     def delete(self, request, pk):
-        """
-        Handle DELETE request to delete a payroll entry by ID.
-        """
         try:
             payroll = Payroll.objects.get(pk=pk)
             payroll.delete()
+            Log.objects.create(
+                username=request.user.username,
+                action=f"Payroll deleted for {payroll.employee.name}.",
+                category="Payroll"
+            )
             return Response({"message": "Payroll entry deleted successfully!"}, status=status.HTTP_204_NO_CONTENT)
         except Payroll.DoesNotExist:
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, pk):
-        """
-        Handle PATCH request to update specific fields of a payroll entry by ID.
-        """
+
         try:
             payroll = Payroll.objects.get(pk=pk)
             data = request.data
@@ -196,3 +233,22 @@ class PayrollDetail(APIView):
             return Response({"message": "Payroll entry updated successfully!"}, status=status.HTTP_200_OK)
         except Payroll.DoesNotExist:
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+class LogView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+    
+    def get(self, request):
+        category = request.query_params.get("category", None)  # Get category from query params
+        if category and category != "All":
+            logs = Log.objects.filter(category=category).order_by("-timestamp")
+        else:
+            logs = Log.objects.all().order_by("-timestamp")
+        serializer = LogSerializer(logs, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = LogSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()  # Save the log entry with the category
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

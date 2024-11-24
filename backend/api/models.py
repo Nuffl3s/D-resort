@@ -57,3 +57,23 @@ class Payroll(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.status} - ${self.net_pay:.2f}"
+    
+class Log(models.Model):
+    CATEGORY_CHOICES = [
+        ("Employee Registration", "Employee Registration"),
+        ("Attendance", "Attendance"),
+        ("Payroll", "Payroll"),
+        ("Report", "Report"),
+        ("Inventory", "Inventory"),
+        ("Booking", "Booking"),
+        ("System", "System"),
+    ]
+
+    username = models.CharField(max_length=255)
+    action = models.CharField(max_length=255)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default="System")  # Add this field
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.username} - {self.action} - {self.category}"
+

@@ -90,12 +90,12 @@ function AdminPayroll() {
         }));
     
         try {
-            await axios.post('http://localhost:8000/api/payroll/', updatedEntries);
+            await api.post('http://localhost:8000/api/payroll/', updatedEntries);
             alert('Payroll data saved successfully!');
             setPayrollEntries([]); // Clear entries after saving
     
             // Fetch updated payroll list
-            axios.get('http://localhost:8000/api/payroll/')
+            api.get('http://localhost:8000/api/payroll/')
                 .then((response) => {
                     console.log('Updated Payroll Data:', response.data); // Log updated data
                     setPayrollData(response.data);
@@ -146,7 +146,7 @@ function AdminPayroll() {
 
     const handleDelete = (id) => {
         if (window.confirm("Are you sure you want to delete this payroll entry?")) {
-            axios.delete(`http://localhost:8000/api/payroll/${id}/`)
+            api.delete(`http://localhost:8000/api/payroll/${id}/`)
                 .then(() => {
                     // Refresh the list after deletion
                     setPayrollData(payrollData.filter(payroll => payroll.id !== id));

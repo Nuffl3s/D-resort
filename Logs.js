@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import api from '../api';
 import Swal from 'sweetalert2';
 import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -25,7 +26,7 @@ const Logs = () => {
         const fetchLogs = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get('http://localhost:8000/logs/');
+                const response = await api.get('http://localhost:8000/api/logs/');
                 const data = response.data;
                 setLogs(data);
                 setLoading(false);
@@ -53,7 +54,7 @@ const Logs = () => {
             confirmButtonText: 'Yes, delete it!',
         }).then((result) => {
             if (result.isConfirmed) {
-                axios.delete('http://localhost:8000/logs/')
+                api.delete('http://localhost:8000/api/logs/')
                     .then(() => {
                         setLogs([]);
                         Swal.fire('Deleted!', 'Logs have been deleted.', 'success');

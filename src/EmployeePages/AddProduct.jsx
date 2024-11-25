@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/EmployeeSidebar';
 import axios from 'axios';
+import api from '../api';
 import Swal from 'sweetalert2';
 
 function AddProduct() {
@@ -146,7 +147,7 @@ function AddProduct() {
         }));
     
         try {
-            const response = await axios.post('http://localhost:8000/api/uploadproducts/', {
+            const response = await api.post('http://localhost:8000/api/uploadproducts/', {
                 products: productsToUpload
             });
     
@@ -182,7 +183,7 @@ function AddProduct() {
         setProductName(value);
         if (value.length >= 2) {
             try {
-                const response = await axios.get(`http://localhost:8000/api/product-autocomplete/?query=${value}`);
+                const response = await api.get(`http://localhost:8000/api/product-autocomplete/?query=${value}`);
                 console.log(response.data); // Check the structure of the data received
                 setSuggestions(response.data);
                 setShowSuggestions(response.data.length > 0);

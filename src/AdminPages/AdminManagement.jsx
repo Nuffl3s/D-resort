@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Swal from 'sweetalert2'; // Import SweetAlert2
 import AdminSidebar from '../components/AdminSidebar';
 
 function AdminManagement() {
@@ -17,49 +16,22 @@ function AdminManagement() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Show SweetAlert prompt
-        Swal.fire({
-            title: 'Biometric Registration',
-            text: 'Please put your finger in the biometric device to register.',
-            icon: 'info',
-            confirmButtonText: 'OK',
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                console.log("Form Submitted", formData); // Add this to see form data in the console
-                try {
-                    const response = await axios.post('http://localhost:8000/api/register/', {
-                        name: formData.name,
-                        address: formData.address,
-                    });
-                    console.log('Employee Registered:', response.data);
-
-                    // Success alert
-                    Swal.fire({
-                        title: 'Success',
-                        text: 'Employee registered successfully!',
-                        icon: 'success',
-                        confirmButtonText: 'OK',
-                    });
-                } catch (error) {
-                    console.error('Error registering employee:', error);
-
-                    // Error alert
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Failed to register employee. Please try again.',
-                        icon: 'error',
-                        confirmButtonText: 'OK',
-                    });
-                }
-            }
-        });
+        console.log("Form Submitted", formData); // Add this to see form data in the console
+        try {
+            const response = await axios.post('http://localhost:8000/api/register/', {
+                name: formData.name,
+                address: formData.address,
+            });
+            console.log('Employee Registered:', response.data);
+        } catch (error) {
+            console.error('Error registering employee:', error);
+        }
     };
 
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/employees/');
+                const response = await api.get('http://localhost:8000/api/employees/');
                 setEmployees(response.data); // Assuming this endpoint exists and returns employee data
             } catch (error) {
                 console.error('Error fetching employees:', error);

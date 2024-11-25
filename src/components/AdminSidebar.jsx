@@ -73,6 +73,9 @@ function AdminSidebar({ displayName: propDisplayName }) {
     };
 
     const handleLogout = () => {
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+        localStorage.removeItem("user_role");
         navigate('/');
     };
 

@@ -39,6 +39,9 @@ function EmployeeSidebar() {
 
 
     const handleLogout = () => {
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+        localStorage.removeItem("user_role");
         navigate('/');
     };
 

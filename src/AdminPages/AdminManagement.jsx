@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2'; // Import SweetAlert2
 import AdminSidebar from '../components/AdminSidebar';
 
-function AdminManagement () {
+function AdminManagement() {
     const [employees, setEmployees] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
@@ -16,16 +17,43 @@ function AdminManagement () {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Form Submitted", formData); // Add this to see form data in the console
-        try {
-            const response = await axios.post('http://localhost:8000/api/register/', {
-                name: formData.name,
-                address: formData.address,
-            });
-            console.log('Employee Registered:', response.data);
-        } catch (error) {
-            console.error('Error registering employee:', error);
-        }
+
+        // Show SweetAlert prompt
+        Swal.fire({
+            title: 'Biometric Registration',
+            text: 'Please put your finger in the biometric device to register.',
+            icon: 'info',
+            confirmButtonText: 'OK',
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                console.log("Form Submitted", formData); // Add this to see form data in the console
+                try {
+                    const response = await axios.post('http://localhost:8000/api/register/', {
+                        name: formData.name,
+                        address: formData.address,
+                    });
+                    console.log('Employee Registered:', response.data);
+
+                    // Success alert
+                    Swal.fire({
+                        title: 'Success',
+                        text: 'Employee registered successfully!',
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                    });
+                } catch (error) {
+                    console.error('Error registering employee:', error);
+
+                    // Error alert
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to register employee. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                    });
+                }
+            }
+        });
     };
 
     useEffect(() => {
@@ -37,7 +65,7 @@ function AdminManagement () {
                 console.error('Error fetching employees:', error);
             }
         };
-    
+
         fetchEmployees();
     }, []);
 
@@ -84,18 +112,18 @@ function AdminManagement () {
                             </div>
 
                             <div className="mt-5 w-full flex justify-start gap-5">
-                            <button
-                                type="submit"
-                                onClick={handleSubmit}  // Add this line to trigger the form submission
-                                className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#09B0EF]"
-                                    >
+                                <button
+                                    type="button" // Change to type="button" to prevent default form submission
+                                    onClick={handleSubmit} // Add this line to trigger the form submission
+                                    className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#09B0EF]"
+                                >
                                     Register
                                 </button>
 
                                 <button type="button" className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#ED6565] hover:bg-[#F24E4E]">
                                     Cancel
                                 </button>
-                            </div>  
+                            </div>
                         </div>
 
                         <div className="bg-white rounded-md shadow-md p-6 w-full ml-5 h-[850px]">

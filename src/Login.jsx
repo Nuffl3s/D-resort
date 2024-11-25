@@ -27,7 +27,7 @@ function Login() {
 
       <div className="w-1/2 h-full flex justify-center items-center">
         <div className="w-[500px] h-[500px] bg-white p-8 rounded-[5px] shadow-lg">
-          <h2 className="text-2xl font-extrabold text-[#1089D3] text-center mb-6">
+          <h2 className="text-2xl font-extrabold  text-[#12B1D1] text-center mb-6">
             {isEmployee ? 'EMPLOYEE LOGIN' : 'ADMIN LOGIN'}
           </h2>
           <form className="mt-6">
@@ -66,14 +66,14 @@ function Login() {
             <button
               type="submit"
               onClick={handleLogin}
-              className="w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white p-3 rounded-[10px] shadow-md hover:to-[#0f8bb1]"
+              className="w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white p-3 rounded-[10px] shadow-md hover:to-[#0f8bb1] font-bold"
             >
               Login
             </button>
           </form>
           <button
             onClick={handleToggleLogin}
-            className="w-full mt-4 bg-gray-200 text-gray-800 p-3 rounded-[10px] shadow-md hover:bg-gray-300"
+            className="w-full mt-4 bg-gray-200 text-gray-800 p-3 rounded-[10px] shadow-md hover:bg-gray-300 font-semibold"
           >
             Switch to {isEmployee ? 'Admin' : 'Employee'} Login
           </button>

@@ -1,223 +1,163 @@
-import { useState } from 'react';
-import AdminSidebar from '../components/AdminSidebar';
+import { useState } from "react";
+import AdminSidebar from "../components/AdminSidebar";
 
 function AuditLog() {
     const [selectedOption, setSelectedOption] = useState("All");
-    const [selectedDateRange, setSelectedDateRange] = useState("Today");
-    const [dateDropdownOpen, setDateDropdownOpen] = useState(false); 
+    const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
-    // Mock data for each filter
-    const mockData = {
-        Registration: [
-            { name: 'John Doe', date: '2024-10-19', time: '10:30 AM' },
-            { name: 'Jane Smith', date: '2024-10-18', time: '11:15 AM' },
-        ],
-        Attendance: [
-            { name: 'John Doe', date: '2024-10-19', time: '08:00 AM' },
-            { name: 'Jane Smith', date: '2024-10-18', time: '08:15 AM' },
-        ],
-        Payroll: [
-            { name: 'Payroll for October', date: '2024-10-15', time: '09:00 AM' },
-        ],
-        Report: [
-            { name: 'Monthly Sales Report', date: '2024-10-01', time: '02:00 PM' },
-        ],
-        Booking: [
-            { name: 'John Doe - Checked in', date: '2024-10-19', time: '12:00 PM' },
-            { name: 'Jane Smith - Checked out', date: '2024-10-18', time: '10:00 AM' },
-            { name: 'Jane Smith - Confirmed', date: '2024-10-18', time: '10:00 AM' },
+    // Mock data for the table
+    const mockData = [
+        { name: "John Doe", category: "Employee Registration", action: "Registered Employee", date: "30 APR 2024", time: "23:49:05" },
+        { name: "Michael Lavaro", category: "Employee Registration", action: "Registered Employee", date: "30 APR 2024", time: "23:49:05" },
+        { name: "Michael Lavaro", category: "Attendance", action: "Attendance", date: "30 APR 2024", time: "23:49:05" },
+        { name: "", category: "Payroll", action: "Payroll created", date: "30 APR 2024", time: "23:49:05" },
+        { name: "", category: "Report", action: "Sales Report", date: "30 APR 2024", time: "23:49:05" },
+        { name: "Jane Smith", category: "Booking", action: "Checked out", date: "30 APR 2024", time: "23:49:05" },
+        { name: "Smith John", category: "Booking", action: "Check in", date: "30 APR 2024", time: "23:49:05" },
+        { name: "Smith John", category: "Booking", action: "Check in", date: "30 APR 2024", time: "23:49:05" },
+        { name: "Smith John", category: "Booking", action: "Check in", date: "30 APR 2024", time: "23:49:05" },
+        { name: "Smith John", category: "Booking", action: "Check in", date: "30 APR 2024", time: "23:49:05" },
+        { name: "Smith John", category: "Booking", action: "Check in", date: "30 APR 2024", time: "23:49:05" },
 
-        ],
-    };
 
-    const handleOptionChange = (event) => {
-        setSelectedOption(event.target.value);
-    };
+    ];
 
-    const handleChange = (label) => {
-        setSelectedDateRange(label); // Update selected date range
-        setDateDropdownOpen(false); // Close dropdown
-    };
-
-    // Render the content based on the selected filter
-    const renderContent = () => {
-        // If "All" is selected, render all categories with labels
-        if (selectedOption === "All") {
-            return Object.keys(mockData).map((category) => (
-                <div key={category} className="mb-8">
-                    <h2 className="text-xl font-semibold mb-4">{category}</h2>
-                    <ul className="space-y-4">
-                        {mockData[category].map((entry, index) => (
-                            <li key={index} className="border p-4 rounded-lg shadow-sm">
-                                <p className="font-semibold">{entry.name}</p>
-                                <p>Date: {entry.date}</p>
-                                <p>Time: {entry.time}</p>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            ));
-        }
-
-        // For specific options, render only the selected category
-        const data = mockData[selectedOption] || [];
-
-        if (data.length === 0) {
-            return <p>No data available for {selectedOption}</p>;
-        }
-
+    // Filtered data based on category and search query
+    const filteredData = mockData.filter((entry) => {
         return (
-            <ul className="space-y-4">
-                {data.map((entry, index) => (
-                    <li key={index} className="border p-4 rounded-lg shadow-sm ">
-                        <p className="font-semibold">{entry.name}</p>
-                        <p>Date: {entry.date}</p>
-                        <p>Time: {entry.time}</p>
-                    </li>
-                ))}
-            </ul>
+            (selectedOption === "All" || entry.category === selectedOption) &&
+            (searchQuery === "" || entry.name.toLowerCase().includes(searchQuery.toLowerCase()))
         );
-    };
+    });
+
+    // Pagination logic
+    const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
         <div className="flex">
+            {/* Sidebar */}
             <AdminSidebar />
-            <div className="p-6 pl-10 flex-1 h-screen overflow-y-auto">
-                <h1 className="text-4xl font-bold mb-4">AUDIT LOG</h1>
 
-                {/* Filter Options */}
-                <div className="flex items-center justify-between mb-6">
-                    {/* Radio Buttons */}
-                    <div className="flex space-x-6">
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                className="form-radio cursor-pointer"
-                                name="auditFilter"
-                                value="All"
-                                checked={selectedOption === "All"}
-                                onChange={handleOptionChange}
-                            />
-                            <span className="ml-2 text-md">All</span>
-                        </label>
+            {/* Main Content */}
+            <div className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
+                <h1 className="text-4xl font-bold mb-6">Audit Log</h1>
 
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                className="form-radio cursor-pointer"
-                                name="auditFilter"
-                                value="Registration"
-                                checked={selectedOption === "Registration"}
-                                onChange={handleOptionChange}
+                {/* Filters */}
+                <div className="flex items-center justify-between mb-4">
+                    {/* Search Input */}
+                    <div className="relative w-1/3">
+                        {/* Search Icon */}
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <img
+                                src="src/assets/search.png" // Replace this with the actual path to your image
+                                alt="Search Icon"
+                                className="h-5 w-5"
                             />
-                            <span className="ml-2 text-md">Employee Registration</span>
-                        </label>
+                        </div>
 
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                className="form-radio cursor-pointer"
-                                name="auditFilter"
-                                value="Attendance"
-                                checked={selectedOption === "Attendance"}
-                                onChange={handleOptionChange}
-                            />
-                            <span className="ml-2 text-md">Attendance</span>
-                        </label>
-
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                className="form-radio cursor-pointer"
-                                name="auditFilter"
-                                value="Payroll"
-                                checked={selectedOption === "Payroll"}
-                                onChange={handleOptionChange}
-                            />
-                            <span className="ml-2 text-md">Payroll</span>
-                        </label>
-
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                className="form-radio cursor-pointer"
-                                name="auditFilter"
-                                value="Report"
-                                checked={selectedOption === "Report"}
-                                onChange={handleOptionChange}
-                            />
-                            <span className="ml-2 text-md">Report</span>
-                        </label>
-
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                className="form-radio cursor-pointer"
-                                name="auditFilter"
-                                value="Booking"
-                                checked={selectedOption === "Booking"}
-                                onChange={handleOptionChange}
-                            />
-                            <span className="ml-2 text-md">Booking</span>
-                        </label>
+                        {/* Search Input */}
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 border border-gray-300 rounded-lg p-2 w-full"
+                        />
                     </div>
 
-                    {/* Date Range Dropdown */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setDateDropdownOpen(!dateDropdownOpen)} // Toggle date dropdown
-                            className="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none font-medium rounded-md text-sm px-3 py-1.5"
-                            type="button"
-                        >
-                            {selectedDateRange} {/* Reflect selected date range */}
-                            <svg
-                                className={`w-2.5 h-2.5 ml-2.5 transform transition-transform ${dateDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 10 6"
-                            >
-                                <path
-                                    stroke="currentColor"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="m1 1 4 4 4-4"
-                                />
-                            </svg>
-                        </button>
-
-                        {/* Date Dropdown menu */}
-                        {dateDropdownOpen && (
-                            <div className="absolute right-0 z-20 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow">
-                                <ul className="p-3 space-y-1 text-sm text-gray-700">
-                                    {['Today', 'Last day', 'Last 7 days', 'Last 30 days', 'Last month', 'Last year'].map((label, index) => (
-                                        <li key={index}>
-                                            <div className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer" onClick={() => handleChange(label)}>
-                                                <input
-                                                    id={`filter-radio-example-${index + 1}`}
-                                                    type="radio"
-                                                    name="filter-radio"
-                                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
-                                                />
-                                                <label
-                                                    htmlFor={`filter-radio-example-${index + 1}`}
-                                                    className="w-full ml-2 text-sm font-medium text-gray-900"
-                                                >
-                                                    {label}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
+                    {/* Reset Button */}
+                    <button
+                        onClick={() => {
+                            setSearchQuery("");
+                        }}
+                        className="ml-4 bg-[#70b8d3] hover:bg-[#09B0EF] text-white px-4 py-2 rounded-lg"
+                    >
+                        Reset
+                    </button>
                 </div>
 
-                {/* Content Section */}
-                <div className="p-6 w-full mx-auto mt-8 bg-white shadow-lg rounded-lg border-gray-200 mb-4 h-[780px] overflow-y-auto">
-                    {renderContent()}
+                {/* Category Tabs */}
+                <div className="flex space-x-6 mb-4 border-b pb-2">
+                    {["All", "Employee Registration", "Attendance", "Payroll", "Report", "Booking"].map((category) => {
+                        // Determine if the current category is selected
+                        const isSelected = selectedOption === category;
+                        const activeColor = "text-[#70b8d3] border-[#70b8d3]"; // Use a consistent color for both text and border
+
+                        return (
+                            <button
+                                key={category}
+                                onClick={() => setSelectedOption(category)}
+                                className={`px-4 py-2 ${
+                                    isSelected
+                                        ? `${activeColor} font-semibold border-b-2`
+                                        : "text-gray-700 hover:text-[#70b8d3]"
+                                }`}
+                            >
+                                {category}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Table */}
+                <div className="bg-white rounded-lg shadow p-4">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="">
+                            <tr className="bg-gray-100 border-b">
+                                <th className="p-3 border">Name</th>
+                                <th className="p-3 border">Action</th>
+                                <th className="p-3 border">Date</th>
+                                <th className="p-3 border">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedData.length > 0 ? (
+                                paginatedData.map((entry, index) => (
+                                    <tr key={index} className="hover:bg-gray-50 border-b">
+                                        <td className="p-3 border">{entry.name || "—"}</td>
+                                        <td className="p-3 border">{entry.action}</td>
+                                        <td className="p-3 border">{entry.date}</td>
+                                        <td className="p-3 border">{entry.time}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td className="p-3 border text-center" colSpan="4">
+                                        No records found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex justify-end items-center mt-6 space-x-2">
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        className={`text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded ${
+                            currentPage === 1 ? "cursor-not-allowed opacity-50" : "hover:bg-[#09B0EF]"
+                        }`}
+                        disabled={currentPage === 1}
+                    >
+                        Prev
+                    </button>
+                    <div className="px-2 py-1 bg-gray-100 text-gray-700">
+                        {currentPage}
+                    </div>
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredData.length / itemsPerPage)))}
+                        className={`text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded ${
+                            currentPage === Math.ceil(filteredData.length / itemsPerPage)
+                                ? "cursor-not-allowed opacity-50"
+                                : "hover:bg-[#09B0EF]"
+                        }`}
+                        disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage)}
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
         </div>

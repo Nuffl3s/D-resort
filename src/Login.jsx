@@ -23,7 +23,7 @@ function Login() {
     event.preventDefault();
     try {
       // Send login request
-      const response = await axios.post("http://localhost:8000/api/logtoken/", {
+      const response = await api.post("http://localhost:8000/api/logtoken/", {
         username: formData.username,
         password: formData.password,
       });
@@ -94,7 +94,7 @@ function Login() {
       <div className="w-1/2 h-full flex justify-center items-center">
         <div className="w-[500px] h-[500px] bg-white p-8 rounded-[5px] shadow-lg">
           <h2 className="text-2xl font-extrabold text-[#1089D3] text-center mb-6">
-            {isEmployee ? 'EMPLOYEE LOGIN' : 'ADMIN LOGIN'}
+            {isRegistering ? 'EMPLOYEE LOGIN' : 'ADMIN LOGIN'}
           </h2>
           <form className="mt-6" onSubmit={isRegistering ? handleRegister : handleLogin}>
             {/* Username */}
@@ -162,7 +162,7 @@ function Login() {
 
           {/* Switch between Login and Register */}
           <button
-            onClick={handleToggleLogin}
+            onClick={handleToggleRegister}
             className="w-full mt-4 bg-gray-200 text-gray-800 p-3 rounded-[10px] shadow-md hover:bg-gray-300"
           >
             {isRegistering ? "Switch to Login" : "Switch to Register"}

@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "./api"; // Import the API instance
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants"; 
 import axios from "axios";
 
 function Login() {
@@ -29,8 +28,8 @@ function Login() {
       });
 
       // Save JWT tokens to localStorage
-      localStorage.setItem(ACCESS_TOKEN, response.data.access);
-      localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
+      localStorage.setItem("access", response.data.access);
+      localStorage.setItem("refresh", response.data.refresh);
 
       // Retrieve user details
       const userDetails = await api.get("/user-details/");
@@ -92,9 +91,9 @@ function Login() {
 
       {/* Right Side with Form */}
       <div className="w-1/2 h-full flex justify-center items-center">
-        <div className="w-[500px] h-[500px] bg-white p-8 rounded-[5px] shadow-lg">
+        <div className="w-[500px] bg-white p-8 rounded-[5px] shadow-lg">
           <h2 className="text-2xl font-extrabold text-[#1089D3] text-center mb-6">
-            {isEmployee ? 'EMPLOYEE LOGIN' : 'ADMIN LOGIN'}
+            {isRegistering ? "REGISTER" : "LOGIN"}
           </h2>
           <form className="mt-6" onSubmit={isRegistering ? handleRegister : handleLogin}>
             {/* Username */}
@@ -102,33 +101,33 @@ function Login() {
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username
               </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
-                placeholder="Username"
-                required
-              />
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
+                    placeholder="Username"
+                    required
+                />
             </div>
 
             {/* Password */}
             <div className="mb-4">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
-                placeholder="Password"
-                required
-              />
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password
+                </label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
+                    placeholder="Password"
+                    required
+                />
             </div>
 
             {/* User Type (for registration only) */}
@@ -153,7 +152,6 @@ function Login() {
             {/* Submit Button */}
             <button
               type="submit"
-              onClick={handleLogin}
               className="w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white p-3 rounded-[10px] shadow-md hover:to-[#0f8bb1]"
             >
               {isRegistering ? "Register" : "Login"}
@@ -162,7 +160,7 @@ function Login() {
 
           {/* Switch between Login and Register */}
           <button
-            onClick={handleToggleLogin}
+            onClick={handleToggleRegister}
             className="w-full mt-4 bg-gray-200 text-gray-800 p-3 rounded-[10px] shadow-md hover:bg-gray-300"
           >
             {isRegistering ? "Switch to Login" : "Switch to Register"}

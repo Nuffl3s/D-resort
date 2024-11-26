@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import AdminSidebar from '../components/AdminSidebar';
+import Swal from 'sweetalert2';
 
-function AdminManagement() {
+function AdminManagement () {
     const [employees, setEmployees] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
@@ -16,18 +17,57 @@ function AdminManagement() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Form Submitted", formData); // Add this to see form data in the console
-        try {
-            const response = await axios.post('http://localhost:8000/api/register/', {
-                name: formData.name,
-                address: formData.address,
-            });
-            console.log('Employee Registered:', response.data);
-        } catch (error) {
-            console.error('Error registering employee:', error);
-        }
+        console.log("Form Submitted", formData); // Debugging form data
+    
+        // Show SweetAlert prompt before proceeding
+        Swal.fire({
+            title: 'Biometric Registration',
+            text: 'Please put your finger in the biometric device to register.',
+            icon: 'info',
+            confirmButtonText: 'OK',
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('http://localhost:8000/api/register/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: formData.name,
+                            address: formData.address,
+                        }),
+                    });
+    
+                    if (response.ok) {
+                        const responseData = await response.json();
+                        console.log('Employee Registered:', responseData);
+    
+                        // Success SweetAlert
+                        Swal.fire({
+                            title: 'Success',
+                            text: 'Employee registered successfully!',
+                            icon: 'success',
+                            confirmButtonText: 'OK',
+                        });
+                    } else {
+                        throw new Error('Failed to register employee');
+                    }
+                } catch (error) {
+                    console.error('Error registering employee:', error);
+    
+                    // Error SweetAlert
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to register employee. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                    });
+                }
+            }
+        });
     };
-
+    
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
@@ -37,7 +77,7 @@ function AdminManagement() {
                 console.error('Error fetching employees:', error);
             }
         };
-
+    
         fetchEmployees();
     }, []);
 
@@ -81,20 +121,17 @@ function AdminManagement() {
                                         <input type="text" id="mobileNumber" name="mobileNumber" className="mt-1 p-3 w-full border border-black rounded bg-white" />
                                     </div>
                                 </form>
-                            </div>
 
-                            <div className="mt-5 w-full flex justify-start gap-5">
-                                <button
-                                    type="button" // Change to type="button" to prevent default form submission
-                                    onClick={handleSubmit} // Add this line to trigger the form submission
-                                    className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#09B0EF]"
-                                >
-                                    Register
-                                </button>
-
-                                <button type="button" className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#ED6565] hover:bg-[#F24E4E]">
-                                    Cancel
-                                </button>
+                                    
+                                <div className="mt-5 w-full flex justify-start gap-5">
+                                    <button
+                                        type="submit"
+                                        onClick={handleSubmit}  // Add this line to trigger the form submission
+                                        className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#09B0EF]"
+                                            >
+                                            Register
+                                    </button>
+                                </div>  
                             </div>
                         </div>
 

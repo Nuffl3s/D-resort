@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "./api"; // Import the API instance
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants"; 
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants"; // Import constants
 import axios from "axios";
 
 function Login() {
@@ -23,14 +23,14 @@ function Login() {
     event.preventDefault();
     try {
       // Send login request
-      const response = await api.post("http://localhost:8000/api/logtoken/", {
+      const response = await axios.post("http://localhost:8000/api/logtoken/", {
         username: formData.username,
         password: formData.password,
       });
 
       // Save JWT tokens to localStorage
-      localStorage.setItem(ACCESS_TOKEN, response.data.access);
-      localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
+      localStorage.setItem("access", response.data.access);
+      localStorage.setItem("refresh", response.data.refresh);
 
       // Retrieve user details
       const userDetails = await api.get("/user-details/");
@@ -65,7 +65,7 @@ function Login() {
 
     try {
       // Register user using the API instance
-      const response = await api.post("/api/reguser/", requestBody);
+      const response = await api.post("/reguser/", requestBody);
 
       if (response.status === 201) {
         alert("User registered successfully!");
@@ -92,9 +92,9 @@ function Login() {
 
       {/* Right Side with Form */}
       <div className="w-1/2 h-full flex justify-center items-center">
-        <div className="w-[500px] h-[500px] bg-white p-8 rounded-[5px] shadow-lg">
+        <div className="w-[500px] bg-white p-8 rounded-[5px] shadow-lg">
           <h2 className="text-2xl font-extrabold text-[#1089D3] text-center mb-6">
-            {isRegistering ? 'EMPLOYEE LOGIN' : 'ADMIN LOGIN'}
+            {isRegistering ? "REGISTER" : "LOGIN"}
           </h2>
           <form className="mt-6" onSubmit={isRegistering ? handleRegister : handleLogin}>
             {/* Username */}
@@ -153,7 +153,6 @@ function Login() {
             {/* Submit Button */}
             <button
               type="submit"
-              onClick={handleLogin}
               className="w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white p-3 rounded-[10px] shadow-md hover:to-[#0f8bb1]"
             >
               {isRegistering ? "Register" : "Login"}

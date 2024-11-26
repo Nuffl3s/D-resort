@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import AdminSidebar from '../components/AdminSidebar';
+import api from '../api';
 
 function AdminManagement() {
     const [employees, setEmployees] = useState([]);
@@ -40,6 +41,22 @@ function AdminManagement() {
 
         fetchEmployees();
     }, []);
+
+    useEffect(() => {
+        fetch('/api/employees/') // Update the endpoint as needed
+            .then((response) => {
+                if (!response.ok) {
+                throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                setEmployees(data); // Update the state with fetched data
+            })
+            .catch((error) => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+        }, []);
 
     return (
         <div className="flex">
@@ -144,10 +161,10 @@ function AdminManagement() {
                                             </thead>
 
                                             <tbody>
-                                                {employees.map((employee) => (
+                                                {employees.map((employee, index) => (
                                                     <tr key={employee.id}>
                                                         <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
-                                                            <p className="text-gray-900 whitespace-no-wrap"></p>
+                                                            <p className="text-gray-900 whitespace-no-wrap">{index + 1}</p>
                                                         </td>
                                                         <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
                                                             <p className="text-gray-900 whitespace-no-wrap">{employee.name}</p>

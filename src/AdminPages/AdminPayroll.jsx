@@ -50,7 +50,20 @@ function AdminPayroll() {
             });
     }, []);
 
+    useEffect(() => {
+        fetch('/api/employees/', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                'Content-Type': 'application/json',
+            },
+        })
+            .then((response) => response.json())
+            .then((data) => setEmployees(data))
+            .catch((error) => console.error('Error fetching employees:', error));
+    }, []);
     
+
     // Handle payroll calculation (just calculate, don't change status yet)
     const handleCalculate = () => {
         if (!selectedEmployee) {
@@ -294,9 +307,7 @@ function AdminPayroll() {
                                             </td>
                                             <td className="px-6 py-3">{index + 1}</td>
                                             <td className="px-6 py-3">{payroll.employee}</td> {/* Employee name */}
-                                            <td className="px-6 py-3">
-                                            {payroll.net_pay ? `$${parseFloat(payroll.net_pay).toFixed(2)}` : 'N/A'}
-                                            </td>
+                                            <td className="px-6 py-3">${parseFloat(payroll.net_pay).toFixed(2) || 'N/A'}</td>
                                             <td className="px-6 py-3">
                                                 <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 'text-[#FF6767]'} py-2 rounded`}>
                                                     {payroll.status}

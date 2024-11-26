@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import Employee, Product, Payroll, CustomUser, Log
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -25,7 +25,22 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ['name', 'address']
-        
+
+class WeeklyScheduleSerializer(serializers.ModelSerializer):
+    employee = serializers.CharField(source='employee.name')
+
+    class Meta:
+        model = WeeklySchedule
+        fields = ['id', 'employee', 'schedule']
+
+    def validate(self, data):
+        schedule = data.get('schedule', {})
+        # Enforce day order
+        day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        ordered_schedule = {day: schedule.get(day, {}) for day in day_order}
+        data['schedule'] = ordered_schedule
+        return data
+
 
 class ProductSerializer(serializers.ModelSerializer):
     date_added = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)  # Include this field

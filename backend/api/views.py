@@ -4,8 +4,8 @@ from django.contrib.auth.models import update_last_login
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer
-from .models import Employee, Product, Payroll, CustomUser, Log
+from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -17,17 +17,16 @@ class RegisterUserView(APIView):
     def post(self, request):
         serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()  # Save and create user
-
-            # Log the user registration
+            user = serializer.save()
+            # Log registration
             Log.objects.create(
                 username=user.username,
                 action=f"User {user.username} registered as {user.user_type}.",
                 category="Employee Registration"
             )
-
             return Response({"message": "User registered successfully!", "user_id": user.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
     
 class CustomLoginView(APIView):
@@ -38,18 +37,19 @@ class CustomLoginView(APIView):
         username = request.data.get("username")
         password = request.data.get("password")
 
-        user = authenticate(username=username, password=password)
+        if not username or not password:
+            return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        user = authenticate(username=username, password=password)
         if user is not None:
-            # Successful login
             refresh = RefreshToken.for_user(user)
-            update_last_login(None, user)  # Update last login timestamp
+            update_last_login(None, user)
 
             # Log the login action
             Log.objects.create(
                 username=user.username,
                 action=f"{user.username} logged in.",
-                category="Attendance"
+                category="System"
             )
 
             return Response({
@@ -57,10 +57,7 @@ class CustomLoginView(APIView):
                 "access": str(refresh.access_token),
                 "user_type": user.user_type,
             }, status=status.HTTP_200_OK)
-        else:
-            # Login failed
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserDetailsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -93,7 +90,40 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     
-    
+class WeeklyScheduleView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+
+    def get(self, request):
+        schedules = WeeklySchedule.objects.select_related('employee').all()
+        serializer = WeeklyScheduleSerializer(schedules, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        data = request.data
+        employee = Employee.objects.get(name=data['employee'])
+        schedule = data.get('schedule', {})
+
+        # Enforce day order
+        day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        ordered_schedule = {day: schedule.get(day, {}) for day in day_order}
+
+        # Save the ordered schedule
+        weekly_schedule_data = {
+            "employee": employee.name,
+            "schedule": ordered_schedule,
+        }
+
+        existing_schedule = WeeklySchedule.objects.filter(employee=employee).first()
+        if existing_schedule:
+            serializer = WeeklyScheduleSerializer(existing_schedule, data=weekly_schedule_data)
+        else:
+            serializer = WeeklyScheduleSerializer(data=weekly_schedule_data)
+
+        if serializer.is_valid():
+            serializer.save(employee=employee)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class UploadProductView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrEmployee]
 
@@ -173,11 +203,15 @@ class PayrollListCreate(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
 
     def get(self, request):
-        # Handles GET requests
+        # Ensure all employees have a payroll entry
+        employees = Employee.objects.all()
+        for employee in employees:
+            Payroll.objects.get_or_create(employee=employee, defaults={'status': 'Not yet'})
+
         payrolls = Payroll.objects.select_related('employee').all()
         serializer = PayrollSerializer(payrolls, many=True)
         return Response(serializer.data, status=200)
-    
+
     def post(self, request):
         data = request.data  # Expecting a list of payroll entries
         if not isinstance(data, list):
@@ -201,6 +235,7 @@ class PayrollListCreate(APIView):
                 return Response({"error": f"Employee '{entry['employee_name']}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response({"message": "Payroll entries created successfully!"}, status=status.HTTP_201_CREATED)
+
 
     
 class PayrollDetail(APIView):

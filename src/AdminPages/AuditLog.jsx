@@ -22,6 +22,7 @@ const AuditLog = () => {
         'Report',
         'Inventory',
         'Booking',
+        'System',
     ];
 
     // Fetch logs based on selected category

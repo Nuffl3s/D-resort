@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from rest_framework.generics import UpdateAPIView, DestroyAPIView
 from django.contrib.auth.models import update_last_login
 from rest_framework import generics, status
 from rest_framework.views import APIView
@@ -70,6 +71,8 @@ class UserDetailsView(APIView):
             "user_type": user.user_type,
         })
     
+from rest_framework.response import Response
+
 class RegisterEmployeeView(generics.CreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
@@ -78,18 +81,37 @@ class RegisterEmployeeView(generics.CreateAPIView):
     def perform_create(self, serializer):
         employee = serializer.save()
         log_action = f"Employee {employee.name} registered with address {employee.address}."
-        # Log the registration
         Log.objects.create(
-            username="System",  # Use request.user.username if logged-in user registers the employee
+            username="System",
             action=log_action,
             category="Employee Registration"
         )
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        # Return the updated list of employees
+        employees = Employee.objects.all()
+        employee_serializer = EmployeeSerializer(employees, many=True)
+        return Response(employee_serializer.data, status=status.HTTP_201_CREATED)
+
     
 class EmployeeListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
-    
+
+class EditEmployeeView(UpdateAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+
+class DeleteEmployeeView(DestroyAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+
 class WeeklyScheduleView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
 

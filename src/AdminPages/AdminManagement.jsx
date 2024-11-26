@@ -4,60 +4,79 @@ import AdminSidebar from '../components/AdminSidebar';
 import api from '../api';
 
 function AdminManagement() {
-    const [employees, setEmployees] = useState([]);
+    const [employeeList, setEmployeeList] = useState([]);
+    const [searchTerm, setSearchTerm] = useState(""); // Search term
+    const [currentPage, setCurrentPage] = useState(1); // Current page
+    const employeesPerPage = 5; // Number of employees per page
     const [formData, setFormData] = useState({
         name: '',
         address: '',
+        mobile_number: '',
     });
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+    useEffect(() => {
+        fetchEmployeeList();
+    }, []);
+
+    // Fetch employees from the backend
+    const fetchEmployeeList = async () => {
+        try {
+            const response = await api.get('http://localhost:8000/api/employees/');
+            setEmployeeList(response.data);
+        } catch (error) {
+            console.error('Error fetching employees:', error);
+        }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        console.log("Form Submitted", formData); // Add this to see form data in the console
+    // Handle input changes for the form
+    const handleInputChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value,
+        });
+    };
+
+    // Handle employee registration
+    const handleSubmit = async () => {
         try {
-            const response = await axios.post('http://localhost:8000/api/register/', {
-                name: formData.name,
-                address: formData.address,
+            const response = await api.post('http://localhost:8000/api/registeremployee/', formData);
+
+            fetchEmployeeList();
+
+            setFormData({
+                name: '',
+                address: '',
+                mobile_number: '',
             });
-            console.log('Employee Registered:', response.data);
         } catch (error) {
             console.error('Error registering employee:', error);
         }
     };
 
-    useEffect(() => {
-        const fetchEmployees = async () => {
-            try {
-                const response = await api.get('http://localhost:8000/api/employees/');
-                setEmployees(response.data); // Assuming this endpoint exists and returns employee data
-            } catch (error) {
-                console.error('Error fetching employees:', error);
-            }
-        };
+     // Handle search input change
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value); // Update the search term
+        setCurrentPage(1); // Reset to the first page on new search
+    };
 
-        fetchEmployees();
-    }, []);
+    // Get filtered and paginated employees
+    const filteredEmployees = employeeList.filter((employee) =>
+        employee.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    const indexOfLastEmployee = currentPage * employeesPerPage;
+    const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
+    const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
+    
+    const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage)
 
-    useEffect(() => {
-        fetch('/api/employees/') // Update the endpoint as needed
-            .then((response) => {
-                if (!response.ok) {
-                throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then((data) => {
-                setEmployees(data); // Update the state with fetched data
-            })
-            .catch((error) => {
-                console.error('There was a problem with the fetch operation:', error);
-            });
-        }, []);
-
+    // Handle pagination
+    const handlePageChange = (pageNumber) => {
+        if (pageNumber >= 1 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+        }
+    };
+    
     return (
         <div className="flex">
             <AdminSidebar />
@@ -136,8 +155,18 @@ function AdminManagement() {
 
                                     <div className="flex items-center space-x-4">
                                         <div className="flex bg-white items-center p-2 rounded-md border">
-                                            <img src="./src/assets/search.png" className="fill-current w-5 h-5" />
-                                            <input className="bg-white outline-none ml-1 block" type="text" placeholder="search..." />
+                                            <img 
+                                                src="./src/assets/search.png" 
+                                                className="fill-current w-5 h-5" 
+                                                alt="Search Icon"
+                                            />
+                                            <input
+                                                className="bg-white outline-none ml-1 block"
+                                                type="text"
+                                                placeholder="Search..."
+                                                value={searchTerm} // Bind to the searchTerm state
+                                                onChange={handleSearchChange} // Call the handler on input change
+                                            />
                                         </div>
                                         <button className="bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
                                             + New
@@ -161,21 +190,21 @@ function AdminManagement() {
                                             </thead>
 
                                             <tbody>
-                                                {employees.map((employee, index) => (
+                                                {filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee).map((employee, index) => (
                                                     <tr key={employee.id}>
-                                                        <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
-                                                            <p className="text-gray-900 whitespace-no-wrap">{index + 1}</p>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                                            <p className="text-gray-900 whitespace-no-wrap">{indexOfFirstEmployee + index + 1}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                                             <p className="text-gray-900 whitespace-no-wrap">{employee.name}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                                             <p className="text-gray-900 whitespace-no-wrap">{employee.address}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
-                                                            <p className="text-gray-900 whitespace-no-wrap"></p>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                                            <p className="text-gray-900 whitespace-no-wrap">{employee.mobile_number}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                                             <div className="flex space-x-1">
                                                                 <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
                                                                     <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
@@ -190,16 +219,30 @@ function AdminManagement() {
                                             </tbody>
                                         </table>
 
-                                        <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-end xs:justify-between">
-                                            <div className="inline-flex mt-2 xs:mt-0">
-                                                <button className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-l">
-                                                    Prev
-                                                </button>
-                                                &nbsp; &nbsp;
-                                                <button className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r">
-                                                    Next
-                                                </button>
-                                            </div>
+                                         {/* Pagination Controls */}
+                                        <div className="flex justify-between mt-4">
+                                            <button
+                                                onClick={() => handlePageChange(currentPage - 1)}
+                                                disabled={currentPage === 1}
+                                                className={`px-4 py-2 rounded ${
+                                                    currentPage === 1
+                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                        : "bg-blue-500 text-white"
+                                                }`}
+                                            >
+                                                Prev
+                                            </button>
+                                            <button
+                                                onClick={() => handlePageChange(currentPage + 1)}
+                                                disabled={currentPage === totalPages}
+                                                className={`px-4 py-2 rounded ${
+                                                    currentPage === totalPages
+                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                        : "bg-blue-500 text-white"
+                                                }`}
+                                            >
+                                                Next
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

@@ -1,61 +1,35 @@
-import { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types'; // Import PropTypes
 
-function Theme() {
-    const [theme, setTheme] = useState('light'); // Default theme is light
-
-    // Load theme from localStorage on mount
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') || 'light'; // default to light if not set
-        setTheme(savedTheme);
-        applyTheme(savedTheme);
-    }, []);
-
-    // Function to apply the theme globally
-    const applyTheme = useCallback((theme) => {
-        if (theme === 'dark') {
-            document.body.classList.add('bg-gray-900', 'text-white');
-            document.body.classList.remove('bg-white', 'text-gray-900');
-        } else {
-            document.body.classList.add('bg-white', 'text-gray-900');
-            document.body.classList.remove('bg-gray-900', 'text-white');
-            document.body.classList.remove('bg-gray-800', 'text-white');
-
-        }
-    }, []);
-
-    // Handle theme change
+function Theme({ isDarkMode, onToggleTheme }) {
     const handleThemeChange = (event) => {
-        const selectedTheme = event.target.value;
-        setTheme(selectedTheme);
-        applyTheme(selectedTheme);
-        localStorage.setItem('theme', selectedTheme);
+        const isDark = event.target.value === 'dark';
+        console.log("Toggling theme to:", isDark); // Add console log to verify if the state is being toggled
+        onToggleTheme(isDark);
     };
-
+    
     return (
-        <div className="p-5 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-semibold mb-4">Theme</h2>
-            <div className="space-y-2">
-                <label className="flex items-center">
+        <div className="p-5 rounded-lg shadow-lg bg-white dark:bg-[#303030]">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Theme</h2>
+            <div className="rounded-md space-y-2 p-6 bg-gray-100 dark:bg-[#676767]">
+                <label className="flex items-center text-gray-800 dark:text-white">
                     <input
                         type="radio"
                         name="theme"
                         value="light"
                         className="mr-2"
-                        checked={theme === 'light'}
+                        checked={!isDarkMode}
                         onChange={handleThemeChange}
-                        aria-label="Light theme"
                     />
                     Light
                 </label>
-                <label className="flex items-center">
+                <label className="flex items-center text-gray-800 dark:text-white">
                     <input
                         type="radio"
                         name="theme"
                         value="dark"
                         className="mr-2"
-                        checked={theme === 'dark'}
+                        checked={isDarkMode}
                         onChange={handleThemeChange}
-                        aria-label="Dark theme"
                     />
                     Dark
                 </label>
@@ -63,5 +37,10 @@ function Theme() {
         </div>
     );
 }
+
+Theme.propTypes = {
+    isDarkMode: PropTypes.bool.isRequired, // Validate isDarkMode as a boolean
+    onToggleTheme: PropTypes.func.isRequired // Validate onToggleTheme as a function
+};
 
 export default Theme;

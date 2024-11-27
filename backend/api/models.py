@@ -34,7 +34,13 @@ class Employee(models.Model):
     def __str__(self):
         return self.name
 
-    
+class WeeklySchedule(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    schedule = models.JSONField()  # Stores a dictionary with all days' schedules
+
+    def __str__(self):
+        return f"Weekly Schedule for {self.employee.name}"
+
 class Product(models.Model):
     name = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField()

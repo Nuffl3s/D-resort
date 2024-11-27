@@ -1,45 +1,117 @@
-import { useState } from "react";
-import AdminSidebar from "../components/AdminSidebar";
+import { useState, useEffect, useMemo } from 'react';
+import AdminSidebar from '../components/AdminSidebar';
+import moment from 'moment';
+import api from '../api';
+import { applyTheme } from '../components/themeHandlers';
 
-function AuditLog() {
-    const [selectedOption, setSelectedOption] = useState("All");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8;
+const AuditLog = () => {
+    const [logs, setLogs] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [filterBy, setFilterBy] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
 
-    // Mock data for the table
-    const mockData = [
-        { name: "John Doe", category: "Employee Registration", status: "Registered Employee", date: "30 APR 2024", time: "23:49:05" },
-        { name: "Michael Lavaro", category: "Employee Registration", status: "Registered Employee", date: "30 APR 2024", time: "23:49:05" },
-        { name: "Michael Lavaro", category: "Attendance", status: "Attendance", date: "30 APR 2024", time: "23:49:05" },
-        { name: "", category: "Payroll", status: "Payroll created", date: "30 APR 2024", time: "23:49:05" },
-        { name: "", category: "Report", status: "Sales Report", date: "30 APR 2024", time: "23:49:05" },
-        { name: "Jane Smith", category: "Booking", status: "Checked out", date: "30 APR 2024", time: "23:49:05" },
-        { name: "Smith John", category: "Booking", status: "Check in", date: "30 APR 2024", time: "23:49:05" },
+    const categories = [
+        'All',
+        'Employee Registration',
+        'Attendance',
+        'Payroll',
+        'Report',
+        'Inventory',
+        'Booking',
+        'System',
     ];
 
-    // Filtered data based on category and search query
-    const filteredData = mockData.filter((entry) => {
-        return (
-            (selectedOption === "All" || entry.category === selectedOption) &&
-            (searchQuery === "" || entry.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
-    });
+    // Fetch logs based on selected category
+    useEffect(() => {
+        const fetchLogs = async () => {
+            try {
+                setLoading(true);
+                const endpoint =
+                    selectedCategory === 'All'
+                        ? 'http://localhost:8000/api/logs/'
+                        : `http://localhost:8000/api/logs/?category=${encodeURIComponent(
+                            selectedCategory
+                        )}`;
+                const response = await api.get(endpoint);
+                setLogs(response.data);
+                setLoading(false);
+            } catch (err) {
+                setError(err.message);
+                setLoading(false);
+            }
+        };
 
-    // Pagination logic
-    const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+        fetchLogs();
+    }, [selectedCategory]);
+
+    const filteredLogs = useMemo(() => {
+        return logs
+            .filter((log) => {
+                // Apply the "All" filter or filter by "username" or "action"
+                if (filterBy === 'all') {
+                    return true;
+                } else if (filterBy === 'username') {
+                    return log.username.toLowerCase().includes(searchQuery.toLowerCase());
+                } else if (filterBy === 'action') {
+                    return log.action.toLowerCase().includes(searchQuery.toLowerCase());
+                } else {
+                    return false;
+                }
+            })
+            .filter((log) => {
+                // Apply the date filter
+                if (dateFrom && dateTo) {
+                    const logDate = moment(log.timestamp).format('YYYY-MM-DD');
+                    return moment(logDate).isBetween(dateFrom, dateTo, undefined, '[]');
+                } else if (dateFrom) {
+                    const logDate = moment(log.timestamp).format('YYYY-MM-DD');
+                    return moment(logDate).isSameOrAfter(dateFrom);
+                } else if (dateTo) {
+                    const logDate = moment(log.timestamp).format('YYYY-MM-DD');
+                    return moment(logDate).isSameOrBefore(dateTo);
+                } else {
+                    return true;
+                }
+            });
+    }, [logs, searchQuery, filterBy, dateFrom, dateTo]);
+
+    const renderLogs = () => {
+        if (loading) return <p className="dark:text-[#e7e6e6]">Loading...</p>;
+        if (error) return <p className="text-red-600">Error: {error}</p>;
+        if (filteredLogs.length === 0) return <p>No logs match the filters.</p>;
+
+        return (
+            <ul>
+                {filteredLogs.map((log) => (
+                    <li key={log.id} className="mb-4">
+                        <strong className="text-gray-800 dark:text-white">{log.username}</strong>: {log.action}{' '}
+                        <span className="text-gray-600 dark:text-gray-400">
+                            ({moment(log.timestamp).format('YYYY-MM-DD h:mm A')})
+                        </span>
+                    </li>
+                ))}
+            </ul>
+        );
+    };
+
+    useEffect(() => {
+        applyTheme();
+    }, []);
 
     return (
-        <div className="flex">
-            {/* Sidebar */}
+        <div className="flex bg-white dark:bg-[#212121]">
             <AdminSidebar />
 
             {/* Main Content */}
-            <div className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
-                <h1 className="text-4xl font-bold mb-6">Audit Log</h1>
+            <div className="w-full p-6">
+                <h1 className="text-4xl font-bold mb-6 text-gray-800 dark:text-[#e7e6e6]">AUDIT LOG</h1>
 
-                {/* Filters */}
-                <div className="flex items-center justify-between mb-4">
+                {/* Filter Section */}
+                <div className="flex justify-between items-center mb-6 space-x-4">
                     {/* Search Input */}
                     <div className="relative w-1/3">
                         {/* Search Icon */}
@@ -57,37 +129,52 @@ function AuditLog() {
                             placeholder="Search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 border border-gray-300 rounded-lg p-2 w-full"
+                            className="pl-10 border border-gray-300 rounded-lg p-2 w-full dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd] placeholder:text-gray-200"
                         />
                     </div>
-
-                    {/* Reset Button */}
-                    <button
-                        onClick={() => {
-                            setSearchQuery("");
-                        }}
-                        className="ml-4 bg-[#70b8d3] text-white px-4 py-2 rounded-lg font-semibold"
-                    >
-                        Reset
-                    </button>
+                    <div className="flex justify-end w-full gap-3">
+                        {/* Filter By Dropdown */}
+                        <select
+                            value={filterBy}
+                            onChange={(e) => setFilterBy(e.target.value)}
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                        >
+                            <option value="all">All</option>
+                            <option value="username">Username</option>
+                            <option value="action">Action</option>
+                        </select>
+                        {/* Date From */}
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                        />
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                        />
+                    </div>
                 </div>
 
                 {/* Category Tabs */}
                 <div className="flex space-x-6 mb-4 border-b pb-2">
-                    {["All", "Employee Registration", "Attendance", "Payroll", "Report", "Booking"].map((category) => {
+                    {categories.map((category) => {
                         // Determine if the current category is selected
-                        const isSelected = selectedOption === category;
-                        const activeColor = "text-[#70b8d3] border-[#70b8d3]"; // Use a consistent color for both text and border
+                        const isSelected = selectedCategory === category;
+                        const activeColor = 'text-[#70b8d3] border-[#70b8d3] dark:text-[#70b8d3] dark:border-[#70b8d3]'; // Consistent active color
 
                         return (
                             <button
                                 key={category}
-                                onClick={() => setSelectedOption(category)}
+                                onClick={() => setSelectedCategory(category)}
                                 className={`px-4 py-2 ${
                                     isSelected
                                         ? `${activeColor} font-semibold border-b-2`
-                                        : "text-gray-700 hover:text-[#70b8d3]"
-                                }`}
+                                        : 'text-gray-700 hover:text-[#70b8d3]'
+                                } dark:text-[#e7e6e6] dark:hover:text-[#70b8d3]`}
                             >
                                 {category}
                             </button>
@@ -95,67 +182,11 @@ function AuditLog() {
                     })}
                 </div>
 
-                {/* Table */}
-                <div className="bg-white rounded-lg shadow p-4">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-gray-100 border-b">
-                                <th className="p-3 border">Name</th>
-                                <th className="p-3 border">Status</th>
-                                <th className="p-3 border">Date</th>
-                                <th className="p-3 border">Time</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginatedData.length > 0 ? (
-                                paginatedData.map((entry, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 border-b">
-                                        <td className="p-3 border">{entry.name || "—"}</td>
-                                        <td className="p-3 border">{entry.status}</td>
-                                        <td className="p-3 border">{entry.date}</td>
-                                        <td className="p-3 border">{entry.time}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td className="p-3 border text-center" colSpan="4">
-                                        No records found.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                <div className="flex justify-end items-center mt-6 space-x-4">
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        className={`px-4 py-2 rounded-l-lg bg-[#70b8d3] text-white ${
-                            currentPage === 1 ? "cursor-not-allowed opacity-50" : "hover:bg-[#09B0EF]"
-                        }`}
-                        disabled={currentPage === 1}
-                    >
-                        Prev
-                    </button>
-                    <div className="px-4 py-2 bg-gray-100 border text-gray-700">
-                        {currentPage}
-                    </div>
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredData.length / itemsPerPage)))}
-                        className={`px-4 py-2 rounded-r-lg bg-[#70b8d3] text-white ${
-                            currentPage === Math.ceil(filteredData.length / itemsPerPage)
-                                ? "cursor-not-allowed opacity-50"
-                                : "hover:bg-[#09B0EF]"
-                        }`}
-                        disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage)}
-                    >
-                        Next
-                    </button>
-                </div>
+                {/* Logs List */}
+                <div>{renderLogs()}</div>
             </div>
         </div>
     );
-}
+};
 
 export default AuditLog;

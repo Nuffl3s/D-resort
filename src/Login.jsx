@@ -64,7 +64,7 @@ function Login() {
 
     try {
       // Register user using the API instance
-      const response = await api.post("/api/reguser/", requestBody);
+      const response = await api.post("/reguser/", requestBody);
 
       if (response.status === 201) {
         alert("User registered successfully!");

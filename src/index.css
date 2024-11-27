@@ -6,7 +6,7 @@
 @tailwind utilities;
 
 *{
-    @apply transition-colors duration-300;
+    @apply transition-colors duration-100;
 }
 @layer components {
     .menu-item {

@@ -1,41 +1,53 @@
 import { useState, useEffect } from "react";
 import ReceiptModal from "../Modal/ReceiptModal";
-import CustomAlertModal from "../Modal/AlertModal"; 
-import Loader from '../components/Loader';
+import Loader from "../components/Loader";
+import Swal from "sweetalert2"; // Import SweetAlert2
+import { useNavigate } from "react-router-dom"; // For navigation
 
 function BillingPage() {
-    const [showModal, setShowModal] = useState(false); 
-    const [showAlertModal, setShowAlertModal] = useState(false); 
-    const [note, setNote] = useState(""); 
+    const [showModal, setShowModal] = useState(false);
+    const [note, setNote] = useState("");
     const [loading, setLoading] = useState(true);
-
+    const navigate = useNavigate(); // Hook for navigation
 
     // Temporary data for testing
     const customerName = "John Doe";
     const customerPhone = "+1 (234) 567-890";
     const transactionDate = "Oct 1, 2024";
-    
+
     const transactions = [
         { name: "Cottage A", date: "Oct 1 - Oct 3", price: 500 },
         { name: "Cottage B", date: "Oct 4 - Oct 7", price: 500 },
         { name: "Cottage C", date: "Oct 8 - Oct 10", price: 600 },
     ];
 
-    // Function to calculate total price
     const totalPrice = transactions.reduce((total, transaction) => total + transaction.price, 0);
 
     const handleContinue = () => {
-        setShowAlertModal(true); 
+        Swal.fire({
+            title: "IMPORTANT!",
+            text: "Screenshot or download the receipt first before you continue.",
+            icon: "warning",
+            showCancelButton: true,
+            cancelButtonText: "Close",
+            confirmButtonText: "Continue",
+            customClass: {
+                confirmButton:
+                    "bg-[#12B1D1] text-white font-semibold px-4 py-2 rounded-md hover:bg-[#3ebae7] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#12B1D1]",
+                cancelButton:
+                    "bg-red-500 text-white font-semibold px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+                actions: "flex justify-center gap-4", // Adds space between the buttons
+            },
+            buttonsStyling: false, // Disable SweetAlert2's default button styles
+        }).then((result) => {
+            if (result.isConfirmed) {
+                navigate("/booking"); // Navigate to booking main page
+            }
+        });
     };
-
-    const handleCloseAlert = () => {
-        setShowAlertModal(false); 
-    };
-
-    const handleConfirmContinue = () => {
-        setShowAlertModal(false);
-    };
-
+    
+    
+    
     useEffect(() => {
         const timer = setTimeout(() => {
             setLoading(false);
@@ -96,7 +108,7 @@ function BillingPage() {
                         <div className="flex justify-center">
                             <button
                                 className="text-[#31BEFF] font-semibold flex items-center hover:underline"
-                                onClick={() => setShowModal(true)} // Show modal on click
+                                onClick={() => setShowModal(true)}
                             >
                                 Get Receipt
                                 <span>
@@ -107,7 +119,7 @@ function BillingPage() {
                     </div>
                     <button 
                         className="mt-10 px-4 py-2 bg-[#12B1D1] hover:bg-[#3ebae7] text-white font-semibold rounded-md"
-                        onClick={handleContinue} 
+                        onClick={handleContinue}
                     >
                         Continue
                     </button>
@@ -121,14 +133,8 @@ function BillingPage() {
                 customerName={customerName}
                 transactionDate={transactionDate}
                 totalPrice={totalPrice}
-                note={note} 
-                setNote={setNote} 
-            />
-
-            <CustomAlertModal 
-                showModal={showAlertModal} 
-                handleClose={handleCloseAlert} 
-                handleContinue={handleConfirmContinue} 
+                note={note}
+                setNote={setNote}
             />
         </div>
     );

@@ -16,7 +16,7 @@ import EmployeeDash from './EmployeePages/EmployeeDash.jsx';
 import EmployeeReservation from './EmployeePages/EmployeeReservation.jsx';
 import ManageProduct from './EmployeePages/ManageProduct.jsx';
 import AddProduct from './EmployeePages/AddProduct.jsx';
-import EmployeeReport from './EmployeePages/EmployeeReport.jsx';
+import SalesReport from './EmployeePages/SalesReport.jsx';
 import BookingMainPage from './OnlineBookingPages/BookingMainPage.jsx';
 import BillingPage from './OnlineBookingPages/BillingPage.jsx';
 import CottageAndLodge from './OnlineBookingPages/CottageAndLodgePage.jsx';
@@ -54,7 +54,7 @@ root.render(
         <Route path="/EmployeeReservation" element={<EmployeeReservation />} />
         <Route path="/ManageProduct" element={<ManageProduct />} />
         <Route path="/AddProduct" element={<AddProduct />} />
-        <Route path="/EmployeeReport" element={<EmployeeReport />} />
+        <Route path="/SalesReport" element={<SalesReport />} />
 
         {/* Public Pages */}
         <Route path="/booking" element={<BookingMainPage />} />

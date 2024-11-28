@@ -87,15 +87,18 @@ function EmployeeDash () {
                                 <h1 className="text-2xl font-bold">Ratings</h1>
                                 <div>
                                     <button
+                                        onClick={() => setSelectedCategory('Add')}
+                                        className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}>
+                                        Add
+                                    </button>
+                                    <button
                                         onClick={() => setSelectedCategory('Cottage')}
-                                        className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}
-                                    >
+                                        className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}>
                                         Cottage
                                     </button>
                                     <button
                                         onClick={() => setSelectedCategory('Lodge')}
-                                        className={`text-sm p-2 w-[100px] text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}
-                                    >
+                                        className={`text-sm p-2 w-[100px] text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}>
                                         Lodge
                                     </button>
                                 </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/EmployeeSidebar';
-import axios from 'axios';
+// import axios from 'axios';
 import api from '../api';
 import Swal from 'sweetalert2';
 
@@ -283,7 +283,7 @@ function AddProduct() {
 
                                 <button
                                     type="submit"
-                                    className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white font-semibold py-2 px-4 rounded"
+                                    className="bg-[#70b8d3] hover:bg-[#09B0EF] shadow text-white font-semibold py-2 px-4 rounded"
                                 >
                                     Add product
                                 </button>
@@ -314,10 +314,10 @@ function AddProduct() {
                                     />
                                 </div>
                                 <div className="flex space-x-2">
-                                    <button onClick={handleUpload} className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
+                                    <button onClick={handleUpload} className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] shadow px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
                                         <i><img src="./src/assets/upload.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Upload
                                     </button>
-                                    <button onClick={handleClearProducts} className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
+                                    <button onClick={handleClearProducts} className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] shadow px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
                                         <i><img src="./src/assets/clear.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Clear
                                     </button>
                                 </div>
@@ -439,7 +439,7 @@ function AddProduct() {
                                 <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-end justify-between">
                                     <div className="inline-flex mt-2 xs:mt-0">
                                         <button
-                                            className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-l"
+                                            className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#09B0EF] shadow font-semibold py-2 px-4 rounded-l"
                                             onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : currentPage)}
                                             disabled={currentPage === 1}
                                         >
@@ -458,7 +458,7 @@ function AddProduct() {
                                         ))}
                                         
                                         <button
-                                            className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r"
+                                            className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#09B0EF] shadow font-semibold py-2 px-4 rounded-r"
                                             onClick={() => setCurrentPage(currentPage < totalPages ? currentPage + 1 : currentPage)}
                                             disabled={currentPage === totalPages}
                                         >

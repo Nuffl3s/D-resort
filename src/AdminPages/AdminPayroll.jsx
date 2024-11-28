@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
+import { applyTheme } from '../components/themeHandlers';
 import api from '../api';
-import axios from 'axios';
 
 // Function to format dates
 const formatDate = (dateString) => {
@@ -207,20 +207,24 @@ function AdminPayroll() {
         setIsDropdownVisible(false); // Hide dropdown after action
     };
 
+    useEffect(() => {
+        applyTheme();
+    }, []);
+
     return (
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-screen overflow-hidden bg-white dark:bg-[#1c1e21]">
             <AdminSidebar />
             <div id="report" className="p-7 flex-1 h-screen overflow-hidden">
-                <h1 className="text-4xl font-bold mb-5">PAYROLL</h1>
+                <h1 className="text-4xl font-bold mb-5 dark:text-[#e7e6e6]">PAYROLL</h1>
                 <div className="flex space-x-5">
-                    <div className="bg-white shadow p-6 w-full h-[830px]">
+                    <div className="bg-white rounded-md shadow p-6 w-full h-[830px] dark:bg-[#303030] dark:shadow">
                         <div className="flex justify-between border-b mb-4 pb-3">
-                            <h1 className="font-semibold text-[18px]">Payroll List</h1>
-                            <div className="flex space-x-2">
+                            <h1 className="font-semibold text-[18px] dark:text-[#e7e6e6]">Payroll List</h1>
+                            <div className="flex space-x-2 items-center">
                                 <div className="relative">
                                     <button
                                         onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-                                        className="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none font-medium rounded-md text-sm px-3 py-1.5"
+                                        className="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none font-medium rounded-md text-sm px-3 p-2  dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
                                         type="button"
                                     >
                                         {sortOption || "Sort By"}
@@ -265,7 +269,7 @@ function AdminPayroll() {
                                         id="table-search"
                                         value={searchTerm}
                                         onChange={handleSearch}
-                                        className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-white focus:ring-blue-500 focus:border-blue-500"
+                                        className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-md w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
                                         placeholder="Search by name"
                                     />
                                 </div>
@@ -274,7 +278,7 @@ function AdminPayroll() {
 
                         <div className="overflow-y-auto max-h-[670px] mt-5">
                             <table className="w-full text-sm text-left text-gray-500">
-                                <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10">
+                                <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#424242] dark:text-[#e7e6e6]">
                                     <tr>
                                         <th scope="col" className="p-4">
                                             <div className="flex items-center">
@@ -282,7 +286,7 @@ function AdminPayroll() {
                                                     type="checkbox"
                                                     checked={selectAll}
                                                     onChange={handleSelectAll}
-                                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 "
                                                 />
                                                 <label htmlFor="checkbox-all-search" className="sr-only">checkbox</label>
                                             </div>
@@ -331,13 +335,13 @@ function AdminPayroll() {
                         </div>
                     </div>
 
-                    <div className="bg-white shadow p-6 w-full">
+                    <div className="rounded-md bg-white shadow p-6 w-full dark:bg-[#303030] dark:shadow">
                         <div className="shadow p-6 rounded-md">
                             <div className="mb-4">
                             <select
                                 value={selectedEmployee}
                                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                                className="block w-full p-2 border border-gray-300 rounded-lg"
+                                className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
                             >
                                 <option value="" disabled>Select Employee</option>
                                 {employees.map(employee => (
@@ -350,31 +354,30 @@ function AdminPayroll() {
 
                             <div className="flex space-x-2 mb-2">
                                 <div className="w-full space-y-2">
-                                    <p>Date From</p>
+                                    <p className="dark:text-[#e7e6e6]">Date From</p>
                                     <input
                                         type="date"
                                         value={payrollRange.from}
                                         onChange={(e) => setPayrollRange({ ...payrollRange, from: e.target.value })}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
-
                                 <div className="w-full space-y-2">
-                                    <p>Date To</p>
+                                    <p className="dark:text-[#e7e6e6]">Date To</p>
                                     <input
                                         type="date"
                                         value={payrollRange.to}
                                         onChange={(e) => setPayrollRange({ ...payrollRange, to: e.target.value })}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
 
                                 <div className="w-full space-y-2">
-                                    <p>Payroll Type</p>
+                                    <p className="dark:text-[#e7e6e6]">Payroll Type</p>
                                     <select
                                         value={payrollType}
                                         onChange={(e) => setPayrollType(e.target.value)}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
                                     >
                                         <option value="weekly">Weekly</option>
                                         <option value="monthly">Monthly</option>
@@ -384,22 +387,22 @@ function AdminPayroll() {
 
                             <div className="flex space-x-2">
                                 <div className="w-full space-y-2">
-                                    <p>Total Hours</p>
+                                    <p className="dark:text-[#e7e6e6]">Total Hours</p>
                                     <input
                                         type="number"
                                         value={totalHours}
                                         onChange={(e) => setTotalHours(Number(e.target.value))}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
 
                                 <div className="w-full space-y-2">
-                                    <p>Hourly Rate</p>
+                                    <p className="dark:text-[#e7e6e6]">Hourly Rate</p>
                                     <input
                                         type="number"
                                         value={hourlyRate}
                                         onChange={(e) => setHourlyRate(Number(e.target.value))}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
                             </div>
@@ -414,10 +417,10 @@ function AdminPayroll() {
                             </div>
                         </div>
 
-                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 p-6 h-[430px]">
-                            <div className="flex justify-end border-b pb-3">
+                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 p-6 h-[430px] dark:bg-[#424242]">
+                            <div className="flex justify-end pb-3">
                                 <button onClick={toggleDropdown}>
-                                    <img src="./src/assets/option.png" alt="Options" className="w-4 h-4" />
+                                    <img src="./src/assets/option.png" alt="Options" className="w-4 h-4 dark:invert" />
                                 </button>
                                 {isDropdownVisible && (
                                     <div className="absolute right-[30px] mt-5 w-40 bg-white border border-gray-300 rounded-md shadow-lg z-10">
@@ -429,18 +432,18 @@ function AdminPayroll() {
                                 )}
                             </div>
 
-                            <div className="shadow p-4 h-[280px]">
+                            <div className="shadow p-4 h-[280px] dark:bg-[#5a5b5b] rounded-md">
                                 <table className="w-full text-sm text-left text-gray-500">
-                                    <caption className="p-5 text-[20px] font-semibold text-gray-900 bg-white">
+                                    <caption className="p-5 text-[20px] font-semibold text-gray-900 bg-white dark:bg-[#5a5b5b] dark:text-[#e7e6e6]">
                                         Payroll Form
-                                        <p className="mt-5 text-[16px] text-left font-normal text-gray-500">
+                                        <p className="mt-5 text-[16px] text-left font-normal text-gray-500 dark:text-[#f3f2f2]">
                                             Payroll Range: {`${formatDate(payrollRange.from)} to ${formatDate(payrollRange.to)}`}
                                         </p>
-                                        <p className="mt-1 text-[16px] text-left font-normal text-gray-500">
+                                        <p className="mt-1 text-[16px] text-left font-normal text-gray-500 dark:text-[#f3f2f2]">
                                             Payroll Type: {payrollType}
                                         </p>
                                     </caption>
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#424242] dark:text-[#e7e6e6]">
                                         <tr>
                                             <th scope="col" className="px-6 py-3">Name</th>
                                             <th scope="col" className="px-6 py-3">Hours</th>
@@ -460,6 +463,7 @@ function AdminPayroll() {
                                     </tbody>
                                 </table>
                             </div>
+                            
                             <div className="flex w-full mt-5 justify-end">
                                 <button 
                                     onClick={handleDone}  // Now updating status when 'Done' is clicked

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import Swal from 'sweetalert2';
 import AdminSidebar from '../components/AdminSidebar';
+import { applyTheme } from '../components/themeHandlers';
 import api from '../api';
 
 function AdminManagement() {
@@ -37,23 +38,69 @@ function AdminManagement() {
     };
 
     // Handle employee registration
-    const handleSubmit = async () => {
-        try {
-            const response = await api.post('http://localhost:8000/api/registeremployee/', formData);
+    const handleSubmit = async (e) => {
+        e.preventDefault(); // Prevent form submission
 
-            fetchEmployeeList();
+        // SweetAlert prompt for biometric confirmation
+        Swal.fire({
+            title: 'Biometric Registration',
+            text: 'Please put your finger on the biometric device to proceed.',
+            icon: 'info',
+            confirmButtonText: 'OK',
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                console.log("Form Submitted", formData);
 
-            setFormData({
-                name: '',
-                address: '',
-                mobile_number: '',
-            });
-        } catch (error) {
-            console.error('Error registering employee:', error);
-        }
+                try {
+                    // Submit form data via POST request
+                    const response = await fetch('http://localhost:8000/api/registeremployee/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData),
+                    });
+
+                    if (response.ok) {
+                        const responseData = await response.json();
+                        console.log('Employee Registered:', responseData);
+
+                        // Fetch updated employee list
+                        fetchEmployeeList();
+
+                        // Reset form
+                        setFormData({
+                            name: '',
+                            address: '',
+                            mobile_number: '',
+                        });
+
+                        // SweetAlert success notification
+                        Swal.fire({
+                            title: 'Success',
+                            text: 'Employee registered successfully!',
+                            icon: 'success',
+                            confirmButtonText: 'OK',
+                        });
+                    } else {
+                        throw new Error('Failed to register employee');
+                    }
+                } catch (error) {
+                    console.error('Error registering employee:', error);
+
+                    // SweetAlert error notification
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to register employee. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                    });
+                }
+            }
+        });
     };
 
-     // Handle search input change
+    // Handle search input change
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value); // Update the search term
         setCurrentPage(1); // Reset to the first page on new search
@@ -63,12 +110,10 @@ function AdminManagement() {
     const filteredEmployees = employeeList.filter((employee) =>
         employee.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    
+
     const indexOfLastEmployee = currentPage * employeesPerPage;
     const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
-    const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
-    
-    const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage)
+    const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
 
     // Handle pagination
     const handlePageChange = (pageNumber) => {
@@ -76,101 +121,101 @@ function AdminManagement() {
             setCurrentPage(pageNumber);
         }
     };
-    
+
+    useEffect(() => {
+        applyTheme();
+    }, []);
+
     return (
-        <div className="flex">
+        <div className="flex dark:bg-[#1c1e21]">
             <AdminSidebar />
             <div id="add" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
-                <h1 className="text-4xl font-bold mb-4">EMPLOYEE MANAGEMENT</h1>
+                <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">EMPLOYEE MANAGEMENT</h1>
                 <div className="w-ful">
                     <div className="flex">
                         <div className="flex-col">
-                            <div className="w-[700px] h-[400px] shadow-md rounded-md bg-white p-8">
-                                <h2 className="font-semibold text-[18px] mb-4">Employee Information</h2>
+                            <div className="w-[700px] h-[400px] shadow-md rounded-md bg-white p-8  dark:bg-[#303030] dark:shadow-md">
+                                <h2 className="font-semibold text-[18px] mb-4 dark:text-[#e7e6e6]">Employee Information</h2>
                                 <form className="space-y-4" onSubmit={handleSubmit}>
                                     <div>
-                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
+                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">Name</label>
                                         <input
                                             type="text"
                                             id="name"
                                             name="name"
                                             value={formData.name}
                                             onChange={handleInputChange}
-                                            className="mt-1 p-2 w-full border border-black rounded bg-white"
+                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#303030] dark:border-[#bebdbd] dark:text-[#e7e6e6]"
                                             autoComplete="name"
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address</label>
+                                        <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">Address</label>
                                         <input
                                             type="text"
                                             id="address"
                                             name="address"
                                             value={formData.address}
                                             onChange={handleInputChange}
-                                            className="mt-1 p-2 w-full border border-black rounded bg-white"
+                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#303030] dark:border-[#bebdbd] dark:text-[#e7e6e6]"
                                             autoComplete="address-line1"
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700">Mobile Number</label>
-                                        <input type="text" id="mobileNumber" name="mobileNumber" className="mt-1 p-3 w-full border border-black rounded bg-white" />
+                                        <label htmlFor="mobile_number" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">Mobile Number</label>
+                                        <input
+                                            type="text"
+                                            id="mobile_number"
+                                            name="mobile_number"
+                                            value={formData.mobile_number}
+                                            onChange={handleInputChange}
+                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#303030] dark:border-[#bebdbd] dark:text-[#e7e6e6]"
+                                        />
                                     </div>
+                                    <button
+                                        type="submit"
+                                        className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#09B0EF]"
+                                    >
+                                        Register
+                                    </button>
                                 </form>
-                            </div>
-
-                            <div className="mt-5 w-full flex justify-start gap-5">
-                                <button
-                                    type="button" // Change to type="button" to prevent default form submission
-                                    onClick={handleSubmit} // Add this line to trigger the form submission
-                                    className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#09B0EF]"
-                                >
-                                    Register
-                                </button>
-
-                                <button type="button" className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#ED6565] hover:bg-[#F24E4E]">
-                                    Cancel
-                                </button>
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-md shadow-md p-6 w-full ml-5 h-[850px]">
+                        <div className="bg-white rounded-md shadow-md p-6 w-full ml-5 h-[850px] dark:bg-[#303030]">
                             <div className="justify-between border-b mb-4 pb-3">
-                                <h1 className="font-semibold text-[18px]">Employee List</h1>
+                                <h1 className="font-semibold text-[18px] dark:text-[#e7e6e6]">Employee List</h1>
                                 <div className="w-full flex justify-between">
                                     <div className="flex space-x-2 mt-5 w-1/2"> 
                                         <div className="flex items-center space-x-2 text-xs xs:text-sm text-gray-900">
-                                            <span className="text-[13px] font-semibold text-gray-600 uppercase">Show</span>
+                                            <span className="text-[13px] font-semibold text-gray-600 uppercase dark:text-[#e7e6e6]">Show</span>
                                             <div className="relative inline-block">
-                                                <select className="appearance-none border border-gray-300 bg-white py-1 px-2 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                                <select className="appearance-none border border-gray-300 bg-white py-1 px-2 pr-8 rounded leading-tight focus:outline-none dark:border-[#bebdbd] dark:bg-[#303030] focus:bg-white focus:border-gray-500 dark:text-[#e7e6e6]">
                                                     <option value="1">1</option>
                                                 </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                                    <img src="./src/assets/down.png" className="fill-current w-4 h-4" />
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-[#e7e6e6]">
+                                                    <img src="./src/assets/down.png" className="fill-current w-4 h-4 dark:invert" />
                                                 </div>
                                             </div>
-                                            <span className="text-[13px] font-semibold text-gray-600 uppercase">entries</span>
+                                            <span className="text-[13px] font-semibold text-gray-600 uppercase dark:text-[#e7e6e6]">entries</span>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center space-x-4">
-                                        <div className="flex bg-white items-center p-2 rounded-md border">
+                                        <div className="flex bg-white items-center p-2 rounded-md border dark:border-[#bebdbd] dark:bg-[#303030]">
                                             <img 
                                                 src="./src/assets/search.png" 
                                                 className="fill-current w-5 h-5" 
                                                 alt="Search Icon"
                                             />
                                             <input
-                                                className="bg-white outline-none ml-1 block"
+                                                className="bg-white outline-none ml-1 block dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder:text-gray-200"
                                                 type="text"
                                                 placeholder="Search..."
-                                                value={searchTerm} // Bind to the searchTerm state
-                                                onChange={handleSearchChange} // Call the handler on input change
+                                                value={searchTerm} 
+                                                onChange={handleSearchChange} 
                                             />
                                         </div>
-                                        <button className="bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
-                                            + New
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -179,20 +224,20 @@ function AdminManagement() {
                                 <div className="-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto">
                                     <div className="inline-block min-w-full shadow rounded-lg overflow-hidden">
                                         <table className="min-w-full leading-normal">
-                                            <thead>
+                                            <thead className="bg-gray-100 text-gray-600 dark:bg-[#424242] dark:text-[#e7e6e6]">
                                                 <tr>
-                                                    <th className="px-5 py-3 border-b-2 border-r border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
-                                                    <th className="px-5 py-3 border-b-2 border-r border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                                                    <th className="px-5 py-3 border-b-2 border-r border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Address</th>
-                                                    <th className="px-5 py-3 border-b-2 border-r border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mobile Number</th>
-                                                    <th className="px-5 py-3 border-b-2 border-r border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">ID</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Name</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Address</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Mobile Number</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Action</th>
                                                 </tr>
                                             </thead>
 
                                             <tbody>
                                                 {filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee).map((employee, index) => (
                                                     <tr key={employee.id}>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm ">
                                                             <p className="text-gray-900 whitespace-no-wrap">{indexOfFirstEmployee + index + 1}</p>
                                                         </td>
                                                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
@@ -219,15 +264,15 @@ function AdminManagement() {
                                             </tbody>
                                         </table>
 
-                                         {/* Pagination Controls */}
-                                        <div className="flex justify-between mt-4">
+                                        {/* Pagination Controls */}
+                                        <div className="flex justify-end space-x-4 p-2  dark:bg-[#676767]">
                                             <button
                                                 onClick={() => handlePageChange(currentPage - 1)}
                                                 disabled={currentPage === 1}
                                                 className={`px-4 py-2 rounded ${
                                                     currentPage === 1
-                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                                        : "bg-blue-500 text-white"
+                                                        ? "bg-gray-300 text-gray-500 font-semibold cursor-not-allowed"
+                                                        : "text-white font-semibold bg-[#70b8d3] hover:bg-[#09B0EF]"
                                                 }`}
                                             >
                                                 Prev
@@ -237,8 +282,8 @@ function AdminManagement() {
                                                 disabled={currentPage === totalPages}
                                                 className={`px-4 py-2 rounded ${
                                                     currentPage === totalPages
-                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                                        : "bg-blue-500 text-white"
+                                                        ? "bg-gray-300 text-gray-500 font-semiboldcursor-not-allowed"
+                                                        : " text-white font-semibold bg-[#70b8d3] hover:bg-[#09B0EF]"
                                                 }`}
                                             >
                                                 Next

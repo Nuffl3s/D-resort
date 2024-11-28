@@ -97,7 +97,9 @@ function AdminSidebar({ displayName: propDisplayName }) {
     return (
         <div className="min-h-screen flex flex-row bg-white">
             <div
-                className={`${open ? "w-[300px]" : "w-[110px]"} duration-300 h-screen bg-white relative shadow-lg`}
+                className={`${
+                    open ? "w-[300px]" : "w-[110px]"
+                } transition-all duration-300 h-screen bg-white relative shadow-lg dark:bg-[#1a1a1a]`}
             >
                 <img
                     src="./src/assets/control.png"
@@ -138,21 +140,18 @@ function AdminSidebar({ displayName: propDisplayName }) {
                         >
                             <button
                                 onClick={() => handleMenuClick(menu.src, menu.path)}
-                                className={`menu-item ${activeMenu === menu.path ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""} ${hoveredMenu === menu.path ? "w-full hover:bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:text-white" : ""} rounded-md flex items-center gap-x-2`}
+                                className={`menu-item ${activeMenu === menu.path ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""} ${hoveredMenu === menu.path ? "w-full hover:bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:text-[#fafafa] dark:hover:text-[#fafafa]" : ""} rounded-md flex items-center gap-x-2 dark:text-[#fafafa] `}
                             >
                                 <span className="inline-flex items-center justify-center h-12 w-12 text-lg">
                                     <img
                                         src={`./src/assets/${menu.src}.png`}
                                         alt={menu.title}
-                                        className={`w-5 h-5`}
-                                        style={{
-                                            filter:
-                                                hoveredMenu === menu.path || activeMenu === menu.path
-                                                    ? "invert(100%)"
-                                                    : "none",
-                                        }}
+                                        className={`w-5 h-5 dark:invert ${
+                                            hoveredMenu === menu.path || activeMenu === menu.path ? "invert" : ""
+                                        }`}
                                     />
                                 </span>
+                            
                                 {open && <span className="text-md font-semibold">{menu.title}</span>}
                             </button>
                         </li>

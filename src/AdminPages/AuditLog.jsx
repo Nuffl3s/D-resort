@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
 import moment from 'moment';
 import api from '../api';
+import { applyTheme } from '../components/themeHandlers';
 
 const AuditLog = () => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState('All');
-
     const [filterBy, setFilterBy] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
-    
+
     const categories = [
         'All',
         'Employee Registration',
@@ -28,21 +28,21 @@ const AuditLog = () => {
     // Fetch logs based on selected category
     useEffect(() => {
         const fetchLogs = async () => {
-        try {
-            setLoading(true);
-            const endpoint =
-            selectedCategory === 'All'
-                ? 'http://localhost:8000/api/logs/'
-                : `http://localhost:8000/api/logs/?category=${encodeURIComponent(
-                    selectedCategory
-                )}`;
-            const response = await api.get(endpoint);
-            setLogs(response.data);
-            setLoading(false);
-        } catch (err) {
-            setError(err.message);
-            setLoading(false);
-        }
+            try {
+                setLoading(true);
+                const endpoint =
+                    selectedCategory === 'All'
+                        ? 'http://localhost:8000/api/logs/'
+                        : `http://localhost:8000/api/logs/?category=${encodeURIComponent(
+                            selectedCategory
+                        )}`;
+                const response = await api.get(endpoint);
+                setLogs(response.data);
+                setLoading(false);
+            } catch (err) {
+                setError(err.message);
+                setLoading(false);
+            }
         };
 
         fetchLogs();
@@ -50,122 +50,143 @@ const AuditLog = () => {
 
     const filteredLogs = useMemo(() => {
         return logs
-        .filter((log) => {
-            // Apply the "All" filter or filter by "username" or "action"
-            if (filterBy === 'all') {
-                return true;
-            } else if (filterBy === 'username') {
-                return log.username.toLowerCase().includes(searchQuery.toLowerCase());
-            } else if (filterBy === 'action') {
-                return log.action.toLowerCase().includes(searchQuery.toLowerCase());
-            } else {
-                return false;
-            }
-        })
-        .filter((log) => {
-            // Apply the date filter
-            if (dateFrom && dateTo) {
-                const logDate = moment(log.timestamp).format('YYYY-MM-DD');
-                return moment(logDate).isBetween(dateFrom, dateTo, undefined, '[]');
-            } else if (dateFrom) {
-                const logDate = moment(log.timestamp).format('YYYY-MM-DD');
-                return moment(logDate).isSameOrAfter(dateFrom);
-            } else if (dateTo) {
-                const logDate = moment(log.timestamp).format('YYYY-MM-DD');
-                return moment(logDate).isSameOrBefore(dateTo);
-            } else {
-                return true;
-            }
-        });
+            .filter((log) => {
+                // Apply the "All" filter or filter by "username" or "action"
+                if (filterBy === 'all') {
+                    return true;
+                } else if (filterBy === 'username') {
+                    return log.username.toLowerCase().includes(searchQuery.toLowerCase());
+                } else if (filterBy === 'action') {
+                    return log.action.toLowerCase().includes(searchQuery.toLowerCase());
+                } else {
+                    return false;
+                }
+            })
+            .filter((log) => {
+                // Apply the date filter
+                if (dateFrom && dateTo) {
+                    const logDate = moment(log.timestamp).format('YYYY-MM-DD');
+                    return moment(logDate).isBetween(dateFrom, dateTo, undefined, '[]');
+                } else if (dateFrom) {
+                    const logDate = moment(log.timestamp).format('YYYY-MM-DD');
+                    return moment(logDate).isSameOrAfter(dateFrom);
+                } else if (dateTo) {
+                    const logDate = moment(log.timestamp).format('YYYY-MM-DD');
+                    return moment(logDate).isSameOrBefore(dateTo);
+                } else {
+                    return true;
+                }
+            });
     }, [logs, searchQuery, filterBy, dateFrom, dateTo]);
 
     const renderLogs = () => {
-        if (loading) return <p>Loading...</p>;
+        if (loading) return <p className="dark:text-[#e7e6e6]">Loading...</p>;
         if (error) return <p className="text-red-600">Error: {error}</p>;
         if (filteredLogs.length === 0) return <p>No logs match the filters.</p>;
-    
+
         return (
             <ul>
-            {filteredLogs.map((log) => (
-                <li key={log.id} className="mb-4">
-                <strong>{log.username}</strong>: {log.action}{' '}
-                <span className="text-gray-600">
-                    ({moment(log.timestamp).format('YYYY-MM-DD h:mm A')})
-                </span>
-                </li>
-            ))}
+                {filteredLogs.map((log) => (
+                    <li key={log.id} className="mb-4">
+                        <strong className="text-gray-800 dark:text-white">{log.username}</strong>: {log.action}{' '}
+                        <span className="text-gray-600 dark:text-gray-400">
+                            ({moment(log.timestamp).format('YYYY-MM-DD h:mm A')})
+                        </span>
+                    </li>
+                ))}
             </ul>
         );
     };
-    
+
+    useEffect(() => {
+        applyTheme();
+    }, []);
+
     return (
-        <div className="flex">
-        <AdminSidebar />
+        <div className="flex bg-white dark:bg-[#212121]">
+            <AdminSidebar />
 
-        {/* Main Content */}
-        <div className="w-3/4 p-6">
-            <h1 className="text-2xl font-bold mb-4">Audit Log</h1>
-            
-             {/* Filter */}
-            <div className="flex justify-between items-center mb-6 space-x-4">
-                {/* Filter By Dropdown */}
-                <select
-                    value={filterBy}
-                    onChange={(e) => setFilterBy(e.target.value)}
-                    className="px-4 py-2 rounded bg-gray-200 flex-shrink-0"
-                    >
-                    <option value="all">All</option>
-                    <option value="username">Username</option>
-                    <option value="action">Action</option>
-                </select>
+            {/* Main Content */}
+            <div className="w-full p-6">
+                <h1 className="text-4xl font-bold mb-6 text-gray-800 dark:text-[#e7e6e6]">AUDIT LOG</h1>
 
-                {/* Search Input */}
-                <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search..."
-                    className="px-4 py-2 rounded bg-gray-200 w-full"
-                />
+                {/* Filter Section */}
+                <div className="flex justify-between items-center mb-6 space-x-4">
+                    {/* Search Input */}
+                    <div className="relative w-1/3">
+                        {/* Search Icon */}
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <img
+                                src="src/assets/search.png" // Replace this with the actual path to your image
+                                alt="Search Icon"
+                                className="h-5 w-5"
+                            />
+                        </div>
 
-                {/* Date From */}
-                <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="px-4 py-2 rounded bg-gray-200 flex-shrink-0"
-                />
-                <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="px-4 py-2 rounded bg-gray-200 flex-shrink-0"
-                />
+                        {/* Search Input */}
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 border border-gray-300 rounded-lg p-2 w-full dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd] placeholder:text-gray-200"
+                        />
+                    </div>
+                    <div className="flex justify-end w-full gap-3">
+                        {/* Filter By Dropdown */}
+                        <select
+                            value={filterBy}
+                            onChange={(e) => setFilterBy(e.target.value)}
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                        >
+                            <option value="all">All</option>
+                            <option value="username">Username</option>
+                            <option value="action">Action</option>
+                        </select>
+                        {/* Date From */}
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                        />
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                        />
+                    </div>
                 </div>
 
+                {/* Category Tabs */}
+                <div className="flex space-x-6 mb-4 border-b pb-2">
+                    {categories.map((category) => {
+                        // Determine if the current category is selected
+                        const isSelected = selectedCategory === category;
+                        const activeColor = 'text-[#70b8d3] border-[#70b8d3] dark:text-[#70b8d3] dark:border-[#70b8d3]'; // Consistent active color
 
-            {/* Category Tabs */}
-            <div className="mb-6">
-                {categories.map((category) => (
-                    <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 mr-2 rounded ${
-                        selectedCategory === category
-                        ? 'bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white' // Active button gradient
-                        : 'bg-gray-200 text-gray-700' // Inactive button
-                    } hover:bg-gradient-to-r hover:from-[#12B1D1] hover:to-[#1089D3] hover:text-white`} // Hover effect gradient
-                    >
-                    {category}
-                    </button>
-                ))}
+                        return (
+                            <button
+                                key={category}
+                                onClick={() => setSelectedCategory(category)}
+                                className={`px-4 py-2 ${
+                                    isSelected
+                                        ? `${activeColor} font-semibold border-b-2`
+                                        : 'text-gray-700 hover:text-[#70b8d3]'
+                                } dark:text-[#e7e6e6] dark:hover:text-[#70b8d3]`}
+                            >
+                                {category}
+                            </button>
+                        );
+                    })}
                 </div>
 
-            {/* Logs List */}
-            <div>{renderLogs()}</div>
-        </div>~
+                {/* Logs List */}
+                <div>{renderLogs()}</div>
+            </div>
         </div>
     );
-    };
+};
 
 export default AuditLog;

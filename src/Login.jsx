@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "./api"; // Import the API instance
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants"; // Import constants
 import axios from "axios";
 
 function Login() {
@@ -102,33 +101,33 @@ function Login() {
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username
               </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
-                placeholder="Username"
-                required
-              />
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
+                    placeholder="Username"
+                    required
+                />
             </div>
 
             {/* Password */}
             <div className="mb-4">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
-                placeholder="Password"
-                required
-              />
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password
+                </label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
+                    placeholder="Password"
+                    required
+                />
             </div>
 
             {/* User Type (for registration only) */}

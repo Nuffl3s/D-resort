@@ -11,12 +11,9 @@ function EmployeeSidebar() {
     );
     const [hoveredMenu, setHoveredMenu] = useState(null);
 
-    // For handling the submenus of the Product menu
+    // For handling the submenus of Product and Report menus
     const [productMenuOpen, setProductMenuOpen] = useState(false); // Track Product menu state
-    const [productSubmenuOpen, setProductSubmenuOpen] = useState(null); // Track specific submenu open state
-
-    // Fetch stored profile image and sidebar state on mount
-   
+    const [reportMenuOpen, setReportMenuOpen] = useState(false); // Track Report menu state
 
     const toggleSidebar = () => {
         const newState = !open;
@@ -30,83 +27,68 @@ function EmployeeSidebar() {
         navigate(`/${path}`);
     };
 
+    const toggleMenu = (menuType) => {
+        if (menuType === "Product") {
+            setProductMenuOpen(!productMenuOpen);
+            setActiveMenu("Product");
+        } else if (menuType === "Report") {
+            setReportMenuOpen(!reportMenuOpen);
+            setActiveMenu("Report");
+        }
+    };
+
+    const handleSubmenuClick = (menuType, submenuPath) => {
+        if (menuType === "Product") {
+            navigate(`/${submenuPath}`);
+        } else if (menuType === "Report") {
+            navigate(`/${submenuPath}`);
+        }
+    };
+
     const Menus = [
         { title: "Dashboard", path: "EmployeeDash", src: "dashboard" },
         { title: "Reservation", path: "EmployeeReservation", src: "booking" },
-        { title: "Product", path: "Product", src: "product" },
-        { title: "Sales Report", path: "EmployeeReport", src: "report" },
+        { title: "Product", src: "product" }, 
+        { title: "Report", src: "report" },
+        { title: "Settings", path:"EmployeeSettings", src: "settings" }, 
     ];
 
-
-    const handleLogout = () => {
-        localStorage.removeItem("access");
-        localStorage.removeItem("refresh");
-        localStorage.removeItem("user_role");
-        navigate('/');
+    const Submenus = {
+        Product: [
+            { title: "Add Product", path: "AddProduct", icon: "add-product" },
+            { title: "Manage Product", path: "ManageProduct", icon: "manage-product" },
+        ],
+        Report: [
+            { title: "Sales Report", path: "SalesReport", icon: "sales-report" },
+            { title: "Booking Report", path: "BookingReport", icon: "report" },
+        ],
     };
 
-    const handleTempoBtnToAdmin = () => {
-        navigate('/AdminDash');
-    };
-
-    const handleTempoBtnToBooking = () => {
-        navigate('/booking');
-    };
-
-    const toggleProductMenu = () => {
-        setProductMenuOpen(!productMenuOpen);
-        if (!productMenuOpen) {
-            setActiveMenu("Product"); 
-        } else {
-            setActiveMenu(""); 
-        }
-    };
-
-    // Handle submenu click and keep the submenu open
-    const handleSubmenuClick = (submenu) => {
-        if (submenu === "submenu1") {
-            setProductSubmenuOpen("submenu1");  // Keep submenu open
-            setActiveMenu("Product");  // Ensure the "Product" menu remains active
-            navigate("/AddProduct");
-        } else if (submenu === "submenu2") {
-            setProductSubmenuOpen("submenu2");  // Keep submenu open
-            setActiveMenu("Product");  // Ensure the "Product" menu remains active
-            navigate("/ManageProduct");
-        }
-    };
-    
-    
     return (
         <div className="min-h-screen flex flex-row bg-white">
             {/* Sidebar */}
-            <div
-                className={`${open ? "w-[300px]" : "w-[110px]"} duration-300 h-screen bg-white relative shadow-lg`}
-            >
-                {/* Sidebar Toggle Button */}
-                <img
-                    src="./src/assets/control.png"
-                    alt="Toggle Sidebar"
-                    className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 ${!open && "rotate-180"}`}
-                    onClick={toggleSidebar}
-                />
-
-                {/* Employee Profile Section */}
-                <div className="flex gap-x-5 items-center bg-gradient-to-r from-[#1089D3] to-[#12B1D1] w-full p-5 shadow-md">
+            <div className={`${open ? "w-[300px]" : "w-[110px]"} transition-all duration-300 h-screen bg-white relative shadow-lg`}>
+            {/* Sidebar Toggle Button */}
+                <div className="relative">
+                    {/* Sidebar Toggle Button */}
                     <img
                         src="./src/assets/control.png"
-                        className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 ${!open && "rotate-180"}`}
-                        onClick={() => setOpen(!open)}
                         alt="Toggle Sidebar"
+                        className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 transform transition-transform duration-500 ${!open && "rotate-180"}`}
+                        onClick={toggleSidebar}
                     />
 
-                    <img
-                        src="./src/assets/logo.png"
-                        className={`cursor-pointer duration-500 w-20 ${!open && "rotate-[360deg]"}`}
-                        alt="Logo"
-                    />
-                    <h1 className={`text-white origin-left font-bold text-xl duration-300 ${!open && "scale-0"}`}>
-                        D.YASAY BEACH RESORT
-                    </h1>
+                    {/* Logo Section */}
+                    <div className="flex gap-x-5 items-center bg-gradient-to-r from-[#1089D3] to-[#12B1D1] w-full p-5 shadow-md">
+                        <img
+                            src="./src/assets/logo.png"
+                            className={`cursor-pointer duration-500 w-20 transform transition-transform ${!open ? "rotate-[360deg]" : "rotate-0"}`}
+                            alt="Logo"
+                        />
+                        <h1 className={`text-white origin-left font-bold text-xl duration-300 ${!open && "scale-0"}`}>
+                            D.YASAY BEACH RESORT
+                        </h1>
+                    </div>
                 </div>
 
                 {/* Sidebar Menu */}
@@ -114,16 +96,17 @@ function EmployeeSidebar() {
                     {Menus.map((menu, index) => (
                         <li
                             key={index}
-                            className={`mb-2 ${menu.isSeparated ? "border-t border-gray-300 mt-4 pt-4" : ""}`}
+                            className={`mb-2`}
                             onMouseEnter={() => setHoveredMenu(menu.path)}
                             onMouseLeave={() => setHoveredMenu(null)}
                         >
-                            {menu.src === "product" ? (
+                            {["Product", "Report"].includes(menu.title) ? (
                                 <>
-                                   <button
-                                        onClick={toggleProductMenu}  // Toggle the product menu
+                                    <button
+                                        onClick={() => toggleMenu(menu.title)} // Toggle the menu
                                         className={`menu-item 
-                                            ${productMenuOpen || activeMenu === "Product" ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""} 
+                                            ${menu.title === "Product" && (productMenuOpen || activeMenu === "Product") ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""} 
+                                            ${menu.title === "Report" && (reportMenuOpen || activeMenu === "Report") ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""}
                                             ${hoveredMenu === menu.path ? "w-full hover:bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:text-white" : ""} 
                                             rounded-md flex items-center gap-x-2`}
                                     >
@@ -134,70 +117,66 @@ function EmployeeSidebar() {
                                                 className={`w-5 h-5`}
                                                 style={{
                                                     filter:
-                                                        hoveredMenu === menu.path || activeMenu === "Product" || productMenuOpen
+                                                        hoveredMenu === menu.path ||
+                                                        activeMenu === menu.title ||
+                                                        (menu.title === "Product" && productMenuOpen) ||
+                                                        (menu.title === "Report" && reportMenuOpen)
                                                             ? "invert(100%)"
-                                                            : "none", 
+                                                            : "none", // Highlight icon when active/hovered
                                                 }}
                                             />
                                         </span>
-                                        {open && <span className="text-md font-semibold">{menu.title}</span>}  
-                                        {open && ( 
+                                        {open && <span className="text-md font-semibold">{menu.title}</span>}
+                                        {open && (
                                             <span className="inline-flex items-center justify-end ml-[60px] h-12 w-12">
                                                 <img
                                                     src="./src/assets/down.png"
                                                     alt="Down Icon"
-                                                    className="w-5 h-5 transition-transform duration-300"  
+                                                    className="w-5 h-5 transition-transform duration-300"
                                                     style={{
-                                                        transform: productMenuOpen ? "rotate(180deg)" : "rotate(0deg)", 
+                                                        transform:
+                                                            (menu.title === "Product" && productMenuOpen) ||
+                                                            (menu.title === "Report" && reportMenuOpen)
+                                                                ? "rotate(180deg)"
+                                                                : "rotate(0deg)",
                                                         filter:
-                                                            hoveredMenu === menu.path || activeMenu === "Product" || productMenuOpen
+                                                            hoveredMenu === menu.path ||
+                                                            activeMenu === menu.title ||
+                                                            (menu.title === "Product" && productMenuOpen) ||
+                                                            (menu.title === "Report" && reportMenuOpen)
                                                                 ? "invert(100%)"
-                                                                : "none", 
+                                                                : "none",
                                                     }}
                                                 />
                                             </span>
                                         )}
                                     </button>
 
-                                    {/* Product Submenus (Only outside sidebar when minimized) */}
-                                    {productMenuOpen && (
-                                        <ul className={`pl-6 mt-4 ${!open ? "absolute left-[120px] top-[250px] transition-all duration-300 w-[220px] p-3 shadow-md bg-white rounded-md z-50" : "relative"}`}>
-                                            <li>
-                                                <button
-                                                    onClick={() => handleSubmenuClick("submenu1")}
-                                                    className={`menu-item mt-3 w-full
-                                                        ${productSubmenuOpen === "submenu1" ? "bg-gray-300 text-black" : ""} 
-                                                        hover:bg-gray-200`}
-                                                >
-                                                    <span className="inline-flex items-center justify-center h-12 w-12 text-lg">
-                                                        <img
-                                                            src={`./src/assets/add-product.png`}
-                                                            alt="Add Product"
-                                                            className="w-5 h-5"
-                                                        />
-                                                    </span>
-                                                    Add Product
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <button
-                                                    onClick={() => handleSubmenuClick("submenu2")}
-                                                    className={`menu-item mt-1 w-full
-                                                        ${productSubmenuOpen === "submenu2" ? "bg-gray-300 text-black" : ""} 
-                                                        hover:bg-gray-200`}
-                                                >
-                                                    <span className="inline-flex items-center justify-center h-12 w-12 text-lg">
-                                                        <img
-                                                            src={`./src/assets/manage-product.png`}
-                                                            alt="Manage Product"
-                                                            className="w-5 h-5"
-                                                        />
-                                                    </span>
-                                                    Manage Product
-                                                </button>
-                                            </li>
+                                    {/* Submenus */}
+                                    {(menu.title === "Product" && productMenuOpen) ||
+                                    (menu.title === "Report" && reportMenuOpen) ? (
+                                        <ul
+                                            className={`pl-6 mt-4 ${!open ? "absolute left-[120px] transition-all duration-300 w-[220px] p-3 shadow-md bg-white rounded-md z-50" : "relative"}`}
+                                        >
+                                            {Submenus[menu.title].map((submenu, idx) => (
+                                                <li key={idx}>
+                                                    <button
+                                                        onClick={() => handleSubmenuClick(menu.title, submenu.path)}
+                                                        className={`menu-item mt-3 w-full hover:bg-gray-200 rounded-md`}
+                                                    >
+                                                        <span className="inline-flex items-center justify-center h-12 w-12 text-lg">
+                                                            <img
+                                                                src={`./src/assets/${submenu.icon}.png`}
+                                                                alt={submenu.title}
+                                                                className="w-5 h-5"
+                                                            />
+                                                        </span>
+                                                        {submenu.title}
+                                                    </button>
+                                                </li>
+                                            ))}
                                         </ul>
-                                    )}
+                                    ) : null}
                                 </>
                             ) : (
                                 <button
@@ -216,7 +195,7 @@ function EmployeeSidebar() {
                                                 filter:
                                                     hoveredMenu === menu.path || activeMenu === menu.path
                                                         ? "invert(100%)"
-                                                        : "none", 
+                                                        : "none",
                                             }}
                                         />
                                     </span>
@@ -225,36 +204,6 @@ function EmployeeSidebar() {
                             )}
                         </li>
                     ))}
-
-                    {/* Logout Button */}
-                    <div className="flex w-full justify-center relative top-[500px]">
-                        <div onClick={handleLogout} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:to-[#0f8bb1] cursor-pointer">
-                            <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
-                            {open && (
-                                <button className="rounded-md text-white font-sans font-semibold tracking-wide cursor-pointer">Logout</button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Tempo Button */}
-                    <div className="flex w-full justify-center relative top-[300px]">
-                        <div onClick={handleTempoBtnToBooking} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
-                            <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
-                            {open && (
-                                <button className="rounded-md text-white font-semibold tracking-wide cursor-pointer">Tempo to Booking</button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Tempo Button */}
-                    <div className="flex w-full justify-center relative top-[200px]">
-                        <div onClick={handleTempoBtnToAdmin} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
-                            <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
-                            {open && (
-                                <button className="rounded-md text-white font-semibold tracking-wide cursor-pointer">Tempo to Admin</button>
-                            )}
-                        </div>
-                    </div>
                 </ul>
             </div>
         </div>

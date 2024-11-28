@@ -97,7 +97,9 @@ function AdminSidebar({ displayName: propDisplayName }) {
     return (
         <div className="min-h-screen flex flex-row bg-white">
             <div
-                className={`${open ? "w-[300px]" : "w-[110px]"} duration-300 h-screen bg-white relative shadow-lg dark:bg-[#1a1a1a]`}
+                className={`${
+                    open ? "w-[300px]" : "w-[110px]"
+                } transition-all duration-300 h-screen bg-white relative shadow-lg dark:bg-[#1a1a1a]`}
             >
                 <img
                     src="./src/assets/control.png"
@@ -149,7 +151,7 @@ function AdminSidebar({ displayName: propDisplayName }) {
                                         }`}
                                     />
                                 </span>
-
+                            
                                 {open && <span className="text-md font-semibold">{menu.title}</span>}
                             </button>
                         </li>

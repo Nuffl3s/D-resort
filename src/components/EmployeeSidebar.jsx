@@ -48,8 +48,9 @@ function EmployeeSidebar() {
     const Menus = [
         { title: "Dashboard", path: "EmployeeDash", src: "dashboard" },
         { title: "Reservation", path: "EmployeeReservation", src: "booking" },
-        { title: "Product", src: "product" }, // Product now has submenus
-        { title: "Report", src: "report" }, // Report now has submenus
+        { title: "Product", src: "product" }, 
+        { title: "Report", src: "report" },
+        { title: "Settings", path:"EmployeeSettings", src: "settings" }, 
     ];
 
     const Submenus = {
@@ -59,34 +60,35 @@ function EmployeeSidebar() {
         ],
         Report: [
             { title: "Sales Report", path: "SalesReport", icon: "sales-report" },
-            { title: "Booking Report", path: "BookingReport", icon: "booking-report" },
+            { title: "Booking Report", path: "BookingReport", icon: "report" },
         ],
     };
 
     return (
         <div className="min-h-screen flex flex-row bg-white">
             {/* Sidebar */}
-            <div
-                className={`${open ? "w-[300px]" : "w-[110px]"} duration-300 h-screen bg-white relative shadow-lg`}
-            >
-                {/* Sidebar Toggle Button */}
-                <img
-                    src="./src/assets/control.png"
-                    alt="Toggle Sidebar"
-                    className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 ${!open && "rotate-180"}`}
-                    onClick={toggleSidebar}
-                />
-
-                {/* Employee Profile Section */}
-                <div className="flex gap-x-5 items-center bg-gradient-to-r from-[#1089D3] to-[#12B1D1] w-full p-5 shadow-md">
+            <div className={`${open ? "w-[300px]" : "w-[110px]"} transition-all duration-300 h-screen bg-white relative shadow-lg`}>
+            {/* Sidebar Toggle Button */}
+                <div className="relative">
+                    {/* Sidebar Toggle Button */}
                     <img
-                        src="./src/assets/logo.png"
-                        className={`cursor-pointer duration-500 w-20 ${!open && "rotate-[360deg]"}`}
-                        alt="Logo"
+                        src="./src/assets/control.png"
+                        alt="Toggle Sidebar"
+                        className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 transform transition-transform duration-500 ${!open && "rotate-180"}`}
+                        onClick={toggleSidebar}
                     />
-                    <h1 className={`text-white origin-left font-bold text-xl duration-300 ${!open && "scale-0"}`}>
-                        D.YASAY BEACH RESORT
-                    </h1>
+
+                    {/* Logo Section */}
+                    <div className="flex gap-x-5 items-center bg-gradient-to-r from-[#1089D3] to-[#12B1D1] w-full p-5 shadow-md">
+                        <img
+                            src="./src/assets/logo.png"
+                            className={`cursor-pointer duration-500 w-20 transform transition-transform ${!open ? "rotate-[360deg]" : "rotate-0"}`}
+                            alt="Logo"
+                        />
+                        <h1 className={`text-white origin-left font-bold text-xl duration-300 ${!open && "scale-0"}`}>
+                            D.YASAY BEACH RESORT
+                        </h1>
+                    </div>
                 </div>
 
                 {/* Sidebar Menu */}
@@ -154,11 +156,7 @@ function EmployeeSidebar() {
                                     {(menu.title === "Product" && productMenuOpen) ||
                                     (menu.title === "Report" && reportMenuOpen) ? (
                                         <ul
-                                            className={`pl-6 mt-4 ${
-                                                !open
-                                                    ? "absolute left-[120px] transition-all duration-300 w-[220px] p-3 shadow-md bg-white rounded-md z-50"
-                                                    : "relative"
-                                            }`}
+                                            className={`pl-6 mt-4 ${!open ? "absolute left-[120px] transition-all duration-300 w-[220px] p-3 shadow-md bg-white rounded-md z-50" : "relative"}`}
                                         >
                                             {Submenus[menu.title].map((submenu, idx) => (
                                                 <li key={idx}>
@@ -206,31 +204,6 @@ function EmployeeSidebar() {
                             )}
                         </li>
                     ))}
-
-                    {/* Logout Button */}
-                    <div className="flex w-full justify-center relative top-[500px]">
-                        <div
-                            onClick={() => {
-                                localStorage.removeItem("access");
-                                localStorage.removeItem("refresh");
-                                localStorage.removeItem("user_role");
-                                navigate("/");
-                            }}
-                            className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:to-[#0f8bb1] cursor-pointer"
-                        >
-                            <img
-                                src="./src/assets/logout.png"
-                                className="fill-current w-5 h-5"
-                                style={{ filter: "invert(100%)" }}
-                                alt="Logout Icon"
-                            />
-                            {open && (
-                                <button className="rounded-md text-white font-sans font-semibold tracking-wide cursor-pointer">
-                                    Logout
-                                </button>
-                            )}
-                        </div>
-                    </div>
                 </ul>
             </div>
         </div>

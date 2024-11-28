@@ -112,12 +112,12 @@ function EmployeeReservation () {
                         <div className="w-full flex justify-between mb-5">
                             <button
                                 onClick={() => setModalCalendarEventOpen(true)}
-                                className="flex items-center gap-1 bg-[#12B1D1] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
+                                className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] shadow px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
                             >Calendar Events
                             </button>
                             <button
                                 onClick={() => setModalBookingOpen(true)}
-                                className="flex items-center gap-1 bg-[#12B1D1] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
+                                className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] shadow px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
                             >Book
                             </button>
                             

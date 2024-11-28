@@ -147,22 +147,22 @@ function AdminDash () {
                                         <table className="min-w-full shadow rounded-lg border-collapse">
                                             <thead className="sticky text-gray-600 top-0 bg-white dark:bg-[#424242] dark:text-[#e7e6e6]">
                                                 <tr className="text-center">
-                                                    <th className="text-left px-5 py-3 text-sm font-bold  uppercase tracking-wider">Product Name</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider">Date</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider">Quantity</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider">Price</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider">Amount</th>
+                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Product Name</th>
+                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Date</th>
+                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Quantity</th>
+                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Price</th>
+                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Amount</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="dark:text-[#e7e6e6]">
                                             {products.length > 0 ? (
                                                 products.map((product, index) => (
                                                     <tr key={index}>
-                                                        <td className="px-5 py-5 border-b border-gray-200">{product.name}</td>
-                                                        <td className="px-5 py-5 border-b border-gray-200">{product.date_added}</td>
-                                                        <td className="px-5 py-5 border-b border-gray-200">{product.quantity}</td>
-                                                        <td className="px-5 py-5 border-b border-gray-200">${product.avgPrice}</td>
-                                                        <td className="px-5 py-5 border-b border-gray-200">${(product.quantity * product.avgPrice).toFixed(2)}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200tex t-start">{product.name}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200 text-start">{product.date_added}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200 text-start">{product.quantity}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200 text-start">${product.avgPrice}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200 text-start">${(product.quantity * product.avgPrice).toFixed(2)}</td>
                                                     </tr>
                                                 ))
                                             ) : (

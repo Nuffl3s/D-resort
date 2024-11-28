@@ -88,8 +88,9 @@ function AdminSidebar({ displayName: propDisplayName }) {
         { title: "Employee Management", src: "add", path: "AdminManagement" },
         { title: "Attendance", src: "calendar", path: "AdminAttendance" },
         { title: "Work Schedules", src: "clock", path: "AdminSchedule" },
-        { title: "Report", src: "report", path: "AdminReport" },
         { title: "Payroll", src: "money", path: "AdminPayroll" },
+        { title: "Add Unit", src: "add-unit", path: "AdminAddUnit" },
+        { title: "Report", src: "report", path: "AdminReport" },
         { title: "Audit Log", src: "magnifying", path: "AuditLog", isSeparated: true },
         { title: "Settings", src: "settings", path: "Settings" },
     ];

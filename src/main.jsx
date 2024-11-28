@@ -2,13 +2,13 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './Login.jsx';
-import AdminSidebar from './components/AdminSidebar.jsx';
 import AdminDash from './AdminPages/AdminDash.jsx';
 import AdminManagement from './AdminPages/AdminManagement.jsx';
 import AdminAttendance from './AdminPages/AdminAttendance.jsx';
 import AdminSchedule from './AdminPages/AdminSchedule.jsx';
 import AdminReport from './AdminPages/AdminReport.jsx';
 import AdminPayroll from './AdminPages/AdminPayroll.jsx';
+import AdminAddUnit from './AdminPages/AdminAddUnit.jsx';
 import AuditLog from './AdminPages/AuditLog.jsx';
 import Settings from './AdminPages/Settings.jsx';
 import EmployeeSidebar from './components/EmployeeSidebar.jsx';
@@ -38,7 +38,6 @@ root.render(
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/adminSidebar" element={<AdminSidebar />} />
 
         {/* Admin-Only Routes */}
         <Route path="/AdminDash" element={<AdminDash />} />
@@ -47,6 +46,7 @@ root.render(
         <Route path="/AdminAttendance" element={<AdminAttendance />} />
         <Route path="/AdminSchedule" element={<AdminSchedule />} />
         <Route path="/AdminReport" element={<AdminReport />} />
+        <Route path="/AdminAddUnit" element={<AdminAddUnit />} />
         <Route path="/AuditLog" element={<AuditLog />} />
 
         {/* Shared Routes (Admin and Employee) */}

@@ -1,16 +1,16 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
+import Sidebar from '../components/EmployeeSidebar';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import Sidebar from '../components/EmployeeSidebar';
 import api from '../api';
 
-function EmployeeDash () {
-    const [data, setData] = useState([]); 
+function EmployeeDash() {
+    const [data, setData] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('Cottage');
     const [currentTime, setCurrentTime] = useState(new Date());
     const [date, setDate] = useState();
-    
+
     const tableHeaders =
         selectedCategory === 'Cottage'
             ? ['#', 'Type', 'Capacity', '6AM - 6PM', '6AM - 12MN', '6PM - 6AM', '24 HRS', 'Status']
@@ -21,25 +21,24 @@ function EmployeeDash () {
         try {
             const response = await api.get(endpoint, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Replace with your token logic
-                }
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                },
             });
-            setData(response.data); // Set the fetched data
+            setData(response.data);
         } catch (error) {
             console.error('Error fetching data:', error);
         }
     };
 
     useEffect(() => {
-        fetchData(); 
+        fetchData();
     }, [selectedCategory]);
-
 
     useEffect(() => {
         const intervalId = setInterval(() => {
             setCurrentTime(new Date());
         }, 1000);
-    
+
         return () => clearInterval(intervalId);
     }, []);
     return (
@@ -87,18 +86,13 @@ function EmployeeDash () {
                                 <h1 className="text-2xl font-bold">Ratings</h1>
                                 <div>
                                     <button
-                                        onClick={() => setSelectedCategory('Add')}
-                                        className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}>
-                                        Add
-                                    </button>
-                                    <button
                                         onClick={() => setSelectedCategory('Cottage')}
-                                        className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}>
+                                        className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] bg-[#70b8d3] hover:bg-[#09B0EF] shadow`}>
                                         Cottage
                                     </button>
                                     <button
                                         onClick={() => setSelectedCategory('Lodge')}
-                                        className={`text-sm p-2 w-[100px] text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}>
+                                        className={`text-sm p-2 w-[100px] text-white cursor-pointer rounded-[5px] bg-[#70b8d3] hover:bg-[#09B0EF] shadow`}>
                                         Lodge
                                     </button>
                                 </div>

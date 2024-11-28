@@ -64,6 +64,14 @@ function EmployeeSidebar() {
         ],
     };
 
+    const handleTempoBtnBooking = () => {
+        navigate('/booking');
+    };
+
+
+    const handleTempoBtnAdmin = () => {
+        navigate('/adminDash');
+    };
     return (
         <div className="min-h-screen flex flex-row bg-white">
             {/* Sidebar */}
@@ -204,6 +212,24 @@ function EmployeeSidebar() {
                             )}
                         </li>
                     ))}
+
+                <div className="flex w-full justify-center relative top-[100px]">
+                        <div onClick={handleTempoBtnBooking} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
+                            <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
+                            {open && (
+                                <button className="rounded-md text-white font-semibold tracking-wide cursor-pointer">Tempo to booking</button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex w-full justify-center relative top-[120px]">
+                        <div onClick={handleTempoBtnAdmin} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
+                            <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
+                            {open && (
+                                <button className="rounded-md text-white font-semibold tracking-wide cursor-pointer">Tempo to admin</button>
+                            )}
+                        </div>
+                    </div>
                 </ul>
             </div>
         </div>

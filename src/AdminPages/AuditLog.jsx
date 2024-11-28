@@ -174,7 +174,7 @@ const AuditLog = () => {
                             <button
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
-                                className={`px-4 py-2 ${isSelected ? `${activeColor} font-semibold border-b-2` : 'text-gray-700 hover:text-[#70b8d3]'}`}
+                                className={`px-4 py-2 ${isSelected ? `${activeColor} font-semibold border-b-2` : 'text-gray-700 hover:text-[#70b8d3] dark:text-[#e7e6e6]'}`}
                             >
                                 {category}
                             </button>

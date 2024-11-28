@@ -5,8 +5,8 @@ from django.contrib.auth.models import update_last_login
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer
-from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule
+from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -309,3 +309,12 @@ class LogView(APIView):
             serializer.save()  # Save the log entry with the category
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class CottageListView(generics.ListCreateAPIView):
+    queryset = Cottage.objects.all()
+    serializer_class = CottageSerializer
+
+class LodgeListView(generics.ListCreateAPIView):
+    queryset = Lodge.objects.all()
+    serializer_class = LodgeSerializer
+

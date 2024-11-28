@@ -80,8 +80,12 @@ const AuditLog = () => {
     }, [logs, searchQuery, filterBy, dateFrom, dateTo]);
 
     const renderLogs = () => {
-        if (loading) return <p className="dark:text-[#e7e6e6]">Loading...</p>;
-        if (error) return <p className="text-red-600">Error: {error}</p>;
+        if (loading) return (
+            <div className="flex justify-center items-center min-h-[650px]">
+                <div className="spinner-border animate-spin inline-block w-7 h-7 border-4 rounded-full border-t-[#70b8d3] border-gray-300"></div>
+            </div>
+        );
+        if (error) return <p className="text-red-600 flex justify-center items-center">Error: {error}</p>;
         if (filteredLogs.length === 0) return <p>No logs match the filters.</p>;
 
         return (
@@ -170,11 +174,7 @@ const AuditLog = () => {
                             <button
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
-                                className={`px-4 py-2 ${
-                                    isSelected
-                                        ? `${activeColor} font-semibold border-b-2`
-                                        : 'text-gray-700 hover:text-[#70b8d3]'
-                                } dark:text-[#e7e6e6] dark:hover:text-[#70b8d3]`}
+                                className={`px-4 py-2 ${isSelected ? `${activeColor} font-semibold border-b-2` : 'text-gray-700 hover:text-[#70b8d3]'}`}
                             >
                                 {category}
                             </button>

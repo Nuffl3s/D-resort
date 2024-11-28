@@ -38,7 +38,11 @@ const AuditLog = () => {
                         )}`;
                 const response = await api.get(endpoint);
                 setLogs(response.data);
-                setLoading(false);
+
+                // Simulate a 2-3 second loading delay
+                setTimeout(() => {
+                    setLoading(false);
+                }, 1000); // 2000 milliseconds = 2 seconds
             } catch (err) {
                 setError(err.message);
                 setLoading(false);
@@ -89,19 +93,29 @@ const AuditLog = () => {
         if (filteredLogs.length === 0) return <p>No logs match the filters.</p>;
 
         return (
-            <ul>
-                {filteredLogs.map((log) => (
-                    <li key={log.id} className="mb-4">
-                        <strong className="text-gray-800 dark:text-white">{log.username}</strong>: {log.action}{' '}
-                        <span className="text-gray-600 dark:text-gray-400">
-                            ({moment(log.timestamp).format('YYYY-MM-DD h:mm A')})
-                        </span>
-                    </li>
-                ))}
-            </ul>
+            <table className="min-w-full table-auto border-collapse">
+                <thead>
+                    <tr className="border-b">
+                        <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Username</th>
+                        <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Action</th>
+                        <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filteredLogs.map((log) => (
+                        <tr key={log.id} className="border-b">
+                            <td className="px-4 py-2 text-gray-800 dark:text-[#e7e6e6]">{log.username}</td>
+                            <td className="px-4 py-2 text-gray-800 dark:text-[#e7e6e6]">{log.action}</td>
+                            <td className="px-4 py-2 text-gray-600 dark:text-[#e7e6e6]">
+                                {moment(log.timestamp).format('YYYY-MM-DD h:mm A')}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         );
     };
-
+    
     useEffect(() => {
         applyTheme();
     }, []);

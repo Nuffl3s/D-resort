@@ -83,3 +83,26 @@ class Log(models.Model):
     def __str__(self):
         return f"{self.username} - {self.action} - {self.category}"
 
+class Cottage(models.Model):
+    image = models.URLField()
+    type = models.CharField(max_length=255)
+    capacity = models.PositiveIntegerField()
+    time_6am_6pm_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    time_6am_12mn_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    time_12hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    time_24hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"{self.type} - {self.capacity} people"
+
+class Lodge(models.Model):
+    image = models.URLField()
+    type = models.CharField(max_length=255)
+    capacity = models.PositiveIntegerField()
+    time_3hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    time_6hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    time_12hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    time_24hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"{self.type} - {self.capacity} people"

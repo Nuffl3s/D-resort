@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -62,3 +62,32 @@ class LogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Log
         fields = ["id", "username", "action", "category", "timestamp"]
+        
+class CottageSerializer(serializers.ModelSerializer):
+    description = serializers.SerializerMethodField()  # Dynamically computed field
+
+    class Meta:
+        model = Cottage
+        fields = [
+            'id', 'image', 'type', 'capacity', 'description',
+            'time_6am_6pm_price', 'time_6am_12mn_price', 'time_12hrs_price', 'time_24hrs_price',
+        ]
+
+    def get_description(self, obj):
+        # Dynamically compute the description based on capacity
+        return f"Good for up to {obj.capacity} people."
+
+
+class LodgeSerializer(serializers.ModelSerializer):
+    description = serializers.SerializerMethodField()  # Dynamically computed field
+
+    class Meta:
+        model = Lodge
+        fields = [
+            'id', 'image', 'type', 'capacity', 'description',
+            'time_3hrs_price', 'time_6hrs_price', 'time_12hrs_price', 'time_24hrs_price',
+        ]
+
+    def get_description(self, obj):
+        # Dynamically compute the description based on capacity
+        return f"Comfortably accommodates {obj.capacity} people."

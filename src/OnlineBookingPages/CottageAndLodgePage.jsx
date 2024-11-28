@@ -9,7 +9,10 @@ import { useLocation } from 'react-router-dom';
 function BookingPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { startDate, endDate, persons } = location.state || { startDate: null, endDate: null, persons: 0 };
+    const { startDate: initialStartDate = null, endDate: initialEndDate = null, persons: initialPersons = 1 } = location.state || {};
+    const [startDate, setStartDate] = useState(initialStartDate);
+    const [endDate, setEndDate] = useState(initialEndDate);
+    const [persons, setPersons] = useState(initialPersons);
     const [loading, setLoading] = useState(true);
     const [showGuestDropdown, setShowGuestDropdown] = useState(false);
     const [selectedTypes, setSelectedTypes] = useState({
@@ -30,6 +33,11 @@ function BookingPage() {
         return () => clearTimeout(timer);
     }, []);
 
+    const handleSearch = () => {
+        console.log("Search clicked", { startDate, endDate, persons });
+        // Implement your search logic here
+    };
+    
     useEffect(() => {
         const handleScroll = () => {
             const scrollTop = window.scrollY;
@@ -161,9 +169,13 @@ function BookingPage() {
             <Input
                 startDate={startDate}
                 endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
                 persons={persons}
+                setPersons={setPersons}
                 showGuestDropdown={showGuestDropdown}
                 setShowGuestDropdown={setShowGuestDropdown}
+                handleSearch={handleSearch}
             />
             <div className="flex-grow">
                 <div className="w-full max-w-[1200px] mx-auto mt-10 flex justify-end sort-con">

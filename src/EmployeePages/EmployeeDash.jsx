@@ -3,48 +3,37 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import Sidebar from '../components/EmployeeSidebar';
+import api from '../api';
 
 function EmployeeDash () {
-    const [currentView, setCurrentView] = useState('cottage');
+    const [data, setData] = useState([]); 
+    const [selectedCategory, setSelectedCategory] = useState('Cottage');
     const [currentTime, setCurrentTime] = useState(new Date());
     const [date, setDate] = useState();
+    
+    const tableHeaders =
+        selectedCategory === 'Cottage'
+            ? ['#', 'Type', 'Capacity', '6AM - 6PM', '6AM - 12MN', '6PM - 6AM', '24 HRS', 'Status']
+            : ['#', 'Type', 'Capacity', '3 Hrs', '6 Hrs', '12 Hrs', '24 Hrs', 'Status'];
 
-    const switchView = (view) => {
-        setCurrentView(view);
+    const fetchData = async () => {
+        const endpoint = selectedCategory === 'Cottage' ? '/cottages/' : '/lodges/';
+        try {
+            const response = await api.get(endpoint, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Replace with your token logic
+                }
+            });
+            setData(response.data); // Set the fetched data
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
     };
 
-    const cottagesData = [
-        { id: 1, image: "https://via.placeholder.com/64", type: "Cottage A", date: "2024-10-22", status: "Available" },
-        { id: 2, image: "https://via.placeholder.com/64", type: "Cottage B", date: "2024-10-22", status: "Booked" },
-        { id: 3, image: "https://via.placeholder.com/64", type: "Cottage C", date: "2024-10-22", status: "Available" },
-        { id: 4, image: "https://via.placeholder.com/64", type: "Cottage D", date: "2024-10-22", status: "Available" },
-        { id: 5, image: "https://via.placeholder.com/64", type: "Cottage A", date: "2024-10-22", status: "Available" },
-        { id: 6, image: "https://via.placeholder.com/64", type: "Cottage B", date: "2024-10-22", status: "Booked" },
-        { id: 7, image: "https://via.placeholder.com/64", type: "Cottage C", date: "2024-10-22", status: "Available" },
-        { id: 8, image: "https://via.placeholder.com/64", type: "Cottage D", date: "2024-10-22", status: "Available" },
-        { id: 9, image: "https://via.placeholder.com/64", type: "Cottage A", date: "2024-10-22", status: "Available" },
-        { id: 10, image: "https://via.placeholder.com/64", type: "Cottage B", date: "2024-10-22", status: "Booked" },
-        { id: 11, image: "https://via.placeholder.com/64", type: "Cottage C", date: "2024-10-22", status: "Available" },
-        { id: 12, image: "https://via.placeholder.com/64", type: "Cottage D", date: "2024-10-22", status: "Available" },
-    ];
+    useEffect(() => {
+        fetchData(); 
+    }, [selectedCategory]);
 
-    const lodgesData = [
-        { id: 1, image: "https://via.placeholder.com/64", type: "Lodge A", date: "2024-10-22", status: "Available" },
-        { id: 2, image: "https://via.placeholder.com/64", type: "Lodge B", date: "2024-10-22", status: "Booked" },
-        { id: 3, image: "https://via.placeholder.com/64", type: "Lodge C", date: "2024-10-22", status: "Available" },
-        { id: 4, image: "https://via.placeholder.com/64", type: "Lodge D", date: "2024-10-22", status: "Available" },
-        { id: 5, image: "https://via.placeholder.com/64", type: "Lodge A", date: "2024-10-22", status: "Available" },
-        { id: 6, image: "https://via.placeholder.com/64", type: "Lodge B", date: "2024-10-22", status: "Booked" },
-        { id: 7, image: "https://via.placeholder.com/64", type: "Lodge C", date: "2024-10-22", status: "Available" },
-        { id: 8, image: "https://via.placeholder.com/64", type: "Lodge D", date: "2024-10-22", status: "Available" },
-        { id: 9, image: "https://via.placeholder.com/64", type: "Lodge A", date: "2024-10-22", status: "Available" },
-        { id: 10, image: "https://via.placeholder.com/64", type: "Lodge B", date: "2024-10-22", status: "Booked" },
-        { id: 11, image: "https://via.placeholder.com/64", type: "Lodge C", date: "2024-10-22", status: "Available" },
-        { id: 12, image: "https://via.placeholder.com/64", type: "Lodge D", date: "2024-10-22", status: "Available" },
-    ];
-    
-    // Get the data and heading based on current view
-    const tableData = currentView === 'cottage' ? cottagesData : lodgesData;
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -95,21 +84,17 @@ function EmployeeDash () {
 
                         <div className="flex-row w-full h-[615px] mt-8 p-6 mx-auto bg-white shadow-lg rounded-lg border-gray-200">
                             <div className="flex justify-between mb-5">
-                                <h1 className="text-2xl font-bold">Booking Summary</h1>
+                                <h1 className="text-2xl font-bold">Ratings</h1>
                                 <div>
                                     <button
-                                        onClick={() => switchView('cottage')}
-                                        className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] shadow-md ${
-                                            currentView === 'cottage' ? 'bg-[#09B0EF]' : 'bg-[#70b8d3]'
-                                        } hover:bg-[#09B0EF]`}
+                                        onClick={() => setSelectedCategory('Cottage')}
+                                        className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}
                                     >
                                         Cottage
                                     </button>
                                     <button
-                                        onClick={() => switchView('lodge')}
-                                        className={`text-sm p-2 w-[100px] text-white cursor-pointer rounded-[5px] shadow-md ${
-                                            currentView === 'lodge' ? 'bg-[#09B0EF]' : 'bg-[#70b8d3]'
-                                        } hover:bg-[#09B0EF]`}
+                                        onClick={() => setSelectedCategory('Lodge')}
+                                        className={`text-sm p-2 w-[100px] text-white cursor-pointer rounded-[5px] shadow-md bg-[#09B0EF]`}
                                     >
                                         Lodge
                                     </button>
@@ -122,28 +107,33 @@ function EmployeeDash () {
                                         <table className="w-full">
                                             <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100">
                                                 <tr className="text-center">
-                                                    <th className="px-3 py-3 text-sm font-bold uppercase tracking-wider">#</th>
-                                                    <th className="px-3 py-3 text-sm font-bold uppercase tracking-wider">Type</th>
-                                                    <th className="px-3 py-3 text-sm font-bold uppercase tracking-wider">Date</th>
-                                                    <th className="px-3 py-3 text-sm font-bold uppercase tracking-wider">Status</th>
+                                                    {tableHeaders.map((header, index) => (
+                                                        <th key={index} className="px-3 py-3 text-sm font-bold uppercase tracking-wider" >{header}</th>
+                                                    ))}
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {tableData.map((item, index) => (
-                                                    <tr key={index} className="text-center items-center">
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.id}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">
-                                                            <div className="flex items-center justify-center">
-                                                                <img
-                                                                    src={item.image}
-                                                                    alt={item.type}
-                                                                    className="w-16 h-16 object-cover rounded mr-3"
-                                                                />
-                                                                {item.type}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.date}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.status}</td>
+                                                {data.map((item, index) => (
+                                                    <tr key={item.id} className="px-3 py-3 border-b bg-white text-sm">
+                                                    <td className="px-3 py-3 border-b bg-white text-sm">{index + 1}</td>
+                                                    <td className="px-3 py-3 border-b bg-white text-sm">{item.type}</td>
+                                                    <td className="px-3 py-3 border-b bg-white text-sm">{item.capacity}</td>
+                                                    {selectedCategory === "Cottage" ? (
+                                                        <>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6am_6pm_price}</td>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6am_12mn_price}</td>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_12hrs_price}</td>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_24hrs_price}</td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_3hrs_price}</td>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6hrs_price}</td>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_12hrs_price}</td>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_24hrs_price}</td>
+                                                        </>
+                                                    )}
+                                                    <td className="px-3 py-3 border-b bg-white text-sm">{item.status}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>

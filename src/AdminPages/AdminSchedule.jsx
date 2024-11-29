@@ -2,11 +2,10 @@
 import { useEffect, useState, useRef } from 'react';
 import api from '../api';
 import AddScheduleModal from '../Modal/AddScheduleModal';
-import { handleDownloadExcel, handleDownloadWord } from '../AdminUtils';
+import { handleDownloadExcel, handleDownloadWord } from '../Utils/scheduleUtils';
 import DownloadModal from '../Modal/DownloadModal';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
-
 
 const AdminSchedule = () => {
     const [schedules, setSchedules] = useState([]);
@@ -53,25 +52,32 @@ const AdminSchedule = () => {
 
     const handleModalClose = () => {
         setIsModalOpen(false);
-        api.get('/weekly-schedules/')
-            .then((response) => setSchedules(response.data))
-            .catch((error) => console.error('Error refreshing schedules:', error));
+        api.get('/weekly-schedules/').then((response) => setSchedules(response.data)).catch((error) => console.error('Error refreshing schedules:', error));
     };
 
-    const handleDownloadChoice = (fileType) => {
-        if (fileType === 'excel') {
-            handleDownloadExcel(tableRows); // Ensure you pass the correct data (tableRows)
-        } else if (fileType === 'word') {
-            handleDownloadWord(tableRows);
+    const handleDownloadChoice = (type, context) => {
+        console.log(`Download choice: ${type} for ${context}`);
+        
+        if (context === 'schedule') {
+            // Pass the schedules data to the download functions
+            if (type === 'excel') {
+                handleDownloadExcel(schedules)
+                    .then(() => console.log('Excel download triggered successfully'))
+                    .catch((error) => console.error('Error downloading Excel:', error));
+            } else if (type === 'word') {
+                handleDownloadWord(schedules)
+                    .then(() => console.log('Word download triggered successfully'))
+                    .catch((error) => console.error('Error downloading Word:', error));
+            }
         }
-        setShowModal(false);
+
+        setShowModal(false); // Close the modal after selection
     };
 
     const handlePrint = () => {
         window.print(); // Trigger the print dialog
         setIsDropdownVisible(false); // Close dropdown after print
     };
-    
 
     const handleDownload = () => {
         setShowModal(true); // Open the download modal
@@ -98,6 +104,7 @@ const AdminSchedule = () => {
                                     showModal={showModal} 
                                     handleDownloadChoice={handleDownloadChoice} 
                                     setShowModal={setShowModal} 
+                                    pageContext="schedule" // Pass "schedule" context
                                 />
                             </div>
                             <div className="mr-3">

@@ -7,6 +7,7 @@ import CottageModal from '../Modal/CottageModal';
 import LodgeModal from '../Modal/LodgeModal';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
+import SalesSummaryModal from '../Modal/SalesSummaryModal';
 import api from '../api';
 
 function AdminDash () {
@@ -16,6 +17,7 @@ function AdminDash () {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [products, setProducts] = useState([]);
     const [date, setDate] = useState(); 
+    const [salesSummaryModalOpen, setSalesSummaryModalOpen] = useState(false);
 
     // New state for filtering attendance
     const [attendanceFilter, setAttendanceFilter] = useState('Day');
@@ -82,6 +84,14 @@ function AdminDash () {
         applyTheme();
     }, []);
 
+    const handleViewAllClick = () => {
+        setSalesSummaryModalOpen(true);
+      };
+    
+      const handleCloseModal = () => {
+        setSalesSummaryModalOpen(false);
+      };
+
     return (
         <div className="flex dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
@@ -138,8 +148,14 @@ function AdminDash () {
                         <div className="p-6 w-full mx-auto mt-8 bg-white shadow-lg rounded-lg border-gray-200 mb-4 min-h-[610px] dark:bg-[#374151]">
                             <div className="flex justify-between">
                                 <h1 className="text-xl font-bold text-start mb-10 dark:text-[#e7e6e6]">Sales Summary</h1>
-                                <button className="bg-[#70b8d3] hover:bg-[#09B0EF] mb-10 px-2 text-white text-sm rounded-[5px]">View all</button>
+                                <button onClick={handleViewAllClick} className="bg-[#70b8d3] hover:bg-[#09B0EF] mb-10 px-2 text-white text-sm rounded-[5px] font-medium">View all</button>
                             </div>
+
+                            <SalesSummaryModal
+                                isOpen={salesSummaryModalOpen}
+                                onClose={handleCloseModal}
+                                products={products}
+                            />
 
                             <div className="overflow-x-auto">
                                 <div className="relative">

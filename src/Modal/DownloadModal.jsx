@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-const DownloadModal = ({ showModal, handleDownloadChoice, setShowModal }) => {
+const DownloadModal = ({ showModal, handleDownloadChoice, setShowModal, pageContext }) => {
     if (!showModal) return null;
 
     return (
@@ -9,12 +9,12 @@ const DownloadModal = ({ showModal, handleDownloadChoice, setShowModal }) => {
                 <h2 className="text-xl font-semibold mb-4">Choose Download Type</h2>
                 <div className="flex space-x-4">
                     <button
-                        onClick={() => handleDownloadChoice('excel')}
+                        onClick={() => handleDownloadChoice('excel', pageContext)}  // Pass pageContext
                     >
                         <img src="./src/assets/excel2.png" className="fill-current w-8 h-8" />
                     </button>
                     <button
-                        onClick={() => handleDownloadChoice('word')}
+                        onClick={() => handleDownloadChoice('word', pageContext)}  // Pass pageContext
                     >
                         <img src="./src/assets/word.png" className="fill-current w-8 h-8" />
                     </button>
@@ -35,6 +35,7 @@ DownloadModal.propTypes = {
     showModal: PropTypes.bool.isRequired,
     handleDownloadChoice: PropTypes.func.isRequired,
     setShowModal: PropTypes.func.isRequired,
+    pageContext: PropTypes.string.isRequired,  // New prop for context
 };
 
 export default DownloadModal;

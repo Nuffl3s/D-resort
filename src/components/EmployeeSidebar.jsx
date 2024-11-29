@@ -28,15 +28,7 @@ const EmployeeSidebar = () => {
     const [open, setOpen] = useState(true); // State to toggle sidebar visibility
     const [activeMenu, setActiveMenu] = useState(null); // State to manage active submenu
 
-    const profileImage = null; // Replace with your actual profile image URL
-    const displayName = "John Doe"; // Replace with actual user's display name
-
-    const getInitials = (name) => {
-        return name
-            .split(" ")
-            .map((word) => word.charAt(0).toUpperCase())
-            .join("");
-    };
+    const displayName = "D.YASAY BEACH RESORT"; // Set the new name for the resort
 
     const handleMenuClick = (menuTitle) => {
         // Toggle submenu visibility
@@ -62,31 +54,25 @@ const EmployeeSidebar = () => {
                 className={`bg-[#374151] shadow-lg min-h-screen fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out ${open ? "w-[300px]" : "w-[85px]"}`}
             >
                 <div className="w-full">
-                    {/* Menu Toggle and Profile */}
+                    {/* Menu Toggle and Logo */}
                     <div className="py-3 flex justify-between items-center border-b w-full border-gray-400">
                         <div className="flex items-center gap-3 ml-3">
                             <div
                                 className={`transition-all duration-300 ease-in-out bg-white rounded-full ${
-                                    open ? "w-[70px] h-[70px]" : "w-[40px] h-[40px]"
+                                    open ? "w-[60px] h-[60px]" : "w-[40px] h-[40px]"
                                 }`}
                             >
-                                {profileImage ? (
-                                    <img
-                                        src={profileImage}
-                                        alt="Profile"
-                                        className="w-full h-full object-cover rounded-full"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full bg-gray-400 text-white flex items-center justify-center rounded-full font-bold">
-                                        {getInitials(displayName)}
-                                    </div>
-                                )}
+                                {/* Logo Image */}
+                                <img
+                                    src="./src/assets/logo.png" // Path to the logo image
+                                    alt="Logo"
+                                    className="w-full h-full object-cover rounded-full"
+                                />
                             </div>
 
                             {open && (
                                 <div className="flex flex-col">
-                                    <h2 className="text-white font-semibold text-md">Employee</h2>
-                                    <h1 className="text-white font-bold text-xl">{displayName}</h1>
+                                    <h1 className="text-white font-bold text-[17px]">{displayName}</h1> 
                                 </div>
                             )}
                         </div>
@@ -143,12 +129,19 @@ const EmployeeSidebar = () => {
                                                 }`}
                                             />
                                         )}
-
                                     </Link>
 
                                     {/* Submenus for Product and Report */}
                                     {activeMenu === menu.title && Submenus[menu.title] && (
-                                        <div className="ml-6 pl-4 mt-2 space-y-2">
+                                        <div
+                                            className={`ml-6 pl-4 mt-2 space-y-2 transition-all duration-300 ease-in-out ${
+                                                open
+                                                    ? ""
+                                                    : menu.title === "Product"
+                                                    ? "absolute left-[65px] top-[140px] w-[210px] p-2 bg-[#374151] border rounded-md shadow-lg"
+                                                    : "absolute left-[65px] top-[190px] w-[200px] p-2 bg-[#374151] border rounded-md shadow-lg"
+                                            }`}
+                                        >
                                             {Submenus[menu.title].map((submenu, subIndex) => (
                                                 <Link
                                                     key={subIndex}

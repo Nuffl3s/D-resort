@@ -64,14 +64,13 @@ const AdminAddUnit = () => {
 
 
     return (
-        
-        <div className="flex dark:bg-[#1c1e21]">
+        <div className="flex dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
             <div className="p-6 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">ADD UNIT</h1>
 
                 <div className="mt-10">
-                    <form onSubmit={handleSubmit} className=" bg-white p-8 shadow rounded dark:bg-[#303030]">
+                    <form onSubmit={handleSubmit} className=" bg-white p-8 shadow rounded dark:bg-[#374151]">
                         <div className="flex justify-between mb-5">
                             <h2 className="text-2xl font-bold uppercase dark:text-[#e7e6e6]">Add New {type}</h2>
 
@@ -89,7 +88,7 @@ const AdminAddUnit = () => {
                             <select
                                 value={type}
                                 onChange={(e) => setType(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 dark:border-gray-400 dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                             >
                                 <option value="Cottage">Cottage</option>
                                 <option value="Lodge">Lodge</option>
@@ -104,7 +103,7 @@ const AdminAddUnit = () => {
                                 value={capacity}
                                 onChange={(e) => setCapacity(e.target.value)}
                                 placeholder="Enter capacity"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-gray-400 dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                             />
                         </div>
 
@@ -118,7 +117,7 @@ const AdminAddUnit = () => {
                                 multiple
                                 accept="image/*"
                                 onChange={handleFileUpload}
-                                className="mt-1 block w-full text-gray-600 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                className="mt-1 block w-full text-gray-600 dark:border dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                             />
                             <p className="text-xs text-gray-500 dark:text-[#e7e6e6]">Selected: {images.length} file(s)</p>
                         </div>
@@ -137,7 +136,7 @@ const AdminAddUnit = () => {
                                             handlePriceChange('time_6am_6pm', e.target.value)
                                         }
                                         placeholder="Enter price"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-gray-400 dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
                                 <div className="mb-4">
@@ -151,7 +150,7 @@ const AdminAddUnit = () => {
                                             handlePriceChange('time_6am_12mn', e.target.value)
                                         }
                                         placeholder="Enter price"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-gray-400 dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
                                 <div className="mb-4">
@@ -165,7 +164,7 @@ const AdminAddUnit = () => {
                                             handlePriceChange('time_6pm_6am', e.target.value)
                                         }
                                         placeholder="Enter price"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-gray-400 dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
                                 <div className="mb-4">
@@ -179,7 +178,7 @@ const AdminAddUnit = () => {
                                             handlePriceChange('time_24hrs', e.target.value)
                                         }
                                         placeholder="Enter price"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-gray-400 dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div> 
                             </>

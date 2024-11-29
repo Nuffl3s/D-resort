@@ -1,184 +1,153 @@
-import { useState, useEffect } from 'react';
+import { useState } from "react";
+import { HiMenuAlt3 } from "react-icons/hi"; // Importing HiMenuAlt3
+import { Link } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
 
-// eslint-disable-next-line react/prop-types
-function AdminSidebar({ displayName: propDisplayName }) {
+const AdminSidebar = () => {
     const navigate = useNavigate();
-    const [open, setOpen] = useState(
-        JSON.parse(localStorage.getItem("sidebarOpen")) ?? true
-    );
-    const [activeMenu, setActiveMenu] = useState(
-        localStorage.getItem("activeMenu") || "dashboard"
-    );
-    const [profileImage, setProfileImage] = useState(null);
-    const [hoveredMenu, setHoveredMenu] = useState(null);
 
-    // State for displayName
-    const [displayName, setDisplayName] = useState(
-        propDisplayName || localStorage.getItem("displayName") || "Admin"
-    );
+    const menus = [
+        { title: "Dashboard", src: "src/assets/dashboard.png", path: "/AdminDash" },
+        { title: "Employee Management", src: "src/assets/add.png", path: "/AdminManagement" },
+        { title: "Attendance", src: "src/assets/calendar.png", path: "/AdminAttendance" },
+        { title: "Work Schedules", src: "src/assets/clock.png", path: "/AdminSchedule" },
+        { title: "Payroll", src: "src/assets/money.png", path: "/AdminPayroll" },
+        { title: "Add Unit", src: "src/assets/add-unit.png", path: "/AdminAddUnit" },
+        { title: "Report", src: "src/assets/report.png", path: "/AdminReport" },
+        {
+            title: "Audit Log",
+            src: "src/assets/magnifying.png",
+            path: "/AuditLog",
+            isSeparated: true, // Flag to show the line above and below
+        },
+        { title: "Settings", src: "src/assets/settings.png", path: "/Settings" },
+        { title: "Logout", src: "src/assets/logout.png", path: "/" },
+    ];
 
-    // Function to extract initials from the display name
+    const [open, setOpen] = useState(true); // State to toggle sidebar visibility
+
+    const profileImage = null; // Replace with your actual profile image URL
+    const displayName = "John Doe"; // Replace with actual user's display name
+
     const getInitials = (name) => {
-        if (!name) return ''; // Handle null, undefined, or empty strings
-        const nameParts = name.trim().split(' ').filter(Boolean); // Split and filter empty parts
-        const initials = nameParts
-            .map(part => part.charAt(0).toUpperCase())
-            .join('');
-        return initials;
-    };
-
-    // Fetch profile picture and displayName from localStorage on mount
-    useEffect(() => {
-        const savedProfilePicture = localStorage.getItem("profilePicture");
-        if (savedProfilePicture) {
-            setProfileImage(savedProfilePicture);
-        }
-
-        const savedDisplayName = localStorage.getItem("displayName");
-        if (!propDisplayName && savedDisplayName) {
-            setDisplayName(savedDisplayName);
-        }
-
-        // Function to handle localStorage changes
-        const handleStorageChange = (event) => {
-            if (event.key === "profilePicture") {
-                const updatedProfilePicture = event.newValue;
-                setProfileImage(updatedProfilePicture || null);
-            }
-            if (event.key === "displayName") {
-                setDisplayName(event.newValue || "Admin");
-            }
-        };
-
-        // Add event listener for localStorage changes across tabs
-        window.addEventListener("storage", handleStorageChange);
-
-        // Cleanup event listener when component unmounts
-        return () => {
-            window.removeEventListener("storage", handleStorageChange);
-        };
-    }, [propDisplayName]); // Run on mount and when propDisplayName changes
-
-    const toggleSidebar = () => {
-        const newState = !open;
-        setOpen(newState);
-        localStorage.setItem("sidebarOpen", JSON.stringify(newState));
-    };
-
-    const handleMenuClick = (src, path) => {
-        setActiveMenu(path);
-        localStorage.setItem("activeMenu", path);
-        navigate(`/${path}`);
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem("access");
-        localStorage.removeItem("refresh");
-        localStorage.removeItem("user_role");
-        navigate('/');
+        return name
+            .split(" ")
+            .map((word) => word.charAt(0).toUpperCase())
+            .join("");
     };
 
     const handleTempoBtn = () => {
         navigate('/EmployeeDash');
     };
 
-    const Menus = [
-        { title: "Dashboard", src: "dashboard", path: "AdminDash" },
-        { title: "Employee Management", src: "add", path: "AdminManagement" },
-        { title: "Attendance", src: "calendar", path: "AdminAttendance" },
-        { title: "Work Schedules", src: "clock", path: "AdminSchedule" },
-        { title: "Payroll", src: "money", path: "AdminPayroll" },
-        { title: "Add Unit", src: "add-unit", path: "AdminAddUnit" },
-        { title: "Report", src: "report", path: "AdminReport" },
-        { title: "Audit Log", src: "magnifying", path: "AuditLog", isSeparated: true },
-        { title: "Settings", src: "settings", path: "Settings" },
-    ];
-
     return (
-        <div className="min-h-screen flex flex-row bg-white">
+        <section className="min-h-screen flex flex-row bg-white">
+            {/* Sidebar */}
             <div
-                className={`${
-                    open ? "w-[300px]" : "w-[110px]"
-                } transition-all duration-300 h-screen bg-white relative shadow-lg dark:bg-[#1a1a1a]`}
+                className={`bg-[#374151] shadow-lg min-h-screen fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out ${open ? "w-[300px]" : "w-[85px]"}`}
             >
-                <img
-                    src="./src/assets/control.png"
-                    alt="Toggle Sidebar"
-                    className={`absolute cursor-pointer rounded-full right-[-13px] top-[50px] w-7 ${!open && "rotate-180"}`}
-                    onClick={toggleSidebar}
-                />
-                <div className="flex gap-x-5 items-center bg-gradient-to-r from-[#1089D3] to-[#12B1D1] w-full p-5 shadow-md">
-                    <div className="w-[70px] h-[70px] rounded-full bg-white flex justify-center items-center">
-                        {/* Display either profile image or initials */}
-                        {profileImage ? (
-                            <img
-                                src={profileImage}
-                                alt="Profile"
-                                className="w-full h-full object-cover rounded-full"
-                            />
-                        ) : (
-                            <div className="w-full h-full bg-gray-400 text-white flex items-center justify-center rounded-full font-bold">
-                                {getInitials(displayName)}
-                            </div>
-                        )}
-                    </div>
-                    {open && (
-                        <div className="flex flex-col">
-                            <h2 className="text-white font-semibold text-md">Admin</h2>
-                            <h1 className="text-white font-bold text-xl">{displayName}</h1>
-                        </div>
-                    )}
-                </div>
-
-                <ul className="flex flex-col pt-6 p-8 mt-3">
-                    {Menus.map((menu, index) => (
-                        <li
-                            key={index}
-                            className={`mb-2 ${menu.isSeparated ? "border-t border-gray-300 mt-4 pt-4" : ""}`}
-                            onMouseEnter={() => setHoveredMenu(menu.path)}
-                            onMouseLeave={() => setHoveredMenu(null)}
-                        >
-                            <button
-                                onClick={() => handleMenuClick(menu.src, menu.path)}
-                                className={`menu-item ${activeMenu === menu.path ? "w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white" : ""} ${hoveredMenu === menu.path ? "w-full hover:bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:text-[#fafafa] dark:hover:text-[#fafafa]" : ""} rounded-md flex items-center gap-x-2 dark:text-[#fafafa] `}
+                 <div className="w-full">
+                    {/* Menu Toggle and Profile */}
+                    <div className="py-3 flex justify-between items-center border-b w-full border-gray-400">
+                        <div className="flex items-center gap-3 ml-3">
+                            <div
+                                className={`transition-all duration-300 ease-in-out bg-white rounded-full ${
+                                    open ? "w-[70px] h-[70px]" : "w-[40px] h-[40px]"
+                                }`}
+                                
                             >
-                                <span className="inline-flex items-center justify-center h-12 w-12 text-lg">
+                                {/* Display either profile image or initials */}
+                                {profileImage ? (
                                     <img
-                                        src={`./src/assets/${menu.src}.png`}
-                                        alt={menu.title}
-                                        className={`w-5 h-5 dark:invert ${
-                                            hoveredMenu === menu.path || activeMenu === menu.path ? "invert" : ""
-                                        }`}
+                                    src={profileImage}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover rounded-full"
                                     />
-                                </span>
-                            
-                                {open && <span className="text-md font-semibold">{menu.title}</span>}
-                            </button>
-                        </li>
-                    ))}
+                                ) : (
+                                    <div className="w-full h-full bg-gray-400 text-white flex items-center justify-center rounded-full font-bold">
+                                    {getInitials(displayName)}
+                                    </div>
+                                )}
+                            </div>
 
-                    <div className="flex w-full justify-center relative top-[200px]">
-                        <div onClick={handleLogout} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-gradient-to-r from-[#1089D3] to-[#12B1D1] hover:to-[#0f8bb1] cursor-pointer">
-                            <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
                             {open && (
-                                <button className="rounded-md text-white font-sans font-semibold tracking-wide cursor-pointer">Logout</button>
+                                <div className="flex flex-col">
+                                    <h2 className="text-white font-semibold text-md">Admin</h2>
+                                    <h1 className="text-white font-bold text-xl">{displayName}</h1>
+                                </div>
                             )}
                         </div>
+                        
+                        {/* Menu Toggle Button */}
+                        <HiMenuAlt3
+                            size={26}
+                            className="cursor-pointer text-white"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setOpen(!open);
+                                console.log("Sidebar toggled explicitly:", !open);
+                            }}
+                        />
                     </div>
 
-                    <div className="flex w-full justify-center relative top-[100px]">
-                        <div onClick={handleTempoBtn} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
-                            <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
-                            {open && (
-                                <button className="rounded-md text-white font-semibold tracking-wide cursor-pointer">Tempo to Employee</button>
-                            )}
+                    {/* Menu Items */}
+                    <div className="mt-4 flex flex-col gap-4 relative p-6 justify-center">
+                        {menus.map((menu, i) => (
+                            <div key={i}>
+                                {/* Custom Line Separator Between Report and Audit Log */}
+                                {menu.isSeparated && (
+                                    <div className="border-t border-gray-400 my-4"></div>
+                                )}
+
+                                <Link
+                                    to={menu.path}
+                                    className={`group flex items-center text-white text-md gap-3.5 font-medium p-2 hover:bg-gray-500 dark:hover:text-[#fafafa] hover:text-white rounded-md relative`}
+                                >
+                                    <img
+                                        src={menu.src}
+                                        alt={menu.title}
+                                        className="w-5 h-5 transition-colors duration-300 invert"
+                                    />
+                                    <h2
+                                        style={{
+                                            transitionDelay: `${(i + 1) * 100}ms`,
+                                        }}
+                                        className={`whitespace-pre ${
+                                            open ? "transition-all duration-500 ease-in-out" : ""
+                                        } ${!open ? "opacity-0 translate-x-28 overflow-hidden" : ""}`}
+                                    >
+                                        {menu.title}
+                                    </h2>
+
+                                    <h2
+                                        className={`${
+                                            open && "hidden"
+                                        } z-50 absolute left-48 bg-white font-semibold whitespace-pre text-gray-900 rounded-md drop-shadow-lg px-0 py-0 w-0 overflow-hidden group-hover:px-2 group-hover:py-1 group-hover:left-[55px] group-hover:duration-300 group-hover:w-fit`}
+                                    >
+                                        {menu.title}
+                                    </h2>
+                                </Link>
+                            </div>
+                        ))}
+
+                        <div className="flex w-full justify-center relative top-[10px]">
+                            <div onClick={handleTempoBtn} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
+                                <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
+                                {open && (
+                                    <button className="rounded-md text-white font-semibold tracking-wide cursor-pointer">Tempo to Employee</button>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </ul>
+                </div>
             </div>
-        </div>
+
+            {/* Main Content */}
+            <div className={`flex-grow transition-all duration-300 ease-in-out ${open ? "ml-[300px]" : "ml-[85px]"}`}> {/* Apply transition here */}
+                {/* Place your main content here */}
+            </div>
+        </section>
     );
-}
+};
 
 export default AdminSidebar;

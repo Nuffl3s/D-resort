@@ -103,18 +103,18 @@ function Settings() {
     };
 
     return (
-        <div className={`flex bg-white dark:bg-[#1c1e21]`}>
+        <div className={`flex bg-gray-100 dark:bg-[#111827]`}>
             <AdminSidebar profilePicture={profilePicture} displayName={displayName} />
 
             <div className="p-6 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-6 text-black dark:text-[#e7e6e6]">SETTINGS</h1>
 
                 <div className="space-y-6">
-                    <div className="p-5 rounded-lg shadow-lg bg-white dark:bg-[#303030]">
+                    <div className="p-5 rounded-lg shadow-lg bg-white dark:bg-[#374151]">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center">
                                 {profilePicture === '/path/to/default-profile-picture.jpg' ? (
-                                    <div className="w-20 h-20 flex items-center justify-center rounded-full font-bold text-black bg-gray-300 dark:text-[#e7e6e6] dark:bg-gray-400">
+                                    <div className="w-20 h-20 flex items-center justify-center rounded-full font-bold text-black bg-gray-300 dark:text-[#e7e6e6] dark:bg-[gray-400]">
                                         {getInitials(displayName)}
                                     </div>
                                 ) : (
@@ -132,7 +132,7 @@ function Settings() {
                                         onClick={toggleDropdown}
                                     />
                                     {isDropdownOpen && (
-                                        <div className="absolute top-[35px] left-[5px] bg-white dark:bg-[#303030] shadow-lg rounded-lg w-[200px] p-2">
+                                        <div className="absolute top-[35px] left-[5px] bg-white dark:bg-[#374151] dark:border-gray-600 dark:border bo shadow-lg rounded-lg w-[200px] p-2">
                                             <ul>
                                                 <li
                                                     className="cursor-pointer text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 p-2 rounded"
@@ -168,7 +168,7 @@ function Settings() {
                             </button>
                         </div>
 
-                        <div className="p-6 rounded-md bg-gray-100 dark:bg-[#676767]">
+                        <div className="p-6 rounded-md bg-gray-100 dark:bg-[#1f2937]">
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
                                     <div>
@@ -201,9 +201,9 @@ function Settings() {
                     <Theme isDarkMode={isDarkMode} onToggleTheme={toggleDarkMode}/>
 
                     {/* Change Password Section */}
-                    <div className="p-5 rounded-lg shadow-lg dark:bg-[#303030] bg-white">
+                    <div className="p-5 rounded-lg shadow-lg dark:bg-[#374151] bg-white">
                         <h2 className="text-2xl font-semibold mb-4 dark:text-[#e7e6e6] text-black">Change Password</h2>
-                        <div className="rounded-md space-y-4 p-6 dark:bg-[#676767] bg-gray-100">
+                        <div className="rounded-md space-y-4 p-6 dark:bg-[#1f2937] bg-gray-100">
                             {/* Select Account */}
                             <div>
                                 <label
@@ -214,7 +214,7 @@ function Settings() {
                                 </label>
                                 <select
                                     id="select-account"
-                                    className="w-full border rounded-lg p-2 dark:bg-[#676767] dark:text-[#e7e6e6] dark:placeholder-white bg-gray-100 text-black border-gray-400 dark:border-[#bebdbd]"
+                                    className="w-full border rounded-lg p-2 dark:bg-[#1f2937] dark:text-[#e7e6e6] dark:placeholder-white bg-gray-100 text-black border-gray-400 dark:border-gray-500"
                                 >
                                     <option value="personal">Select</option>
                                     <option value="work">Admin</option>
@@ -233,7 +233,7 @@ function Settings() {
                                 <input
                                     type="password"
                                     id="current-password"
-                                    className="w-full border rounded-lg p-2 dark:bg-[#676767] dark:text-[#e7e6e6] dark:placeholder-white bg-gray-100 text-black border-gray-400 dark:border-[#bebdbd]"
+                                    className="w-full border rounded-lg p-2 dark:bg-[#1f2937] dark:text-[#e7e6e6] dark:placeholder-white bg-gray-100 text-black border-gray-400 dark:border-gray-500"
                                     placeholder="Enter current password"
                                 />
                             </div>
@@ -249,7 +249,7 @@ function Settings() {
                                 <input
                                     type="password"
                                     id="new-password"
-                                    className="w-full border rounded-lg p-2 dark:bg-[#676767] dark:text-[#e7e6e6] dark:placeholder-white bg-gray-100 text-black border-gray-400 dark:border-[#bebdbd]"
+                                    className="w-full border rounded-lg p-2 dark:bg-[#1f2937] dark:text-[#e7e6e6] dark:placeholder-white bg-gray-100 text-black border-gray-400 dark:border-gray-500"
                                     placeholder="Enter new password"
                                 />
                             </div>
@@ -265,7 +265,7 @@ function Settings() {
                                 <input
                                     type="password"
                                     id="confirm-password"
-                                    className="w-full border rounded-lg p-2 dark:bg-[#676767] dark:text-[#e7e6e6] dark:placeholder-white bg-gray-100 text-black border-gray-400 dark:border-[#bebdbd]"
+                                    className="w-full border rounded-lg p-2 dark:bg-[#1f2937] dark:text-[#e7e6e6] dark:placeholder-white bg-gray-100 text-black border-gray-400 dark:border-gray-500"
                                     placeholder="Confirm new password"
                                 />
                             </div>
@@ -314,7 +314,7 @@ function Settings() {
             {/* Edit Modal */}
             {showEditModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="p-6 rounded-lg shadow-lg w-[400px] dark:bg-[#303030] bg-white">
+                    <div className="p-6 rounded-lg shadow-lg w-[400px] dark:bg-[#1f2937] bg-white">
                         <h2 className="text-xl font-semibold mb-4 dark:text-[#e7e6e6] text-black">Edit Profile</h2>
 
                         {/* Profile Picture Input */}
@@ -324,7 +324,7 @@ function Settings() {
                                 type="file"
                                 accept="image/*"
                                 onChange={handleProfileImageChange}
-                                className="block w-full text-sm text-gray-900 border dark:border-gray-600 dark:bg-[#676767] bg-gray-50 border-gray-300 rounded-lg cursor-pointer focus:outline-none"
+                                className="block w-full text-sm text-gray-900 border dark:border-gray-600 dark:bg-[#1f2937] bg-gray-50 border-gray-300 rounded-lg cursor-pointer focus:outline-none"
                             />
                         </div>
 
@@ -335,7 +335,7 @@ function Settings() {
                                 type="text"
                                 value={displayName}
                                 onChange={handleDisplayNameChange}
-                                className="w-full p-2 border dark:bg-[#676767] dark:text-[#e7e6e6] bg-gray-100 text-black border-gray-800 rounded-lg"
+                                className="w-full p-2 border dark:bg-[#1f2937] dark:text-[#e7e6e6] bg-gray-100 text-black border-gray-400 rounded-lg"
                             />
                         </div>
 
@@ -346,7 +346,7 @@ function Settings() {
                                 type="text"
                                 value={username}
                                 onChange={handleUsernameChange}
-                                className="w-full p-2 border dark:bg-[#676767] dark:text-[#e7e6e6] bg-gray-100 text-black border-gray-800 rounded-lg"
+                                className="w-full p-2 border dark:bg-[#1f2937] dark:text-[#e7e6e6] bg-gray-100 text-black border-gray-400 rounded-lg"
                             />
                         </div>
 

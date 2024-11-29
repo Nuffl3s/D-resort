@@ -212,19 +212,19 @@ function AdminPayroll() {
     }, []);
 
     return (
-        <div className="flex h-screen overflow-hidden bg-white dark:bg-[#1c1e21]">
+        <div className="flex h-screen overflow-hidden dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
             <div id="report" className="p-7 flex-1 h-screen overflow-hidden">
                 <h1 className="text-4xl font-bold mb-5 dark:text-[#e7e6e6]">PAYROLL</h1>
                 <div className="flex space-x-5">
-                    <div className="bg-white rounded-md shadow p-6 w-full h-[830px] dark:bg-[#303030] dark:shadow">
+                    <div className="bg-white rounded-md shadow p-6 w-full h-[830px] dark:bg-[#374151] dark:shadow">
                         <div className="flex justify-between border-b mb-4 pb-3">
                             <h1 className="font-semibold text-[18px] dark:text-[#e7e6e6]">Payroll List</h1>
                             <div className="flex space-x-2 items-center">
                                 <div className="relative">
                                     <button
                                         onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-                                        className="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none font-medium rounded-md text-sm px-3 p-2  dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none font-medium rounded-md text-sm px-3 p-2  dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                         type="button"
                                     >
                                         {sortOption || "Sort By"}
@@ -269,7 +269,7 @@ function AdminPayroll() {
                                         id="table-search"
                                         value={searchTerm}
                                         onChange={handleSearch}
-                                        className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-md w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-md w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                         placeholder="Search by name"
                                     />
                                 </div>
@@ -278,7 +278,7 @@ function AdminPayroll() {
 
                         <div className="overflow-y-auto max-h-[670px] mt-5">
                             <table className="w-full text-sm text-left text-gray-500">
-                                <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#424242] dark:text-[#e7e6e6]">
+                                <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                     <tr>
                                         <th scope="col" className="p-4">
                                             <div className="flex items-center">
@@ -335,13 +335,13 @@ function AdminPayroll() {
                         </div>
                     </div>
 
-                    <div className="rounded-md bg-white shadow p-6 w-full dark:bg-[#303030] dark:shadow">
+                    <div className="rounded-md bg-white shadow p-6 w-full dark:bg-[#374151] dark:shadow">
                         <div className="shadow p-6 rounded-md">
                             <div className="mb-4">
                             <select
                                 value={selectedEmployee}
                                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                                className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                             >
                                 <option value="" disabled>Select Employee</option>
                                 {employees.map(employee => (
@@ -359,7 +359,7 @@ function AdminPayroll() {
                                         type="date"
                                         value={payrollRange.from}
                                         onChange={(e) => setPayrollRange({ ...payrollRange, from: e.target.value })}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
                                 <div className="w-full space-y-2">
@@ -368,7 +368,7 @@ function AdminPayroll() {
                                         type="date"
                                         value={payrollRange.to}
                                         onChange={(e) => setPayrollRange({ ...payrollRange, to: e.target.value })}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
 
@@ -377,7 +377,7 @@ function AdminPayroll() {
                                     <select
                                         value={payrollType}
                                         onChange={(e) => setPayrollType(e.target.value)}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     >
                                         <option value="weekly">Weekly</option>
                                         <option value="monthly">Monthly</option>
@@ -392,7 +392,7 @@ function AdminPayroll() {
                                         type="number"
                                         value={totalHours}
                                         onChange={(e) => setTotalHours(Number(e.target.value))}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
 
@@ -402,7 +402,7 @@ function AdminPayroll() {
                                         type="number"
                                         value={hourlyRate}
                                         onChange={(e) => setHourlyRate(Number(e.target.value))}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-[#bebdbd] dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                                     />
                                 </div>
                             </div>
@@ -410,14 +410,14 @@ function AdminPayroll() {
                             <div className="flex w-full justify-end mt-4">
                                 <button 
                                     onClick={handleCalculate}
-                                    className="bg-[#12B1D1] hover:bg-[#51b5da] text-white w-[90px] p-2 rounded-md"
+                                    className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white w-[90px] p-2 rounded-md"
                                 >
                                     Calculate
                                 </button>
                             </div>
                         </div>
 
-                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 p-6 h-[430px] dark:bg-[#424242]">
+                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 p-6 h-[430px] dark:bg-[#1f2937]">
                             <div className="flex justify-end pb-3">
                                 <button onClick={toggleDropdown}>
                                     <img src="./src/assets/option.png" alt="Options" className="w-4 h-4 dark:invert" />
@@ -432,9 +432,9 @@ function AdminPayroll() {
                                 )}
                             </div>
 
-                            <div className="shadow p-4 h-[280px] dark:bg-[#5a5b5b] rounded-md">
+                            <div className="shadow p-4 h-[280px] dark:bg-[#374151] rounded-md">
                                 <table className="w-full text-sm text-left text-gray-500">
-                                    <caption className="p-5 text-[20px] font-semibold text-gray-900 bg-white dark:bg-[#5a5b5b] dark:text-[#e7e6e6]">
+                                    <caption className="p-5 text-[20px] font-semibold text-gray-900 bg-white dark:bg-[#374151] dark:text-[#e7e6e6]">
                                         Payroll Form
                                         <p className="mt-5 text-[16px] text-left font-normal text-gray-500 dark:text-[#f3f2f2]">
                                             Payroll Range: {`${formatDate(payrollRange.from)} to ${formatDate(payrollRange.to)}`}
@@ -443,7 +443,7 @@ function AdminPayroll() {
                                             Payroll Type: {payrollType}
                                         </p>
                                     </caption>
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#424242] dark:text-[#e7e6e6]">
+                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                         <tr>
                                             <th scope="col" className="px-6 py-3">Name</th>
                                             <th scope="col" className="px-6 py-3">Hours</th>
@@ -467,7 +467,7 @@ function AdminPayroll() {
                             <div className="flex w-full mt-5 justify-end">
                                 <button 
                                     onClick={handleDone}  // Now updating status when 'Done' is clicked
-                                    className="bg-[#12B1D1] hover:bg-[#51b5da] text-white p-2 w-[80px] rounded-md">
+                                    className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white p-2 w-[80px] rounded-md">
                                     Done
                                 </button>
                             </div>

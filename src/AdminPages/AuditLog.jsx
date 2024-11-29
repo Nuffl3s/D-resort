@@ -89,30 +89,33 @@ const AuditLog = () => {
                 <div className="spinner-border animate-spin inline-block w-7 h-7 border-4 rounded-full border-t-[#70b8d3] border-gray-300"></div>
             </div>
         );
-        if (error) return <p className="text-red-600 flex justify-center items-center">Error: {error}</p>;
-        if (filteredLogs.length === 0) return <p>No logs match the filters.</p>;
+        if (error) return <p className="text-red-600 flex justify-center items-center ">Error: {error}</p>;
+        if (filteredLogs.length === 0) return <p className="dark:text-[#e7e6e6]">No logs match the filters.</p>;
 
         return (
-            <table className="min-w-full table-auto border-collapse">
-                <thead>
-                    <tr className="border-b">
-                        <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Username</th>
-                        <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Action</th>
-                        <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Timestamp</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredLogs.map((log) => (
-                        <tr key={log.id} className="border-b">
-                            <td className="px-4 py-2 text-gray-800 dark:text-[#e7e6e6]">{log.username}</td>
-                            <td className="px-4 py-2 text-gray-800 dark:text-[#e7e6e6]">{log.action}</td>
-                            <td className="px-4 py-2 text-gray-600 dark:text-[#e7e6e6]">
-                                {moment(log.timestamp).format('YYYY-MM-DD h:mm A')}
-                            </td>
+            <div className='dark:bg-[#374151] p-6 bg-gray-100 shadow-lg rounded-lg'>
+                <table className="min-w-full table-auto border-collapse">
+                    <thead>
+                        <tr className="border-b">
+                            <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Username</th>
+                            <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Action</th>
+                            <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Timestamp</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {filteredLogs.map((log) => (
+                            <tr key={log.id} className="border-b">
+                                <td className="px-4 py-2 text-gray-800 dark:text-[#e7e6e6]">{log.username}</td>
+                                <td className="px-4 py-2 text-gray-800 dark:text-[#e7e6e6]">{log.action}</td>
+                                <td className="px-4 py-2 text-gray-600 dark:text-[#e7e6e6]">
+                                    {moment(log.timestamp).format('YYYY-MM-DD h:mm A')}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+           
         );
     };
     
@@ -121,7 +124,7 @@ const AuditLog = () => {
     }, []);
 
     return (
-        <div className="flex bg-white dark:bg-[#212121]">
+        <div className="flex bg-white dark:bg-[#111827]">
             <AdminSidebar />
 
             {/* Main Content */}
@@ -147,7 +150,7 @@ const AuditLog = () => {
                             placeholder="Search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 border border-gray-300 rounded-lg p-2 w-full dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd] placeholder:text-gray-200"
+                            className="pl-10 border border-gray-300 rounded-lg p-2 w-full dark:bg-[#111827] dark:text-[#e7e6e6] dark:border-gray-400 placeholder:text-gray-200"
                         />
                     </div>
                     <div className="flex justify-end w-full gap-3">
@@ -155,7 +158,7 @@ const AuditLog = () => {
                         <select
                             value={filterBy}
                             onChange={(e) => setFilterBy(e.target.value)}
-                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#111827] dark:text-[#e7e6e6] dark:border-gray-400"
                         >
                             <option value="all">All</option>
                             <option value="username">Username</option>
@@ -166,13 +169,13 @@ const AuditLog = () => {
                             type="date"
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
-                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#111827] dark:text-[#e7e6e6] dark:border-gray-400"
                         />
                         <input
                             type="date"
                             value={dateTo}
                             onChange={(e) => setDateTo(e.target.value)}
-                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#111827] dark:text-[#e7e6e6] dark:border-gray-400"
                         />
                     </div>
                 </div>
@@ -188,7 +191,7 @@ const AuditLog = () => {
                             <button
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
-                                className={`px-4 py-2 ${isSelected ? `${activeColor} font-semibold border-b-2` : 'text-gray-700 hover:text-[#70b8d3] dark:text-[#e7e6e6]'}`}
+                                className={`px-4 py-2 ${isSelected ? `${activeColor} font-semibold border-b-2` : 'text-gray-700 hover:text-[#70b8d3] dark:text-[#e7e6e6] dark:hover:text-[#70b8d3]'}`}
                             >
                                 {category}
                             </button>

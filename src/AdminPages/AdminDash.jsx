@@ -83,7 +83,7 @@ function AdminDash () {
     }, []);
 
     return (
-        <div className="flex dark:bg-[#1c1e21]">
+        <div className="flex dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
             <div id="dashboard" className="p-6 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">DASHBOARD</h1>
@@ -135,7 +135,7 @@ function AdminDash () {
                             </div>  
                         </div>
 
-                        <div className="p-6 w-full mx-auto mt-8 bg-white shadow-lg rounded-lg border-gray-200 mb-4 min-h-[610px] dark:bg-[#303030]">
+                        <div className="p-6 w-full mx-auto mt-8 bg-white shadow-lg rounded-lg border-gray-200 mb-4 min-h-[610px] dark:bg-[#374151]">
                             <div className="flex justify-between">
                                 <h1 className="text-xl font-bold text-start mb-10 dark:text-[#e7e6e6]">Sales Summary</h1>
                                 <button className="bg-[#70b8d3] hover:bg-[#09B0EF] mb-10 px-2 text-white text-sm rounded-[5px]">View all</button>
@@ -145,7 +145,7 @@ function AdminDash () {
                                 <div className="relative">
                                     <div className="max-h-[500px] overflow-y-auto table-scrollbar-hide">
                                         <table className="min-w-full shadow rounded-lg border-collapse">
-                                            <thead className="sticky text-gray-600 top-0 bg-white dark:bg-[#424242] dark:text-[#e7e6e6]">
+                                            <thead className="sticky text-gray-600 top-0 bg-white dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                                 <tr className="text-center">
                                                     <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Product Name</th>
                                                     <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Date</th>
@@ -179,7 +179,7 @@ function AdminDash () {
                     </div>  
                         
                     <div className="flex-col mr-2 ml-4">
-                        <div className="p-6 bg-white shadow-lg rounded-lg border-gray-200 mb-4 dark:bg-[#303030] dark:text-[#e7e6e6]">
+                        <div className="p-6 bg-white shadow-lg rounded-lg border-gray-200 mb-4 dark:bg-[#374151] dark:text-[#e7e6e6]">
                             <h2 className="text-2xl font-semibold text-gray-800 text-center dark:text-[#e7e6e6]">Calendar</h2>
                             <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>                                
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -201,7 +201,7 @@ function AdminDash () {
                         </div>
 
                         {/* Attendance Tracker */}
-                        <div className="p-6 w-[500px] bg-white shadow-lg rounded-lg border-gray-200 dark:bg-[#303030]">
+                        <div className="p-6 w-[500px] bg-white shadow-lg rounded-lg border-gray-200 dark:bg-[#374151]">
                             <div className="flex items-center mb-4 border-b pb-2 border-gray-200 justify-between">
                                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-[#e7e6e6]">Attendance Tracker</h2>
                                 <div className="text-gray-600 text-xl font-mono dark:text-[#e7e6e6]">
@@ -226,7 +226,7 @@ function AdminDash () {
 
                             {/* Attendance Table */}
                             <table className="min-w-full bg-white rounded-lg">
-                                <thead className="bg-gray-100 text-gray-600 dark:bg-[#424242] dark:text-[#e7e6e6]">
+                                <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                     <tr>
                                         <th className="px-5 py-3 text-left text-xs font-semibold  uppercase tracking-wider">
                                             #
@@ -247,7 +247,7 @@ function AdminDash () {
                                 </thead>
                                 <tbody>
                                     {filteredAttendanceData.map((record, index) => (
-                                        <tr key={record.id} className="hover:bg-gray-50 dark:bg-[#676767] dark:text-[#e7e6e6]">
+                                        <tr key={record.id} className="hover:bg-gray-50 dark:bg-[#66696e] dark:text-[#e7e6e6]">
                                             <td className="px-5 py-5 border-gray-200  text-sm">
                                                 {index + 1}
                                             </td>

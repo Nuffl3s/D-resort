@@ -8,9 +8,9 @@ function Theme({ isDarkMode, onToggleTheme }) {
     };
     
     return (
-        <div className="p-5 rounded-lg shadow-lg bg-white dark:bg-[#303030]">
+        <div className="p-5 rounded-lg shadow-lg bg-white dark:bg-[#374151]">
             <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Theme</h2>
-            <div className="rounded-md space-y-2 p-6 bg-gray-100 dark:bg-[#676767]">
+            <div className="rounded-md space-y-2 p-6 bg-gray-100 dark:bg-[#1f2937]">
                 <label className="flex items-center text-gray-800 dark:text-white">
                     <input
                         type="radio"

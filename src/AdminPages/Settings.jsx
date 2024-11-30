@@ -16,10 +16,10 @@ function Settings() {
     useEffect(() => {
         const savedTheme = localStorage.getItem('isDarkMode');
         if (savedTheme) {
-            setIsDarkMode(JSON.parse(savedTheme));
+            setIsDarkMode(JSON.parse(savedTheme)); // Apply saved theme
         }
     }, []);
-
+    
     useEffect(() => {
         const savedProfilePicture = localStorage.getItem('profilePicture');
         const savedDisplayName = localStorage.getItem('displayName');

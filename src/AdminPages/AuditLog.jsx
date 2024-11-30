@@ -93,7 +93,7 @@ const AuditLog = () => {
         if (filteredLogs.length === 0) return <p className="dark:text-[#e7e6e6]">No logs match the filters.</p>;
 
         return (
-            <div className='dark:bg-[#374151] p-6 bg-gray-100 shadow-lg rounded-lg'>
+            <div className='dark:bg-[#374151] p-6 bg-gray-50 shadow-lg rounded-lg'>
                 <table className="min-w-full table-auto border-collapse">
                     <thead>
                         <tr className="border-b">
@@ -124,7 +124,7 @@ const AuditLog = () => {
     }, []);
 
     return (
-        <div className="flex bg-white dark:bg-[#111827]">
+        <div className="flex bg-gray-100 dark:bg-[#111827]">
             <AdminSidebar />
 
             {/* Main Content */}

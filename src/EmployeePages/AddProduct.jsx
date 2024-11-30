@@ -202,13 +202,13 @@ function AddProduct() {
 
 
     return (
-        <div className="flex">
+        <div className="flex bg-gray-100">
             <Sidebar />
             <div id="dashboard" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4">PRODUCT</h1>
-                <div className="bg-white  rounded-md w-full mt-8 overflow-x-hidden flex justify-between">
+                <div className=" rounded-md w-full mt-8 overflow-x-hidden flex justify-between">
                     <div className="lg:ml-30 space-x-8">
-                        <div className="w-[700px] rounded-md border p-5">
+                        <div className="w-[700px] rounded-md border p-5 bg-white shadow">
                             <form className="grid grid-cols-1 gap-3" onSubmit={handleSubmit}>
                                 <div className="flex space-x-4">
                                     <input
@@ -291,7 +291,7 @@ function AddProduct() {
                         </div>
                     </div>
                     
-                    <div className="bg-white rounded-md p-6 min-h-[800px] w-full ml-5 border">
+                    <div className="bg-white rounded-md p-6 min-h-[800px] w-full ml-5 border shadow">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2 text-xs xs:text-sm text-gray-900">
                                 <span className="text-[13px] font-semibold text-gray-600 uppercase">No. of entries</span>

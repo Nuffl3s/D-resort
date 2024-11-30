@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { HiMenuAlt3 } from "react-icons/hi"; // Importing HiMenuAlt3
-import { Link } from "react-router-dom";
-import { useNavigate } from 'react-router-dom';
+import { HiMenuAlt3 } from "react-icons/hi";
+import { Link, useNavigate } from "react-router-dom";
 
 const EmployeeSidebar = () => {
     const navigate = useNavigate();
@@ -25,18 +24,33 @@ const EmployeeSidebar = () => {
         ],
     };
 
-    const [open, setOpen] = useState(true); // State to toggle sidebar visibility
-    const [activeMenu, setActiveMenu] = useState(null); // State to manage active submenu
+    // Sidebar open/close state with localStorage
+    const [open, setOpen] = useState(() => {
+        const savedState = localStorage.getItem("sidebarOpen");
+        return savedState !== null ? JSON.parse(savedState) : true;
+    });
+    const [activeMenu, setActiveMenu] = useState(null); // Track active submenu
 
-    const displayName = "D.YASAY BEACH RESORT"; // Set the new name for the resort
+    const displayName = "D.YASAY BEACH RESORT"; // Placeholder for display name
+
+    const toggleSidebar = () => {
+        setOpen((prev) => {
+            const newState = !prev;
+            localStorage.setItem("sidebarOpen", JSON.stringify(newState));
+            return newState;
+        });
+    };
 
     const handleMenuClick = (menuTitle) => {
-        // Toggle submenu visibility
         if (activeMenu === menuTitle) {
-            setActiveMenu(null); // Close submenu if it's already active
+            setActiveMenu(null); // Close the submenu if clicked again
         } else {
-            setActiveMenu(menuTitle); // Open submenu if it's not active
+            setActiveMenu(menuTitle); // Open the submenu
         }
+    };
+
+    const handleNavigation = (path) => {
+        navigate(`/${path}`);
     };
 
     const handleTempoBtnAdmin = () => {
@@ -51,10 +65,12 @@ const EmployeeSidebar = () => {
         <section className="min-h-screen flex flex-row bg-white">
             {/* Sidebar */}
             <div
-                className={`bg-[#374151] shadow-lg min-h-screen fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out ${open ? "w-[300px]" : "w-[85px]"}`}
+                className={`bg-[#374151] shadow-lg min-h-screen fixed top-0 left-0 z-50 ${
+                    open ? "w-[300px]" : "w-[85px]"
+                } transition-all duration-300 ease-in-out`}
             >
                 <div className="w-full">
-                    {/* Menu Toggle and Logo */}
+                    {/* Menu Toggle and Profile */}
                     <div className="py-3 flex justify-between items-center border-b w-full border-gray-400">
                         <div className="flex items-center gap-3 ml-3">
                             <div
@@ -80,7 +96,7 @@ const EmployeeSidebar = () => {
                         <HiMenuAlt3
                             size={26}
                             className="cursor-pointer text-white"
-                            onClick={() => setOpen(!open)} // Toggle the sidebar state
+                            onClick={toggleSidebar} // Toggle the sidebar state when clicked
                         />
                     </div>
 
@@ -88,41 +104,38 @@ const EmployeeSidebar = () => {
                     <div className="mt-4 flex flex-col gap-4 relative p-6 justify-center">
                         {Menus.map((menu, i) => (
                             <div key={i}>
+                                {/* Menu Link */}
                                 <div>
-                                    {/* Menu Item */}
                                     <Link
                                         to={menu.path ? `/${menu.path}` : "#"}
-                                        className={`group flex items-center text-white text-md gap-3.5 font-medium p-2 hover:bg-gray-500 dark:hover:text-[#fafafa] hover:text-white rounded-md relative`}
-                                        onClick={() => menu.src && handleMenuClick(menu.title)} // Handle submenu toggle
+                                        className="group flex items-center text-white text-md gap-3.5 font-medium p-2 hover:bg-gray-500 dark:hover:text-[#fafafa] hover:text-white rounded-md relative"
+                                        onClick={(e) => {
+                                            e.preventDefault(); // Prevent link default behavior
+                                            if (menu.path) {
+                                                handleNavigation(menu.path); // Navigate if path exists
+                                            } else {
+                                                handleMenuClick(menu.title); // Toggle submenu
+                                            }
+                                        }}
                                     >
                                         <img
-                                            src={`src/assets/${menu.src}.png`} // Add dynamic src for icons
+                                            src={`src/assets/${menu.src}.png`} // Dynamic src for menu icons
                                             alt={menu.title}
                                             className="w-5 h-5 transition-colors duration-300 invert"
                                         />
                                         <h2
-                                            style={{
-                                                transitionDelay: `${(i + 1) * 100}ms`,
-                                            }}
                                             className={`whitespace-pre ${
-                                                open ? "transition-all duration-500 ease-in-out" : ""
+                                                open
+                                                    ? "transition-all duration-500 ease-in-out"
+                                                    : ""
                                             } ${!open ? "opacity-0 translate-x-28 overflow-hidden" : ""}`}
                                         >
                                             {menu.title}
                                         </h2>
 
-                                        <h2
-                                            className={`${
-                                                open && "hidden"
-                                            } z-50 absolute left-48 bg-white font-semibold whitespace-pre text-gray-900 rounded-md drop-shadow-lg px-0 py-0 w-0 overflow-hidden group-hover:px-2 group-hover:py-1 group-hover:left-[55px] group-hover:duration-300 group-hover:w-fit`}
-                                        >
-                                            {menu.title}
-                                        </h2>
-
-                                        {/* Show arrow icon only when sidebar is open and menu title is fully visible */}
                                         {open && (menu.title === "Product" || menu.title === "Report") && (
                                             <img
-                                                src="src/assets/right.png" // Icon for indicating submenu (facing left)
+                                                src="src/assets/right.png" // Right arrow for indicating submenu
                                                 alt="Indicator"
                                                 className={`ml-auto w-3 h-3 transition-transform duration-300 invert ${
                                                     activeMenu === menu.title ? "rotate-90" : ""
@@ -131,7 +144,7 @@ const EmployeeSidebar = () => {
                                         )}
                                     </Link>
 
-                                    {/* Submenus for Product and Report */}
+                                    {/* Submenu for Product and Report */}
                                     {activeMenu === menu.title && Submenus[menu.title] && (
                                         <div
                                             className={`ml-6 pl-4 mt-2 space-y-2 transition-all duration-300 ease-in-out ${
@@ -166,6 +179,7 @@ const EmployeeSidebar = () => {
                             </div>
                         ))}
 
+                        {/* Tempo Button to Employee Dashboard */}
                         <div className="flex w-full justify-center relative top-[10px]">
                             <div onClick={handleTempoBtnAdmin} className="flex justify-center items-center gap-1 px-3 py-3 w-[232px] rounded-[5px] shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] cursor-pointer">
                                 <img src="./src/assets/logout.png" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
@@ -188,8 +202,12 @@ const EmployeeSidebar = () => {
             </div>
 
             {/* Main Content */}
-            <div className={`flex-grow transition-all duration-300 ease-in-out ${open ? "ml-[300px]" : "ml-[85px]"}`}>
-                {/* Place your main content here */}
+            <div
+                className={`flex-grow transition-all duration-300 ease-in-out ${
+                    open ? "ml-[300px]" : "ml-[85px]"
+                }`}
+            >
+                {/* Main content goes here */}
             </div>
         </section>
     );

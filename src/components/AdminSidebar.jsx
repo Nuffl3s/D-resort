@@ -23,24 +23,20 @@ const AdminSidebar = () => {
         { title: "Logout", src: "src/assets/logout.png", path: "/" },
     ];
 
-    const [open, setOpen] = useState(true); // Sidebar open/close state
-    const [isNavigating, setIsNavigating] = useState(false); // Flag to track navigation
+    // Initialize sidebar state with localStorage
+    const [open, setOpen] = useState(() => {
+        const savedState = localStorage.getItem("sidebarOpen");
+        return savedState !== null ? JSON.parse(savedState) : true;
+    });
+
     const profileImage = null; // Profile image (null for now)
     const displayName = "John Doe"; // Display name
+    const [isFirstRender, setIsFirstRender] = useState(true); // Check if it's the first render
 
-    // Retrieve the sidebar state from localStorage on component mount
     useEffect(() => {
-        const savedState = JSON.parse(localStorage.getItem("sidebarOpen"));
-        if (savedState !== null) {
-            setOpen(savedState);
-        }
+        setIsFirstRender(false); // Mark first render as complete
     }, []);
 
-    const getInitials = (name) => {
-        return name.split(" ").map((word) => word.charAt(0).toUpperCase()).join("");
-    };
-
-    // Toggle the sidebar visibility and save the state to localStorage
     const toggleSidebar = () => {
         setOpen((prev) => {
             const newState = !prev;
@@ -49,34 +45,33 @@ const AdminSidebar = () => {
         });
     };
 
-    // Handle navigation and set a flag to prevent state change during navigation
     const handleNavigation = (path) => {
-        setIsNavigating(true); // Set navigation flag to true
-        navigate(path);
+        navigate(path); // Perform navigation without affecting sidebar state
     };
 
-    // Reset navigation flag after navigation completes
-    useEffect(() => {
-        if (isNavigating) {
-            const timer = setTimeout(() => {
-                setIsNavigating(false); // Reset after a short delay
-            }, 200);
-            return () => clearTimeout(timer); // Clean up the timeout on unmount
-        }
-    }, [isNavigating]);
+    const getInitials = (name) => {
+        return name
+            .split(" ")
+            .map((word) => word.charAt(0).toUpperCase())
+            .join("");
+    };
 
     return (
         <section className="min-h-screen flex flex-row bg-white">
             {/* Sidebar */}
             <div
-                className={`bg-[#374151] shadow-lg min-h-screen fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out ${open ? "w-[300px]" : "w-[85px]"}`}
+                className={`bg-[#374151] shadow-lg min-h-screen fixed top-0 left-0 z-50 ${
+                    open ? "w-[300px]" : "w-[85px]"
+                } ${isFirstRender ? "transition-none" : "transition-all duration-300 ease-in-out"}`}
             >
                 <div className="w-full">
                     {/* Menu Toggle and Profile */}
                     <div className="py-3 flex justify-between items-center border-b w-full border-gray-400">
                         <div className="flex items-center gap-3 ml-3">
                             <div
-                                className={`transition-all duration-300 ease-in-out bg-white rounded-full ${open ? "w-[70px] h-[70px]" : "w-[40px] h-[40px]"}`}
+                                className={`transition-all duration-300 ease-in-out bg-white rounded-full ${
+                                    open ? "w-[70px] h-[70px]" : "w-[40px] h-[40px]"
+                                }`}
                             >
                                 {/* Display profile or initials */}
                                 {profileImage ? (
@@ -117,35 +112,44 @@ const AdminSidebar = () => {
 
                                 {/* Menu Link */}
                                 <Link
-    to={menu.path}
-    className="group flex items-center text-white text-md gap-3.5 font-medium p-2 hover:bg-gray-500 dark:hover:text-[#fafafa] hover:text-white rounded-md relative"
-    onClick={(e) => {
-        e.preventDefault(); // Prevent default link behavior
-        handleNavigation(menu.path); // Perform navigation
-        // Ensure the sidebar stays in the same state during navigation
-        if (open) setOpen(true); // Keep sidebar open if it's already open
-    }}
->
-    <img
-        src={menu.src}
-        alt={menu.title}
-        className="w-5 h-5 transition-colors duration-300 invert"
-    />
-    <h2
-        style={{
-            transitionDelay: `${(i + 1) * 100}ms`,
-        }}
-        className={`whitespace-pre ${open ? "transition-all duration-500 ease-in-out" : ""} ${!open ? "opacity-0 translate-x-28 overflow-hidden" : ""}`}
-    >
-        {menu.title}
-    </h2>
-    {/* Tooltip for collapsed state */}
-    <h2
-        className={`${open && "hidden"} z-50 absolute left-48 bg-white font-semibold whitespace-pre text-gray-900 rounded-md drop-shadow-lg px-0 py-0 w-0 overflow-hidden group-hover:px-2 group-hover:py-1 group-hover:left-[55px] group-hover:duration-300 group-hover:w-fit`}
-    >
-        {menu.title}
-    </h2>
-</Link>
+                                    to={menu.path}
+                                    className="group flex items-center text-white text-md gap-3.5 font-medium p-2 hover:bg-gray-500 dark:hover:text-[#fafafa] hover:text-white rounded-md relative"
+                                    onClick={(e) => {
+                                        e.preventDefault(); // Prevent default link behavior
+                                        handleNavigation(menu.path);
+                                    }}
+                                >
+                                    <img
+                                        src={menu.src}
+                                        alt={menu.title}
+                                        className="w-5 h-5 transition-colors duration-300 invert"
+                                    />
+                                    <h2
+                                        style={{
+                                            transitionDelay: `${(i + 1) * 100}ms`,
+                                        }}
+                                        className={`whitespace-pre ${
+                                            open
+                                                ? "transition-all duration-500 ease-in-out"
+                                                : ""
+                                        } ${
+                                            !open
+                                                ? "opacity-0 translate-x-28 overflow-hidden"
+                                                : ""
+                                        }`}
+                                    >
+                                        {menu.title}
+                                    </h2>
+                                    {/* Tooltip for collapsed state */}
+                                    <h2
+                                        className={`${
+                                            open && "hidden"
+                                        } z-50 absolute left-48 bg-white font-semibold whitespace-pre text-gray-900 rounded-md drop-shadow-lg px-0 py-0 w-0 overflow-hidden group-hover:px-2 group-hover:py-1 group-hover:left-[55px] group-hover:duration-300 group-hover:w-fit`}
+                                        style={!open ? { pointerEvents: "none" } : {}}
+                                    >
+                                        {menu.title}
+                                    </h2>
+                                </Link>
                             </div>
                         ))}
 
@@ -173,7 +177,9 @@ const AdminSidebar = () => {
 
             {/* Main Content */}
             <div
-                className={`flex-grow transition-all duration-300 ease-in-out ${open ? "ml-[300px]" : "ml-[85px]"}`}
+                className={`flex-grow transition-all duration-300 ease-in-out ${
+                    open ? "ml-[300px]" : "ml-[85px]"
+                }`}
             >
                 {/* Main content goes here */}
             </div>

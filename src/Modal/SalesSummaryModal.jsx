@@ -107,7 +107,7 @@ const SalesSummaryModal = ({ isOpen, onClose, products }) => {
                     <img
                     src="src/assets/close.png" // Replace with the correct path to your image
                     alt="Close"
-                    className="w-5 h-5" // Adjust size as necessary
+                    className="w-5 h-5 dark:invert" // Adjust size as necessary
                     />
                 </button>
             </div>
@@ -152,15 +152,15 @@ const SalesSummaryModal = ({ isOpen, onClose, products }) => {
                 {/* Chart Container */}
                 <div className="flex flex-col w-[800px]">
                     {/* Bar Chart for Sales Data */}
-                    <div className="mb-8 shadow-md p-3">
+                    <div className="mb-8">
                         <h3 className="text-xl font-semibold text-gray-800 dark:text-[#e7e6e6] mb-4">Sales Overview</h3>
-                        <Bar data={barChartData} options={barChartOptions} />
+                        <Bar className="dark:bg-gray-100 rounded p-2 shadow" data={barChartData} options={barChartOptions} />
                     </div>
 
                     {/* Line Chart for Sales Trend Over Time */}
                     <div className="mb-8">
                         <h3 className="text-xl font-semibold text-gray-800 dark:text-[#e7e6e6] mb-4">Sales Trend Over Time</h3>
-                        <Line data={lineChartData} options={lineChartOptions} />
+                        <Line className="dark:bg-gray-100 rounded p-2 shadow" data={lineChartData} options={lineChartOptions} />
                     </div>
                 </div>
             </div>

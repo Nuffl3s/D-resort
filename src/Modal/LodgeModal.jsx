@@ -39,7 +39,7 @@ const LodgeModal = ({ isOpen, onClose }) => {
             <div className="bg-white p-6 rounded-lg shadow-lg w-[1300px] h-[720px]">
 
                 <div className="flex justify-between mb-5">
-                    <h2 className="self-center text-xl font-semibold">COTTAGES</h2>
+                    <h2 className="self-center text-xl font-semibold">LODGES</h2>
 
                     <button
                         onClick={onClose}
@@ -70,17 +70,11 @@ const LodgeModal = ({ isOpen, onClose }) => {
                             <img src="./src/assets/search.png" className="w-5 h-5" alt="search icon" />
                             <input
                                 type="text"
-                                placeholder="Search cottages..."
+                                placeholder="Search lodge..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="bg-white outline-none ml-2 flex-1"
                             />
-                        </div>
-
-                        <div className="lg:ml-30 ml-4 space-x-8">
-                            <button className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer">
-                                <i><img src="./src/assets/plus.png" className="fill-current w-4 h-4" style={{ filter: 'invert(100%)' }} /></i>Add
-                            </button>
                         </div>
                     </div>
                 </div>

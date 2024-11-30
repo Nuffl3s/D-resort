@@ -8,7 +8,7 @@ function AdminReport () {
     }, []);
 
     return (
-        <div className="flex bg-white dark:bg-[#212121] ">
+        <div className="flex bg-gray-100 dark:bg-[#111827] ">
             <AdminSidebar />
             <div id="report" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">SALES REPORT</h1>

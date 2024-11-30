@@ -1,7 +1,12 @@
+// Import dayjs at the top of your file
+import dayjs from 'dayjs'; // if you're using dayjs
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from 'docx';
 
+
+// WORK SCHEDULE
+// *********************************************************************************************************************
 export const handleDownloadExcel = async (tableRows) => {
     // Create a new workbook and add a worksheet
     const workbook = new ExcelJS.Workbook();
@@ -18,7 +23,7 @@ export const handleDownloadExcel = async (tableRows) => {
             ...['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => {
                 const { startTime, endTime, duty, dayOff } = row.schedule[day];
                 if (dayOff) return "Day Off";
-                if (startTime && endTime) return `${startTime.format('hh:mm A')} - ${endTime.format('hh:mm A')}`;
+                if (startTime && endTime) return `${dayjs(startTime).format('hh:mm A')} - ${dayjs(endTime).format('hh:mm A')}`;
                 return duty || "";
             })
         ]);
@@ -62,7 +67,7 @@ export const handleDownloadWord = async (tableRows) => {
                                                 const { startTime, endTime, duty, dayOff } = row.schedule[day];
                                                 let cellContent = "";
                                                 if (dayOff) cellContent = "Day Off";
-                                                else if (startTime && endTime) cellContent = `${startTime.format('hh:mm A')} - ${endTime.format('hh:mm A')}`;
+                                                else if (startTime && endTime) cellContent = `${dayjs(startTime).format('hh:mm A')} - ${dayjs(endTime).format('hh:mm A')}`;
                                                 else if (duty) cellContent = duty;
                                                 return new TableCell({ children: [new Paragraph(cellContent)] });
                                             })
@@ -75,7 +80,6 @@ export const handleDownloadWord = async (tableRows) => {
                 },
             ],
         });
-
         // Pack the document into a blob
         const blob = await Packer.toBlob(doc);
         console.log("Word document packed into blob.");
@@ -88,3 +92,4 @@ export const handleDownloadWord = async (tableRows) => {
         console.error("Error creating or downloading the Word document:", error);
     }
 };
+

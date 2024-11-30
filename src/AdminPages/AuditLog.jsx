@@ -38,7 +38,11 @@ const AuditLog = () => {
                         )}`;
                 const response = await api.get(endpoint);
                 setLogs(response.data);
-                setLoading(false);
+
+                // Simulate a 2-3 second loading delay
+                setTimeout(() => {
+                    setLoading(false);
+                }, 1000); // 2000 milliseconds = 2 seconds
             } catch (err) {
                 setError(err.message);
                 setLoading(false);
@@ -85,29 +89,42 @@ const AuditLog = () => {
                 <div className="spinner-border animate-spin inline-block w-7 h-7 border-4 rounded-full border-t-[#70b8d3] border-gray-300"></div>
             </div>
         );
-        if (error) return <p className="text-red-600 flex justify-center items-center">Error: {error}</p>;
-        if (filteredLogs.length === 0) return <p>No logs match the filters.</p>;
+        if (error) return <p className="text-red-600 flex justify-center items-center ">Error: {error}</p>;
+        if (filteredLogs.length === 0) return <p className="dark:text-[#e7e6e6]">No logs match the filters.</p>;
 
         return (
-            <ul>
-                {filteredLogs.map((log) => (
-                    <li key={log.id} className="mb-4">
-                        <strong className="text-gray-800 dark:text-white">{log.username}</strong>: {log.action}{' '}
-                        <span className="text-gray-600 dark:text-gray-400">
-                            ({moment(log.timestamp).format('YYYY-MM-DD h:mm A')})
-                        </span>
-                    </li>
-                ))}
-            </ul>
+            <div className='dark:bg-[#374151] p-6 bg-gray-100 shadow-lg rounded-lg'>
+                <table className="min-w-full table-auto border-collapse">
+                    <thead>
+                        <tr className="border-b">
+                            <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Username</th>
+                            <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Action</th>
+                            <th className="px-4 py-2 text-left text-gray-700 dark:text-[#e7e6e6]">Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredLogs.map((log) => (
+                            <tr key={log.id} className="border-b">
+                                <td className="px-4 py-2 text-gray-800 dark:text-[#e7e6e6]">{log.username}</td>
+                                <td className="px-4 py-2 text-gray-800 dark:text-[#e7e6e6]">{log.action}</td>
+                                <td className="px-4 py-2 text-gray-600 dark:text-[#e7e6e6]">
+                                    {moment(log.timestamp).format('YYYY-MM-DD h:mm A')}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+           
         );
     };
-
+    
     useEffect(() => {
         applyTheme();
     }, []);
 
     return (
-        <div className="flex bg-white dark:bg-[#212121]">
+        <div className="flex bg-white dark:bg-[#111827]">
             <AdminSidebar />
 
             {/* Main Content */}
@@ -119,21 +136,24 @@ const AuditLog = () => {
                     {/* Search Input */}
                     <div className="relative w-1/3">
                         {/* Search Icon */}
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <img
-                                src="src/assets/search.png" // Replace this with the actual path to your image
-                                alt="Search Icon"
-                                className="h-5 w-5"
-                            />
+                        <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none">
+                            <svg
+                                className="w-5 h-5 text-gray-500"
+                                aria-hidden="true"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                            </svg>
                         </div>
-
                         {/* Search Input */}
                         <input
                             type="text"
                             placeholder="Search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 border border-gray-300 rounded-lg p-2 w-full dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd] placeholder:text-gray-200"
+                            className="pl-10 border border-gray-300 rounded-lg p-2 w-full dark:bg-[#111827] dark:text-[#e7e6e6] dark:border-gray-400 placeholder:text-gray-200"
                         />
                     </div>
                     <div className="flex justify-end w-full gap-3">
@@ -141,7 +161,7 @@ const AuditLog = () => {
                         <select
                             value={filterBy}
                             onChange={(e) => setFilterBy(e.target.value)}
-                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#111827] dark:text-[#e7e6e6] dark:border-gray-400"
                         >
                             <option value="all">All</option>
                             <option value="username">Username</option>
@@ -152,13 +172,13 @@ const AuditLog = () => {
                             type="date"
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
-                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#111827] dark:text-[#e7e6e6] dark:border-gray-400"
                         />
                         <input
                             type="date"
                             value={dateTo}
                             onChange={(e) => setDateTo(e.target.value)}
-                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#3a3a3a] dark:text-[#e7e6e6] dark:border-[#bebdbd]"
+                            className="px-4 py-2 rounded-md bg-white border dark:bg-[#111827] dark:text-[#e7e6e6] dark:border-gray-400"
                         />
                     </div>
                 </div>
@@ -174,7 +194,7 @@ const AuditLog = () => {
                             <button
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
-                                className={`px-4 py-2 ${isSelected ? `${activeColor} font-semibold border-b-2` : 'text-gray-700 hover:text-[#70b8d3] dark:text-[#e7e6e6]'}`}
+                                className={`px-4 py-2 ${isSelected ? `${activeColor} font-semibold border-b-2` : 'text-gray-700 hover:text-[#70b8d3] dark:text-[#e7e6e6] dark:hover:text-[#70b8d3]'}`}
                             >
                                 {category}
                             </button>

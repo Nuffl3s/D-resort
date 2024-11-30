@@ -2,11 +2,10 @@
 import { useEffect, useState, useRef } from 'react';
 import api from '../api';
 import AddScheduleModal from '../Modal/AddScheduleModal';
-import { handleDownloadExcel, handleDownloadWord } from '../AdminUtils';
+import { handleDownloadExcel, handleDownloadWord } from '../Utils/scheduleUtils';
 import DownloadModal from '../Modal/DownloadModal';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
-
 
 const AdminSchedule = () => {
     const [schedules, setSchedules] = useState([]);
@@ -53,25 +52,32 @@ const AdminSchedule = () => {
 
     const handleModalClose = () => {
         setIsModalOpen(false);
-        api.get('/weekly-schedules/')
-            .then((response) => setSchedules(response.data))
-            .catch((error) => console.error('Error refreshing schedules:', error));
+        api.get('/weekly-schedules/').then((response) => setSchedules(response.data)).catch((error) => console.error('Error refreshing schedules:', error));
     };
 
-    const handleDownloadChoice = (fileType) => {
-        if (fileType === 'excel') {
-            handleDownloadExcel(tableRows); // Ensure you pass the correct data (tableRows)
-        } else if (fileType === 'word') {
-            handleDownloadWord(tableRows);
+    const handleDownloadChoice = (type, context) => {
+        console.log(`Download choice: ${type} for ${context}`);
+        
+        if (context === 'schedule') {
+            // Pass the schedules data to the download functions
+            if (type === 'excel') {
+                handleDownloadExcel(schedules)
+                    .then(() => console.log('Excel download triggered successfully'))
+                    .catch((error) => console.error('Error downloading Excel:', error));
+            } else if (type === 'word') {
+                handleDownloadWord(schedules)
+                    .then(() => console.log('Word download triggered successfully'))
+                    .catch((error) => console.error('Error downloading Word:', error));
+            }
         }
-        setShowModal(false);
+
+        setShowModal(false); // Close the modal after selection
     };
 
     const handlePrint = () => {
         window.print(); // Trigger the print dialog
         setIsDropdownVisible(false); // Close dropdown after print
     };
-    
 
     const handleDownload = () => {
         setShowModal(true); // Open the download modal
@@ -86,11 +92,11 @@ const AdminSchedule = () => {
     const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     return (
-        <div className="flex dark:bg-[#1c1e21]">
+        <div className="flex dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
             <div id="clock" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">WORK SCHEDULES</h1>
-                <div className="bg-white p-8 rounded-md w-full shadow mt-[50px] dark:bg-[#303030]">
+                <div className="bg-white p-8 rounded-md w-full shadow mt-[50px] dark:bg-[#374151]">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center justify-around">
                             <div>
@@ -98,10 +104,11 @@ const AdminSchedule = () => {
                                     showModal={showModal} 
                                     handleDownloadChoice={handleDownloadChoice} 
                                     setShowModal={setShowModal} 
+                                    pageContext="schedule" // Pass "schedule" context
                                 />
                             </div>
                             <div className="mr-3">
-                                <button className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#09B0EF] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
+                                <button className="flex items-center gap-1 bg-[#70b8d3] hover:bg-[#62c5e9] px-4 py-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
                                     onClick={handleClearTable}>
                                     <img src="./src/assets/clear.png" alt="Clear" className="w-4 h-4 filter invert brightness-0" />
                                     Clear
@@ -123,14 +130,28 @@ const AdminSchedule = () => {
                                 <img src="./src/assets/option.png" alt="Options" className="w-4 h-4 dark:invert" />
                             </button>
                             {isDropdownVisible && (
-                                <div ref={dropdownRef} className="absolute right-1 top-3 mt-2 w-40 bg-white border border-gray-300 rounded-md shadow-lg z-10">
+                                <div ref={dropdownRef} className="absolute right-1 top-3 mt-2 w-40 bg-white border border-gray-400 rounded-md shadow-lg z-10 dark:bg-[#374151] dark:text-[#e7e6e6]">
                                     <ul className="py-1 p-2">
-                                        <li onClick={handleDownload} className="p-2 py-2 hover:bg-gray-200 hover:rounded-md cursor-pointer border-b flex">
-                                            <img src="./src/assets/download.png" alt="Download" className="w-5 h-5 mr-2" />
+                                        <li
+                                            onClick={handleDownload}
+                                            className="p-2 py-2 hover:bg-gray-200 hover:rounded-md cursor-pointer flex group dark:hover:text-gray-800 border-b dark:border-gray-400"
+                                        >
+                                            <img
+                                                src="./src/assets/download.png"
+                                                alt="Print"
+                                                className="w-5 h-5 mr-2 dark:invert dark:group-hover:invert-0 dark:group-hover:brightness-0"
+                                            />
                                             Download
                                         </li>
-                                        <li onClick={handlePrint} className="p-2 py-2 hover:bg-gray-200 hover:rounded-md cursor-pointer flex">
-                                            <img src="./src/assets/printer.png" alt="Print" className="w-5 h-5 mr-2" />
+                                        <li
+                                            onClick={handlePrint}
+                                            className="p-2 py-2 hover:bg-gray-200 hover:rounded-md cursor-pointer flex group dark:hover:text-gray-800"
+                                        >
+                                            <img
+                                                src="./src/assets/printer.png"
+                                                alt="Print"
+                                                className="w-5 h-5 mr-2 dark:invert dark:group-hover:invert-0 dark:group-hover:brightness-0"
+                                            />
                                             Print
                                         </li>
                                     </ul>
@@ -142,7 +163,7 @@ const AdminSchedule = () => {
                     <div className="-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto">
                         <div className="inline-block min-w-full rounded-md overflow-hidden">
                             <table id="schedule-table" className="min-w-full border-collapse  rounded-md ">
-                                <thead className="bg-gray-100 dark:bg-[#424242]">
+                                <thead className="bg-gray-100 dark:bg-[#1f2937]">
                                     <tr>
                                         <th className="px-5 py-3   text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:text-[#e7e6e6]">
                                             #

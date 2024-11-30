@@ -192,14 +192,13 @@ const AdminAddUnit = () => {
         };
 
     return (
-        
-        <div className="flex dark:bg-[#1c1e21]">
+        <div className="flex dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
             <div className="p-6 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">ADD UNIT</h1>
 
                 <div className="mt-10">
-                    <form onSubmit={handleSubmit} className=" bg-white p-8 shadow rounded dark:bg-[#303030]">
+                    <form onSubmit={handleSubmit} className=" bg-white p-8 shadow rounded dark:bg-[#374151]">
                         <div className="flex justify-between mb-5">
                             <h2 className="text-2xl font-bold uppercase dark:text-[#e7e6e6]">Add New{type}</h2>
                             <button

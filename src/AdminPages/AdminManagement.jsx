@@ -127,14 +127,14 @@ function AdminManagement() {
     }, []);
 
     return (
-        <div className="flex dark:bg-[#1c1e21]">
+        <div className="flex dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
             <div id="add" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">EMPLOYEE MANAGEMENT</h1>
                 <div className="w-ful">
                     <div className="flex">
                         <div className="flex-col">
-                            <div className="w-[700px] h-[400px] shadow-md rounded-md bg-white p-8  dark:bg-[#303030] dark:shadow-md">
+                            <div className="w-[700px] h-[400px] shadow-md rounded-md bg-white p-8  dark:bg-[#374151] dark:shadow-md">
                                 <h2 className="font-semibold text-[18px] mb-4 dark:text-[#e7e6e6]">Employee Information</h2>
                                 <form className="space-y-4" onSubmit={handleSubmit}>
                                     <div>
@@ -145,7 +145,7 @@ function AdminManagement() {
                                             name="name"
                                             value={formData.name}
                                             onChange={handleInputChange}
-                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#303030] dark:border-[#bebdbd] dark:text-[#e7e6e6]"
+                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6]"
                                             autoComplete="name"
                                         />
                                     </div>
@@ -157,7 +157,7 @@ function AdminManagement() {
                                             name="address"
                                             value={formData.address}
                                             onChange={handleInputChange}
-                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#303030] dark:border-[#bebdbd] dark:text-[#e7e6e6]"
+                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6]"
                                             autoComplete="address-line1"
                                         />
                                     </div>
@@ -169,12 +169,12 @@ function AdminManagement() {
                                             name="mobile_number"
                                             value={formData.mobile_number}
                                             onChange={handleInputChange}
-                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#303030] dark:border-[#bebdbd] dark:text-[#e7e6e6]"
+                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6]"
                                         />
                                     </div>
                                     <button
                                         type="submit"
-                                        className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#09B0EF]"
+                                        className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#62c5e9]"
                                     >
                                         Register
                                     </button>
@@ -182,7 +182,7 @@ function AdminManagement() {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-md shadow-md p-6 w-full ml-5 h-[850px] dark:bg-[#303030]">
+                        <div className="bg-white rounded-md shadow-md p-6 w-full ml-5 h-[850px] dark:bg-[#374151]">
                             <div className="justify-between border-b mb-4 pb-3">
                                 <h1 className="font-semibold text-[18px] dark:text-[#e7e6e6]">Employee List</h1>
                                 <div className="w-full flex justify-between">
@@ -190,7 +190,7 @@ function AdminManagement() {
                                         <div className="flex items-center space-x-2 text-xs xs:text-sm text-gray-900">
                                             <span className="text-[13px] font-semibold text-gray-600 uppercase dark:text-[#e7e6e6]">Show</span>
                                             <div className="relative inline-block">
-                                                <select className="appearance-none border border-gray-300 bg-white py-1 px-2 pr-8 rounded leading-tight focus:outline-none dark:border-[#bebdbd] dark:bg-[#303030] focus:bg-white focus:border-gray-500 dark:text-[#e7e6e6]">
+                                                <select className="appearance-none border border-gray-300 bg-white py-1 px-2 pr-8 rounded leading-tight focus:outline-none dark:border-gray-400 dark:bg-[#374151] focus:bg-white focus:border-gray-500 dark:text-[#e7e6e6]">
                                                     <option value="1">1</option>
                                                 </select>
                                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-[#e7e6e6]">
@@ -202,18 +202,25 @@ function AdminManagement() {
                                     </div>
 
                                     <div className="flex items-center space-x-4">
-                                        <div className="flex bg-white items-center p-2 rounded-md border dark:border-[#bebdbd] dark:bg-[#303030]">
-                                            <img 
-                                                src="./src/assets/search.png" 
-                                                className="fill-current w-5 h-5" 
-                                                alt="Search Icon"
-                                            />
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none ">
+                                                <svg
+                                                    className="w-5 h-5 text-gray-500"
+                                                    aria-hidden="true"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 20 20"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
                                             <input
-                                                className="bg-white outline-none ml-1 block dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder:text-gray-200"
                                                 type="text"
-                                                placeholder="Search..."
-                                                value={searchTerm} 
-                                                onChange={handleSearchChange} 
+                                                id="table-search"
+                                                value={searchTerm}
+                                                onChange={handleSearchChange}
+                                                className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-md w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                                                placeholder="Search by name"
                                             />
                                         </div>
                                     </div>
@@ -224,7 +231,7 @@ function AdminManagement() {
                                 <div className="-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto">
                                     <div className="inline-block min-w-full shadow rounded-lg overflow-hidden">
                                         <table className="min-w-full leading-normal">
-                                            <thead className="bg-gray-100 text-gray-600 dark:bg-[#424242] dark:text-[#e7e6e6]">
+                                            <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                                 <tr>
                                                     <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">ID</th>
                                                     <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Name</th>
@@ -265,25 +272,26 @@ function AdminManagement() {
                                         </table>
 
                                         {/* Pagination Controls */}
-                                        <div className="flex justify-end space-x-4 p-2  dark:bg-[#676767]">
+                                        <div className="inline-flex justify-end w-full p-4 dark:bg-[#66696e]">
                                             <button
                                                 onClick={() => handlePageChange(currentPage - 1)}
                                                 disabled={currentPage === 1}
-                                                className={`px-4 py-2 rounded ${
+                                                className={`text-sm text-indigo-50 transition duration-150 font-semibold py-2 px-4 rounded-l ${
                                                     currentPage === 1
-                                                        ? "bg-gray-300 text-gray-500 font-semibold cursor-not-allowed"
-                                                        : "text-white font-semibold bg-[#70b8d3] hover:bg-[#09B0EF]"
+                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                        : "bg-[#70b8d3] hover:bg-[#09B0EF]"
                                                 }`}
                                             >
                                                 Prev
                                             </button>
+                                            &nbsp; &nbsp;
                                             <button
                                                 onClick={() => handlePageChange(currentPage + 1)}
                                                 disabled={currentPage === totalPages}
-                                                className={`px-4 py-2 rounded ${
+                                                className={`text-sm text-indigo-50 transition duration-150 font-semibold py-2 px-4 rounded-r ${
                                                     currentPage === totalPages
-                                                        ? "bg-gray-300 text-gray-500 font-semiboldcursor-not-allowed"
-                                                        : " text-white font-semibold bg-[#70b8d3] hover:bg-[#09B0EF]"
+                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                        : "bg-[#70b8d3] hover:bg-[#09B0EF]"
                                                 }`}
                                             >
                                                 Next

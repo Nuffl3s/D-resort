@@ -5,6 +5,7 @@ from django.contrib.auth.models import update_last_login
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -277,20 +278,18 @@ class PayrollDetail(APIView):
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, pk):
-
         try:
             payroll = Payroll.objects.get(pk=pk)
             data = request.data
 
-            # Update fields if provided
-            payroll.net_pay = data.get('net_pay', payroll.net_pay)
+            # Update the status field
             payroll.status = data.get('status', payroll.status)
-
             payroll.save()
-            return Response({"message": "Payroll entry updated successfully!"}, status=status.HTTP_200_OK)
+            
+            return Response({"message": "Payroll status updated successfully!"}, status=status.HTTP_200_OK)
         except Payroll.DoesNotExist:
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+
 class LogView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
     
@@ -318,3 +317,20 @@ class LodgeListView(generics.ListCreateAPIView):
     queryset = Lodge.objects.all()
     serializer_class = LodgeSerializer
 
+class AddUnitView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        unit_type = request.data.get("type", "").lower()
+        if unit_type == "cottage":
+            serializer = CottageSerializer(data=request.data)
+        elif unit_type == "lodge":
+            serializer = LodgeSerializer(data=request.data)
+        else:
+            return Response({"error": "Invalid type provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

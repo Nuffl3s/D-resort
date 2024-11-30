@@ -119,7 +119,7 @@ function EmployeeDash() {
                                                         <>
                                                         <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6am_6pm_price}</td>
                                                         <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6am_12mn_price}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_12hrs_price}</td>
+                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6pm_6am_price}</td>
                                                         <td className="px-3 py-3 border-b bg-white text-sm">{item.time_24hrs_price}</td>
                                                         </>
                                                     ) : (

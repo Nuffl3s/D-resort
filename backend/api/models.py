@@ -1,5 +1,12 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.core.files.storage import FileSystemStorage
 from django.db import models
+
+image_storage = FileSystemStorage(
+    # Define where to save the images
+    location='media/images', 
+    base_url='/media/images/'
+)
 
 class CustomUser(AbstractUser):
     USER_TYPES = (
@@ -86,10 +93,11 @@ class Log(models.Model):
 class Cottage(models.Model):
     image = models.URLField()
     type = models.CharField(max_length=255)
+    image = models.ImageField(storage=image_storage, upload_to="cottage_images/")
     capacity = models.PositiveIntegerField()
     time_6am_6pm_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     time_6am_12mn_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    time_12hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    time_6pm_6am_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     time_24hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
@@ -98,6 +106,7 @@ class Cottage(models.Model):
 class Lodge(models.Model):
     image = models.URLField()
     type = models.CharField(max_length=255)
+    image = models.ImageField(storage=image_storage, upload_to="lodge_images/")
     capacity = models.PositiveIntegerField()
     time_3hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     time_6hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)

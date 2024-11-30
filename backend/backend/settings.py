@@ -45,6 +45,9 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  # Use the default Django auth backend
 ]
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 AUTH_USER_MODEL = "api.CustomUser"
 
 SIMPLE_JWT = {
@@ -107,7 +110,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'dresort',        # Replace with your database name
         'USER': 'root',  # Replace with your MySQL username
-        'PASSWORD': 'mars102202',# Replace with your MySQL password
+        'PASSWORD': 'Nuffles012!@#',# Replace with your MySQL password
         'HOST': 'localhost',        # Or '127.0.0.1' if you're running MySQL on the same machine
         'PORT': '3306',             # Default MySQL port
     }

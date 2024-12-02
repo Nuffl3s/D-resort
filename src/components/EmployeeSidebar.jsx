@@ -10,12 +10,13 @@ const EmployeeSidebar = () => {
         { title: "Reservation", path: "EmployeeReservation", src: "booking" },
         { title: "Product", src: "product" },
         { title: "Report", src: "report" },
-        { title: "Settings", path: "EmployeeSettings", src: "settings" },
+        { title: "Logout", src: "logout", path: "login",  isSeparated: true, },
     ];
 
     const Submenus = {
         Product: [
             { title: "Add Product", path: "AddProduct", icon: "add-product" },
+            { title: "Product List", path: "ProductList", icon: "list" },
             { title: "Manage Product", path: "ManageProduct", icon: "manage-product" },
         ],
         Report: [
@@ -105,6 +106,8 @@ const EmployeeSidebar = () => {
                         {Menus.map((menu, i) => (
                             <div key={i}>
                                 {/* Menu Link */}
+                                {menu.isSeparated && <div className="border-t border-gray-400 my-4"></div>}
+                                
                                 <div>
                                     <Link
                                         to={menu.path ? `/${menu.path}` : "#"}

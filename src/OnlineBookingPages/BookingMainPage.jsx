@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import Input from '../components/Inputs';
 import CottageSlider from '../OnlineBookingSlider/CottageSlider';
 import LodgeSlider from '../OnlineBookingSlider/LodgeSlider';
 import ImgSlider from '../OnlineBookingSlider/ImgSlider';
@@ -15,36 +14,9 @@ import { Autoplay } from 'swiper/modules';
 function BookingMainPage() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
-    const [showGuestDropdown, setShowGuestDropdown] = useState(false);
-    const [persons, setPersons] = useState(0);
-    const datePickerRef = useRef(null);
-    const guestDropdownRef = useRef(null);
     const [showScrollButton, setShowScrollButton] = useState(false); // For scroll-to-top button
     const [scrollProgress, setScrollProgress] = useState(0); // To track the scroll progress
 
-    const handleOutsideClick = (e) => {
-        if (
-            datePickerRef.current &&
-            !datePickerRef.current.contains(e.target) &&
-            !guestDropdownRef.current.contains(e.target)
-        ) {
-            setShowGuestDropdown(false);
-        }
-    };
-
-    useEffect(() => {
-        document.addEventListener('mousedown', handleOutsideClick);
-        return () => document.removeEventListener('mousedown', handleOutsideClick);
-    }, []);
-
-    const handleSearch = () => {
-        navigate('/book', { state: { startDate, endDate, persons } });
-        setStartDate(null);
-        setEndDate(null);
-        setPersons(0);
-    };
 
     const handleAboutUs = () => {
         navigate('/about-us');
@@ -101,7 +73,7 @@ function BookingMainPage() {
                         disableOnInteraction: false,
                     }}
                     modules={[Autoplay]}
-                    className="w-full h-[820px] shadow-lg relative"
+                    className="w-full h-[970px] shadow-lg relative"
                 >
                     <SwiperSlide>
                         <img src="./src/assets/sample1.jpg" alt="Slideshow Image 1" className="w-full h-full object-cover" />
@@ -122,33 +94,19 @@ function BookingMainPage() {
                 </Swiper>
 
                 <div className="absolute inset-0 flex items-center justify-center z-10">
-                    <h1 className="text-white font-bold text-4xl md:text-6xl px-4 py-2 rounded-lg text-center font-lemon front-text">
+                    <h1 className="text-white font-bold text-4xl md:text-6xl px-4 py-2 rounded-lg text-center font-lemon front-text ">
                         Enjoy your stay at D.Yasay <br />
                         <a className="mt-2 block">Beach Resort</a>
                         <a className="text-[20px] font-sans font-normal">Experience the perfect blend of relaxation and adventure by the sea. <span className="font-bold">Book now!</span></a>
                     </h1>
                 </div>
-
-                <div className="absolute bottom-[-100px] bg-white border shadow mt-auto p-[70px] rounded-md z-20 input-con">
-                    <Input 
-                        startDate={startDate}
-                        endDate={endDate}
-                        setStartDate={setStartDate}
-                        setEndDate={setEndDate}
-                        persons={persons}
-                        setPersons={setPersons}
-                        showGuestDropdown={showGuestDropdown}
-                        setShowGuestDropdown={setShowGuestDropdown}
-                        handleSearch={handleSearch}
-                        guestDropdownRef={guestDropdownRef}
-                    />
-                </div>
             </div>
             
 
             {/* Content */}
-            <div className="mx-auto mt-40">
-                <div className="bg-gradient-to-r from-[#1089D3] to-[#12B1D1] p-6 rounded-lg flex space-x-6 items-center justify-between w-full max-w-[1200px] mx-auto mt-16 con2">
+            <div className="mx-auto mt-20">
+
+                <div className="bg-gradient-to-r from-[#1089D3] to-[#12B1D1] p-6 rounded-lg flex space-x-6 items-center justify-between w-full max-w-[1200px] mx-auto con2">
                     <div className="flex flex-col justify-center">
                         <h2 className="text-white font-semibold font-lemon text-xl">
                             Find and book your perfect stay
@@ -161,6 +119,7 @@ function BookingMainPage() {
                         </div>
                     </div>
                 </div>
+                
                 <div>
                     <CottageSlider />
                     <div className="mt-20">

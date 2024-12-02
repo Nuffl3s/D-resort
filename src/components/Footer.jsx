@@ -24,7 +24,7 @@ function Footer() {
                         </div>
                         <div className="grid grid-cols-2 gap-8 sm:gap-6 sm:grid-cols-2">
                             <div>
-                                <h2 className="mb-4 text-sm font-bold text-gray-900 uppercase dark:text-white">Contact us</h2>
+                                <h2 className="mb-4 text-sm font-bold text-white uppercase">Contact us</h2>
                                 <ul className="text-white font-medium">
                                     <li className="mb-4">
                                         <a className="hover:underline">+63 917 708 4368</a>
@@ -32,7 +32,7 @@ function Footer() {
                                 </ul>
                             </div>
                             <div>
-                                <h2 className="mb-4 text-sm font-bold text-gray-900 uppercase dark:text-white">Other information</h2>
+                                <h2 className="mb-4 text-sm font-bold text-white uppercase ">Other information</h2>
                                 <ul className="text-white font-medium">
                                     <li className="mb-4">
                                         <a href="#" className="hover:underline" onClick={handleAboutUs}>About us</a>

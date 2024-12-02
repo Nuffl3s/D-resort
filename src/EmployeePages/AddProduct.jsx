@@ -257,7 +257,19 @@ function AddProduct() {
                                     </div>
 
                                     <div className="w-full flex-col space-y-2">
-                                        <p className="text-gray-500">AVG Price</p>
+                                        <p className="text-gray-500">Acquisition Cost</p>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="Average Price"
+                                            className="w-full p-2 border border-gray-300 rounded"
+                                            value={avgPrice}
+                                            onChange={handleAvgPriceChange}
+                                        />
+                                    </div>
+
+                                    <div className="w-full flex-col space-y-2">
+                                        <p className="text-gray-500">Selling Price</p>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -270,7 +282,7 @@ function AddProduct() {
                                 </div>
 
                                 <div className="flex flex-col space-y-2">
-                                    <p className="text-gray-500">Total Amount</p>
+                                    <p className="text-gray-500">Total Profit</p>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -331,9 +343,10 @@ function AddProduct() {
                                         <tr>
                                             <th className="thDesign">NO.</th>
                                             <th className="thDesign">Product Name</th>
-                                            <th className="thDesign">Quantity</th>
-                                            <th className="thDesign">Average Price</th>
-                                            <th className="thDesign">Amount</th>
+                                            <th className="thDesign">Qty</th>
+                                            <th className="thDesign">Acquisition Cost</th>
+                                            <th className="thDesign">Selling Price</th>
+                                            <th className="thDesign">Total Profit</th>
                                             <th className="thDesign">Action</th>
                                         </tr>
                                     </thead>

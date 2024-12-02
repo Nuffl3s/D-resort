@@ -108,6 +108,7 @@ function AdminDash () {
             <AdminSidebar />
             <div id="dashboard" className="p-6 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">DASHBOARD</h1>
+                
                 <div className="flex justify-between">
                     <div className="flex-row w-full mr-5">
                         <div className="flex space-x-10 h-[200px]">

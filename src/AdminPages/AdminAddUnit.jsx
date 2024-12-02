@@ -33,7 +33,18 @@ const AdminAddUnit = () => {
     };
 
     const handleFileChange = (e) => {
-    setFormData({ ...formData, image: e.target.files[0] });
+        const file = e.target.files[0];
+        const maxSizeInMB = 2; // Set max file size to 2MB
+        if (file && file.size > maxSizeInMB * 1024 * 1024) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'File size should not exceed 2MB.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+        setFormData({ ...formData, image: file });
     };
 
     const handleSubmit = async (e) => {
@@ -81,114 +92,114 @@ const AdminAddUnit = () => {
         if (formData.type === "Cottage") {
             return (
             <>
-                <div>
-                <label htmlFor="price1" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] dark:text-[#e7e6e6]">
-                    6AM-6PM Price
-                </label>
-                <input
-                    type="number"
-                    id="price1"
-                    name="price1"
-                    placeholder="Price for 6AM-6PM"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
-                />
+                <div className="mb-4">
+                    <label htmlFor="price1" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                        6AM-6PM Price
+                    </label>
+                    <input
+                        type="number"
+                        id="price1"
+                        name="price1"
+                        placeholder="Price for 6AM-6PM"
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                    />
                 </div>
-                <div>
-                <label htmlFor="price2" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                    6AM-12MN Price
-                </label>
-                <input
-                    type="number"
-                    id="price2"
-                    name="price2"
-                    placeholder="Price for 6AM-12MN"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
-                />
+                <div className="mb-4">
+                    <label htmlFor="price2" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                        6AM-12MN Price
+                    </label>
+                    <input
+                        type="number"
+                        id="price2"
+                        name="price2"
+                        placeholder="Price for 6AM-12MN"
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                    />
                 </div>
-                <div>
-                <label htmlFor="price3" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                    6PM-6AM Price
-                </label>
-                <input
-                    type="number"
-                    id="price3"
-                    name="price3"
-                    placeholder="Price for 6PM-6AM"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
-                />
+                <div className="mb-4">
+                    <label htmlFor="price3" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                        6PM-6AM Price
+                    </label>
+                    <input
+                        type="number"
+                        id="price3"
+                        name="price3"
+                        placeholder="Price for 6PM-6AM"
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                    />
                 </div>
-                <div>
-                <label htmlFor="price4" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                    24 Hours Price
-                </label>
-                <input
-                    type="number"
-                    id="price4"
-                    name="price4"
-                    placeholder="Price for 24 Hours"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
-                />
+                <div className="mb-4">
+                    <label htmlFor="price4" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                        24 Hours Price
+                    </label>
+                    <input
+                        type="number"
+                        id="price4"
+                        name="price4"
+                        placeholder="Price for 24 Hours"
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                    />
                 </div>
             </>
             );
         } else if (formData.type === "Lodge") {
             return (
             <>
-                <div>
-                <label htmlFor="price1" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                    3 Hours Price
-                </label>
-                <input
-                    type="number"
-                    id="price1"
-                    name="price1"
-                    placeholder="Price for 3 Hours"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
-                />
+                <div className="mb-4">
+                    <label htmlFor="price1" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                        3 Hours Price
+                    </label>
+                    <input
+                        type="number"
+                        id="price1"
+                        name="price1"
+                        placeholder="Price for 3 Hours"
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                    />
                 </div>
-                <div>
-                <label htmlFor="price2" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                    6 Hours Price
-                </label>
-                <input
-                    type="number"
-                    id="price2"
-                    name="price2"
-                    placeholder="Price for 6 Hours"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
-                />
+                <div className="mb-4">
+                    <label htmlFor="price2" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                        6 Hours Price
+                    </label>
+                    <input
+                        type="number"
+                        id="price2"
+                        name="price2"
+                        placeholder="Price for 6 Hours"
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                    />
                 </div>
-                <div>
-                <label htmlFor="price3" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                    12 Hours Price
-                </label>
-                <input
-                    type="number"
-                    id="price3"
-                    name="price3"
-                    placeholder="Price for 12 Hours"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
-                />
+                <div className="mb-4">
+                    <label htmlFor="price3" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                        12 Hours Price
+                    </label>
+                    <input
+                        type="number"
+                        id="price3"
+                        name="price3"
+                        placeholder="Price for 12 Hours"
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                    />
                 </div>
-                <div>
-                <label htmlFor="price4" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                    24 Hours Price
-                </label>
-                <input
-                    type="number"
-                    id="price4"
-                    name="price4"
-                    placeholder="Price for 24 Hours"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
-                />
+                <div className="mb-4">
+                    <label htmlFor="price4" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                        24 Hours Price
+                    </label>
+                    <input
+                        type="number"
+                        id="price4"
+                        name="price4"
+                        placeholder="Price for 24 Hours"
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                    />
                 </div>
             </>
             );
@@ -204,7 +215,7 @@ const AdminAddUnit = () => {
                 <div className="mt-10">
                     <form onSubmit={handleSubmit} className=" bg-white p-8 shadow rounded dark:bg-[#374151]">
                         <div className="flex justify-between mb-5">
-                            <h2 className="text-2xl font-bold uppercase dark:text-[#e7e6e6]">Add New{type}</h2>
+                            <h2 className="text-2xl font-bold uppercase dark:text-[#e7e6e6]">Add New {type}</h2>
                             <button
                                 onClick={handleTempoBtnBooking}
                                 type="submit"
@@ -215,13 +226,13 @@ const AdminAddUnit = () => {
                         </div>
                         {/* Type Selection */}
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] dark:text-[#e7e6e6]">Type</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">Type</label>
                             <select
                                 type="text"
                                 name="type"
                                 value={formData.type}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-3 border dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                             >
                                 <option value="Cottage">Cottage</option>
                                 <option value="Lodge">Lodge</option>
@@ -244,20 +255,20 @@ const AdminAddUnit = () => {
 
                         {/* Capacity */}
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] dark:text-[#e7e6e6]">Capacity</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] ">Capacity</label>
                             <input
                                 type="number"
                                 id="capacity"
                                 name="capacity"
                                 placeholder="Enter capacity"
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                             />
                         </div>
 
                         {/* File Upload */}
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] dark:text-[#e7e6e6]">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
                                 Upload Images
                             </label>
                             <input
@@ -265,7 +276,7 @@ const AdminAddUnit = () => {
                                 id="image"
                                 name="image"
                                 onChange={handleFileChange}
-                                className="mt-1 block w-full text-gray-600 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                className="mt-1 block w-full text-gray-600 border border-gray-300 rounded dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
                             />
                             <p className="text-xs text-gray-500 dark:text-[#e7e6e6]">Selected: {images.length} file(s)</p>
                         </div>

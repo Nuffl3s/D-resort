@@ -14,11 +14,12 @@ function Settings() {
     const [showImageModal, setShowImageModal] = useState(false); // State to show enlarged image modal
 
     useEffect(() => {
-        const savedTheme = localStorage.getItem('isDarkMode');
-        if (savedTheme) {
-            setIsDarkMode(JSON.parse(savedTheme));
-        }
-    }, []);
+    const savedTheme = localStorage.getItem('isDarkMode');
+    if (savedTheme) {
+        setIsDarkMode(JSON.parse(savedTheme)); // Apply saved theme
+    }
+}, []);
+
 
     useEffect(() => {
         const savedProfilePicture = localStorage.getItem('profilePicture');

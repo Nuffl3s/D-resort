@@ -1,33 +1,31 @@
 import { useState,useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
-import { useNavigate } from 'react-router-dom';
 
 const CottageSlider = () => {
-    const navigate = useNavigate();
 
     const cards = [
-        { id: 1, imgSrc: "./src/assets/c-A.jpg", images: ["./src/assets/c-A.jpg","./src/assets/c-A2.jpg"], title: "Cottage A - Function Hall", description: "Full Description 1" },
-        { id: 2, imgSrc: "./src/assets/c-B.jpg", images: ["./src/assets/c-B.jpg","./src/assets/c-B2.jpg"], title: "Cottage B", description: "Full Description 2" },
-        { id: 3, imgSrc: "./src/assets/c-C.jpg", images: ["./src/assets/c-C.jpg","./src/assets/c-C2.jpg"], title: "Cottage C", description: "Full Description 3" },
-        { id: 4, imgSrc: "./src/assets/c-D.jpg", images: ["./src/assets/c-D.jpg","./src/assets/c-D2.jpg"], title: "Cottage D", description: "Full Description 4" },
-        { id: 5, imgSrc: "./src/assets/c-E.jpg", images: ["./src/assets/c-E.jpg","./src/assets/c-E2.jpg"], title: "Cottage E", description: "Full Description 5" },
-        { id: 6, imgSrc: "./src/assets/c-F.jpg", images: ["./src/assets/c-F.jpg","./src/assets/c-F2.jpg"], title: "Cottage F", description: "Full Description 1" },
-        { id: 7, imgSrc: "./src/assets/c-G.jpg", images: ["./src/assets/c-G.jpg","./src/assets/c-G2.jpg"], title: "Cottage G", description: "Full Description 2" },
-        { id: 8, imgSrc: "./src/assets/c-H.jpg", images: ["./src/assets/c-H.jpg","./src/assets/c-H2.jpg"], title: "Cottage H", description: "Full Description 3" },
-        { id: 9, imgSrc: "./src/assets/c-I.jpg", images: ["./src/assets/c-I.jpg","./src/assets/c-I2.jpg"], title: "Cottage I", description: "Full Description 4" },
-        { id: 10, imgSrc: "./src/assets/c-J.jpg", images: ["./src/assets/c-G.jpg","./src/assets/c-J2.jpg"], title: "Cottage J", description: "Full Description 5" },
-        { id: 11, imgSrc: "./src/assets/c-K.jpg", images: ["./src/assets/c-K.jpg","./src/assets/c-K2.jpg"], title: "Cottage K", description: "Full Description 1" },
-        { id: 12, imgSrc: "./src/assets/c-L.jpg", images: ["./src/assets/c-L.jpg","./src/assets/c-L2.jpg"], title: "Cottage L", description: "Full Description 2" },
-        { id: 13, imgSrc: "./src/assets/c-M.jpg", images: ["./src/assets/c-M.jpg","./src/assets/c-M2.jpg"], title: "Cottage M", description: "Full Description 3" },
-        { id: 14, imgSrc: "./src/assets/c-N.jpg", images: ["./src/assets/c-N.jpg","./src/assets/c-N2.jpg"], title: "Cottage N", description: "Full Description 4" },
-        { id: 15, imgSrc: "./src/assets/c-O.jpg", images: ["./src/assets/c-O.jpg","./src/assets/c-O2.jpg"], title: "Cottage O", description: "Full Description 5" },
-        { id: 16, imgSrc: "./src/assets/c-P.jpg", images: ["./src/assets/c-P.jpg","./src/assets/c-P2.jpg"], title: "Cottage P", description: "Full Description 1" },
-        { id: 17, imgSrc: "./src/assets/c-Q.jpg", images: ["./src/assets/c-Q.jpg","./src/assets/c-Q2.jpg"], title: "Cottage Q", description: "Full Description 2" },
-        { id: 18, imgSrc: "./src/assets/c-R.jpg", images: ["./src/assets/c-R.jpg","./src/assets/c-R2.jpg"], title: "Cottage R", description: "Full Description 3" },
+        { id: 1, imgSrc: "./src/assets/c-A.jpg", images: ["./src/assets/c-A.jpg","./src/assets/c-A2.jpg"], title: "Function Hall", description: "Full Description 1" },
+        { id: 2, imgSrc: "./src/assets/c-B.jpg", images: ["./src/assets/c-B.jpg","./src/assets/c-B2.jpg"], title: "Cottage 1", description: "Full Description 2" },
+        { id: 3, imgSrc: "./src/assets/c-C.jpg", images: ["./src/assets/c-C.jpg","./src/assets/c-C2.jpg"], title: "Cottage 2", description: "Full Description 3" },
+        { id: 4, imgSrc: "./src/assets/c-D2.jpg", images: ["./src/assets/c-D2.jpg", "./src/assets/c-E2.jpg"], title: "Cottage 3 SKIP MAO NI ANG 4", description: "Full Description 4" },
+        { id: 5, imgSrc: "./src/assets/c-D.jpg", images: ["./src/assets/c-D.jpg","./src/assets/c-E.jpg"], title: "Cottage 5", description: "Full Description 5" },
+        { id: 6, imgSrc: "./src/assets/c-F.jpg", images: ["./src/assets/c-F.jpg","./src/assets/c-F2.jpg"], title: "Cottage 6", description: "Full Description 1" },
+        { id: 7, imgSrc: "./src/assets/c-G.jpg", images: ["./src/assets/c-G.jpg","./src/assets/c-G2.jpg"], title: "Cottage 6A", description: "Full Description 2" },
+        { id: 8, imgSrc: "./src/assets/c-H.jpg", images: ["./src/assets/c-H.jpg","./src/assets/c-H2.jpg"], title: "Cottage 4A", description: "Full Description 3" },
+        { id: 9, imgSrc: "./src/assets/c-I.jpg", images: ["./src/assets/c-I.jpg","./src/assets/c-I2.jpg"], title: "Cottage 3A", description: "Full Description 4" },
+        { id: 10, imgSrc: "./src/assets/c-J.jpg", images: ["./src/assets/c-G.jpg","./src/assets/c-J2.jpg"], title: "Cottage 5A", description: "Full Description 5" },
+        { id: 11, imgSrc: "./src/assets/c-K.jpg", images: ["./src/assets/c-K.jpg","./src/assets/c-K2.jpg"], title: "Cottage 5B", description: "Full Description 1" },
+        { id: 12, imgSrc: "./src/assets/c-L.jpg", images: ["./src/assets/c-L.jpg","./src/assets/c-L2.jpg"], title: "Cottage 5C", description: "Full Description 2" },
+        { id: 13, imgSrc: "./src/assets/c-M.jpg", images: ["./src/assets/c-M.jpg","./src/assets/c-M2.jpg"], title: "Cottage 4A", description: "Full Description 3" },
+        { id: 14, imgSrc: "./src/assets/c-N.jpg", images: ["./src/assets/c-N.jpg","./src/assets/c-N2.jpg"], title: "Cottage 4B", description: "Full Description 4" },
+        { id: 15, imgSrc: "./src/assets/c-O.jpg", images: ["./src/assets/c-O.jpg","./src/assets/c-O2.jpg"], title: "Cottage 4C", description: "Full Description 5" },
+        { id: 16, imgSrc: "./src/assets/c-P.jpg", images: ["./src/assets/c-P.jpg","./src/assets/c-P2.jpg"], title: "Cottage 3A", description: "Full Description 1" },
+        { id: 17, imgSrc: "./src/assets/c-Q.jpg", images: ["./src/assets/c-Q.jpg","./src/assets/c-Q2.jpg"], title: "Cottage 3B", description: "Full Description 2" },
+        { id: 18, imgSrc: "./src/assets/c-R.jpg", images: ["./src/assets/c-R.jpg","./src/assets/c-R2.jpg"], title: "Cottage 3C", description: "Full Description 3" },
         { id: 19, imgSrc: "./src/assets/c-S.jpg", images: ["./src/assets/c-S.jpg","./src/assets/c-S2.jpg"], title: "Cottage S", description: "Full Description 4" },
         { id: 20, imgSrc: "./src/assets/c-T.jpg", images: ["./src/assets/c-T.jpg","./src/assets/c-T2.jpg"], title: "Cottage T", description: "Full Description 5" },
         { id: 21, imgSrc: "./src/assets/c-U.jpg", images: ["./src/assets/c-U.jpg","./src/assets/c-U2.jpg"], title: "Cottage U", description: "Full Description 1" },
-        { id: 22, imgSrc: "./src/assets/c-V.jpg", images: ["./src/assets/c-V.jpg","./src/assets/c-V2.jpg"], title: "Cottage V", description: "Full Description 2" },
+        { id: 22, imgSrc: "./src/assets/c-V.jpg", images: ["./src/assets/c-V.jpg","./src/assets/c-V2.jpg"], title: "1ABC", description: "Full Description 2" },
         { id: 23, imgSrc: "./src/assets/c-W.jpg", images: ["./src/assets/c-W.jpg","./src/assets/c-W2.jpg"], title: "Cottage W - Social Hall", description: "Full Description 3" },
     ];
 
@@ -102,9 +100,7 @@ const CottageSlider = () => {
         setShowAll(!showAll);
     };
 
-    const handleCheckAvailability = (type) => {
-        navigate(`/calendar/${type}`);
-    };
+
 
     return (
         <div className="relative w-full max-w-[1200px] mx-auto overflow-hidden mt-16 slider">
@@ -200,12 +196,6 @@ const CottageSlider = () => {
                             onClick={handleCloseModal}
                         >
                             Book now
-                        </button>
-                        <button 
-                            className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md"
-                            onClick={() => handleCheckAvailability(cards[selectedCardIndex].title)} // Pass the title or type of cottage
-                        >
-                            Check Availability
                         </button>
                         <button 
                             className="bg-[#FF6767] hover:bg-[#f35656] text-white px-4 py-2 rounded-md "

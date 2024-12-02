@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.contrib.auth import authenticate
 from rest_framework.generics import UpdateAPIView, DestroyAPIView
 from django.contrib.auth.models import update_last_login
@@ -11,6 +12,8 @@ from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule,
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
+from itertools import combinations
+from django.conf import settings
 from .permissions import IsAdminOrEmployee, IsAdminOnly
 
 class RegisterUserView(APIView):
@@ -317,20 +320,113 @@ class LodgeListView(generics.ListCreateAPIView):
     queryset = Lodge.objects.all()
     serializer_class = LodgeSerializer
 
+class TotalUnitsView(APIView):
+    def get(self, request):
+        total_cottages = Cottage.objects.count()
+        total_lodges = Lodge.objects.count()
+        return Response({
+            "total_cottages": total_cottages,
+            "total_lodges": total_lodges
+        })
+
 class AddUnitView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
         unit_type = request.data.get("type", "").lower()
+        name = request.data.get("name", "").strip()
+
         if unit_type == "cottage":
+            # Check for uniqueness based on name and type
+            if Cottage.objects.filter(name=name, type=request.data.get("type")).exists():
+                return Response({"error": "Cottage with the same name exists."}, status=400)
             serializer = CottageSerializer(data=request.data)
         elif unit_type == "lodge":
+            # Check for uniqueness based on name and type
+            if Lodge.objects.filter(name=name, type=request.data.get("type")).exists():
+                return Response({"error": "Lodge with the same name exists."}, status=400)
             serializer = LodgeSerializer(data=request.data)
         else:
-            return Response({"error": "Invalid type provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid type provided."}, status=400)
 
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    
+class DeleteCottageView(DestroyAPIView):
+    queryset = Cottage.objects.all()  # Ensure this matches the Cottage model
+    serializer_class = CottageSerializer
+
+class DeleteLodgeView(DestroyAPIView):
+    queryset = Lodge.objects.all()  # Ensure this matches the Lodge model
+    serializer_class = LodgeSerializer
+
+class FilterUnitsView(APIView):
+    def get(self, request):
+        people = int(request.query_params.get("people", 1))
+        num_combinations = int(request.query_params.get("num_combinations", 1))
+        unit_type = request.query_params.get("type", "all").lower()
+        price_range = request.query_params.get("price_range", "all").lower()
+
+        # Filter by type
+        if unit_type == "cottage":
+            units = Cottage.objects.all()
+            serializer_class = CottageSerializer
+        elif unit_type == "lodge":
+            units = Lodge.objects.all()
+            serializer_class = LodgeSerializer
+        else:
+            cottages = list(Cottage.objects.all())
+            lodges = list(Lodge.objects.all())
+            units = cottages + lodges
+            serializer_class = None  # Handle mixed serialization
+
+        # Filter by price range
+        if price_range == "under_100":
+            units = [u for u in units if getattr(u, "time_24hrs_price", 0) < 100]
+        elif price_range == "100_200":
+            units = [u for u in units if 100 <= getattr(u, "time_24hrs_price", 0) <= 200]
+        elif price_range == "200_and_above":
+            units = [u for u in units if getattr(u, "time_24hrs_price", 0) > 200]
+
+        # Process combinations
+        units = sorted(units, key=lambda x: x.capacity, reverse=True)
+        valid_combinations = []
+        for combo in combinations(units, num_combinations):
+            combo_capacity = sum(c.capacity for c in combo)
+            if combo_capacity >= people:
+                valid_combinations.append((combo_capacity, list(combo)))
+
+        if valid_combinations:
+            best_combination = min(valid_combinations, key=lambda x: x[0])
+            recommended_units = best_combination[1]
+        else:
+            return Response({"error": "No results found for the given filters."}, status=400)
+
+        # **Add the image_url here**:
+        for unit in recommended_units:
+            if hasattr(unit, "image") and unit.image:
+                unit.image_url = request.build_absolute_uri(unit.image.url)
+                print(f"Unit: {unit.name}, Image URL: {unit.image_url}")
+            else:
+                print(f"Unit: {unit.name} has no image")
+
+        # Serialize recommendations
+        if serializer_class:
+            recommended_serializer = serializer_class(recommended_units, many=True, context={"request": request})
+        else:
+            # Mixed serialization for "all"
+            recommended_serializer = [
+                CottageSerializer(unit, context={"request": request}).data if isinstance(unit, Cottage)
+                else LodgeSerializer(unit, context={"request": request}).data
+                for unit in recommended_units
+            ]
+
+        return Response({"recommended": recommended_serializer})
+
+
+
+

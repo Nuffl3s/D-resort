@@ -16,7 +16,8 @@ function AddProduct() {
     const [currentPage, setCurrentPage] = useState(1);
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [salesHistory, setSalesHistory] = useState([]);
+    const [inventory, initialInventory] = useState(false);
+    const [salesHistory] = useState([]);
 
     const productsPerPage = 7;
     const inputRef = useRef(null);

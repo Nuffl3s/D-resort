@@ -3,10 +3,8 @@ import { useEffect, useState } from 'react';
 import Sidebar from '../components/EmployeeSidebar';
 // import axios from 'axios';
 import api from '../api';
-import { useNavigate } from "react-router-dom";
 
 function ProductList() {
-    const navigate = useNavigate();
     const [products, setProducts] = useState([]);  
 
     const fetchProducts = async () => {
@@ -31,9 +29,6 @@ function ProductList() {
         }
     };
 
-    const handleAddProduct = () => {
-        navigate("/AddProduct"); // Redirect to Add Product page
-    };
 
     return (
         <div className="flex bg-gray-100">
@@ -64,7 +59,6 @@ function ProductList() {
                             />
                         </div>
                     </div>
-                    <button onClick={handleAddProduct} className='rounded-md shadow-md bg-[#70b8d3] hover:bg-[#09B0EF] text-white font-medium p-2 px-4'>Add Product</button>
                 </div>
               
                 {/* Table of Products */}
@@ -76,7 +70,9 @@ function ProductList() {
                                 <th scope="col" className="thDesign">Product name</th>
                                 <th scope="col" className="thDesign">Date of Product added</th>
                                 <th scope="col" className="thDesign">Quantity</th>
-                                <th scope="col" className="thDesign">AVG PRICE</th>
+                                <th scope="col" className="thDesign">Acquisition cost</th>
+                                <th scope="col" className="thDesign">Selling price</th>
+                                <th scope="col" className="thDesign">Total profit</th>
                                 <th scope="col" className="thDesign">ACTION</th>
                             </tr>
                         </thead>
@@ -87,6 +83,8 @@ function ProductList() {
                                         <td className="px-6 py-4">{product.id}</td>
                                         <td className="px-6 py-4 font-medium text-black whitespace-nowrap">{product.name}</td>
                                         <td className="px-6 py-4">{product.date_added}</td>
+                                        <td className="px-6 py-4">{product.quantity}</td>
+                                        <td className="px-6 py-4">{product.avgPrice}</td>
                                         <td className="px-6 py-4">{product.quantity}</td>
                                         <td className="px-6 py-4">{product.avgPrice}</td>
                                         <td className="space-x-2">

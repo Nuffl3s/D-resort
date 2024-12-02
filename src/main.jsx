@@ -15,7 +15,7 @@ import EmployeeSidebar from './components/EmployeeSidebar.jsx';
 import EmployeeDash from './EmployeePages/EmployeeDash.jsx';
 import EmployeeReservation from './EmployeePages/EmployeeReservation.jsx';
 import ProductList from './EmployeePages/ProductList.jsx';
-import AddProduct from './EmployeePages/AddProduct.jsx';
+import AddProduct from './AdminPages/AddProduct.jsx';
 import ManageProduct from './EmployeePages/ManageProduct.jsx';
 import SalesReport from './EmployeePages/SalesReport.jsx';
 import BookingReport from './EmployeePages/BookingReport.jsx';
@@ -48,6 +48,8 @@ root.render(
         <Route path="/AdminReport" element={<AdminReport />} />
         <Route path="/AdminAddUnit" element={<AdminAddUnit />} />
         <Route path="/AuditLog" element={<AuditLog />} />
+        <Route path="/AddProduct" element={<AddProduct />} />
+
 
         {/* Shared Routes (Admin and Employee) */}
         <Route path="/Settings" element={<Settings />} />
@@ -55,7 +57,6 @@ root.render(
         <Route path="/EmployeeDash" element={<EmployeeDash />} />
         <Route path="/EmployeeReservation" element={<EmployeeReservation />} />
         <Route path="/ProductList" element={<ProductList />} />
-        <Route path="/AddProduct" element={<AddProduct />} />
         <Route path="/ManageProduct" element={<ManageProduct />} />
         <Route path="/SalesReport" element={<SalesReport />} />
         <Route path="/BookingReport" element={<BookingReport />} />

@@ -10,8 +10,9 @@ const AdminSidebar = () => {
         { title: "Employee Management", src: "src/assets/add.png", path: "/AdminManagement" },
         { title: "Attendance", src: "src/assets/calendar.png", path: "/AdminAttendance" },
         { title: "Work Schedules", src: "src/assets/clock.png", path: "/AdminSchedule" },
-        { title: "Payroll", src: "src/assets/money.png", path: "/AdminPayroll" },
         { title: "Add Unit", src: "src/assets/add-unit.png", path: "/AdminAddUnit" },
+        { title: "Add Product", src: "src/assets/add-product.png", path: "/AddProduct" },
+        { title: "Payroll", src: "src/assets/money.png", path: "/AdminPayroll" },
         { title: "Report", src: "src/assets/report.png", path: "/AdminReport" },
         {
             title: "Audit Log",

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import Sidebar from '../components/EmployeeSidebar';
+import Sidebar from '../components/AdminSidebar';
 // import axios from 'axios';
 import api from '../api';
 import Swal from 'sweetalert2';
@@ -16,6 +16,7 @@ function AddProduct() {
     const [currentPage, setCurrentPage] = useState(1);
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [salesHistory, setSalesHistory] = useState([]);
 
     const productsPerPage = 7;
     const inputRef = useRef(null);
@@ -200,106 +201,153 @@ function AddProduct() {
         setShowSuggestions(false);  // Hide the suggestions dropdown
     };
 
-
     return (
         <div className="flex bg-gray-100">
             <Sidebar />
             <div id="dashboard" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4">PRODUCT</h1>
                 <div className=" rounded-md w-full mt-8 overflow-x-hidden flex justify-between">
-                    <div className="lg:ml-30 space-x-8">
-                        <div className="w-[700px] rounded-md border p-5 bg-white shadow">
-                            <form className="grid grid-cols-1 gap-3" onSubmit={handleSubmit}>
-                                <div className="flex space-x-4">
-                                    <input
-                                        type="text"
-                                        placeholder="Product Name"
-                                        className="w-full p-2 border border-gray-300 rounded"
-                                        value={productName}
-                                        onChange={handleProductNameChange}
-                                        ref={inputRef}
-                                        autoComplete="off"
-                                    />
+                    <div className="flex-col">
+                        <div className="lg:ml-30 space-x-8">
+                            <div className="w-[700px] rounded-md border p-5 bg-white shadow">
+                                <form className="grid grid-cols-1 gap-3" onSubmit={handleSubmit}>
+                                    <div className="flex space-x-4">
+                                        <input
+                                            type="text"
+                                            placeholder="Product Name"
+                                            className="w-full p-2 border border-gray-300 rounded"
+                                            value={productName}
+                                            onChange={handleProductNameChange}
+                                            ref={inputRef}
+                                            autoComplete="off"
+                                        />
 
-                                    {showSuggestions && (
-                                        <div 
-                                            className="absolute top-[163px] left-[355px] z-20 w-[758px] border-gray-400 border bg-white divide-y divide-gray-100 rounded-lg shadow-md"
-                                            ref={dropdownRef} // Reference to the dropdown
-                                        >
-                                            <ul className="p-3 space-y-1 text-sm text-gray-700">
-                                                {suggestions.map((suggestion, index) => (
-                                                    <li key={index}>
-                                                        <div
-                                                            className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer"
-                                                            onClick={() => handleSuggestionClick(suggestion)}
-                                                        >
-                                                            <span className="w-full ms-2 text-sm font-medium text-gray-900">
-                                                                {suggestion.name}  {/* Ensure this matches the API response structure */}
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                        {showSuggestions && (
+                                            <div 
+                                                className="absolute top-[163px] left-[355px] z-20 w-[758px] border-gray-400 border bg-white divide-y divide-gray-100 rounded-lg shadow-md"
+                                                ref={dropdownRef} // Reference to the dropdown
+                                            >
+                                                <ul className="p-3 space-y-1 text-sm text-gray-700">
+                                                    {suggestions.map((suggestion, index) => (
+                                                        <li key={index}>
+                                                            <div
+                                                                className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer"
+                                                                onClick={() => handleSuggestionClick(suggestion)}
+                                                            >
+                                                                <span className="w-full ms-2 text-sm font-medium text-gray-900">
+                                                                    {suggestion.name}  {/* Ensure this matches the API response structure */}
+                                                                </span>
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex justify-between space-x-2">
+                                        <div className="w-full flex-col space-y-2">
+                                            <p className="text-gray-500">Quantity</p>
+                                            <input
+                                                type="number"
+                                                placeholder="Quantity"
+                                                className="w-full p-2 border border-gray-300 rounded"
+                                                value={quantity}
+                                                onChange={handleQuantityChange}
+                                            />
                                         </div>
-                                    )}
-                                </div>
 
-                                <div className="flex justify-between space-x-2">
-                                    <div className="w-full flex-col space-y-2">
-                                        <p className="text-gray-500">Quantity</p>
-                                        <input
-                                            type="number"
-                                            placeholder="Quantity"
-                                            className="w-full p-2 border border-gray-300 rounded"
-                                            value={quantity}
-                                            onChange={handleQuantityChange}
-                                        />
+                                        <div className="w-full flex-col space-y-2">
+                                            <p className="text-gray-500">Acquisition Cost</p>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="Average Price"
+                                                className="w-full p-2 border border-gray-300 rounded"
+                                                value={avgPrice}
+                                                onChange={handleAvgPriceChange}
+                                            />
+                                        </div>
+
+                                        <div className="w-full flex-col space-y-2">
+                                            <p className="text-gray-500">Selling Price</p>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="Average Price"
+                                                className="w-full p-2 border border-gray-300 rounded"
+                                                value={avgPrice}
+                                                onChange={handleAvgPriceChange}
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="w-full flex-col space-y-2">
-                                        <p className="text-gray-500">Acquisition Cost</p>
+                                    <div className="flex flex-col space-y-2">
+                                        <p className="text-gray-500">Total Profit</p>
                                         <input
                                             type="number"
                                             step="0.01"
-                                            placeholder="Average Price"
+                                            placeholder="Total Amount"
                                             className="w-full p-2 border border-gray-300 rounded"
-                                            value={avgPrice}
-                                            onChange={handleAvgPriceChange}
+                                            value={totalAmount}
+                                            readOnly
                                         />
                                     </div>
 
-                                    <div className="w-full flex-col space-y-2">
-                                        <p className="text-gray-500">Selling Price</p>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            placeholder="Average Price"
-                                            className="w-full p-2 border border-gray-300 rounded"
-                                            value={avgPrice}
-                                            onChange={handleAvgPriceChange}
-                                        />
-                                    </div>
+                                    <button
+                                        type="submit"
+                                        className="bg-[#70b8d3] hover:bg-[#09B0EF] shadow text-white font-semibold py-2 px-4 rounded"
+                                    >
+                                        Add product
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div className="bg-white shadow-md p-4 rounded-sm mt-5 min-h-[500px]">
+                            <div className="flex items-center gap-x-2 mb-2 justify-between">
+                                <div className="flex items-center gap-x-2">
+                                    <img src="src/assets/grid.png" alt="" className="w-4 h-4"/>
+                                    <h2 className="text-xl font-semibold uppercase">Product list</h2>
                                 </div>
 
-                                <div className="flex flex-col space-y-2">
-                                    <p className="text-gray-500">Total Profit</p>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="Total Amount"
-                                        className="w-full p-2 border border-gray-300 rounded"
-                                        value={totalAmount}
-                                        readOnly
-                                    />
+                                <div>
+                                    <button className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white p-2 px-3 rounded text-sm">View all</button>
                                 </div>
+                                
+                            </div>
+                            <table className="w-full border border-gray-300 text-left">
+                                <thead>
+                                    <tr>
+                                        <th className="thDesign">#</th>
+                                        <th className="thDesign">Product Name</th>
+                                        <th className="thDesign">Qty</th>
+                                        <th className="thDesign">Acquisition Cost</th>
+                                        <th className="thDesign">Selling Price</th>
+                                        <th className="thDesign">Total Profit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {salesHistory.slice(-5).map((sale, index) => {
+                                        const product = inventory.find(item => item.name === sale.name);
+                                        const quantitySold = 
+                                            initialInventory.find(item => item.id === product?.id)?.quantity - product?.quantity || 0;
 
-                                <button
-                                    type="submit"
-                                    className="bg-[#70b8d3] hover:bg-[#09B0EF] shadow text-white font-semibold py-2 px-4 rounded"
-                                >
-                                    Add product
-                                </button>
-                            </form>
+                                        return (
+                                            <tr key={sale.id}>
+                                                <td className="border px-4 py-2">{index + 1}</td>
+                                                <td className="border px-4 py-2">{sale.name}</td>
+                                                <td className="border px-4 py-2">{quantitySold}</td>
+                                                <td className="border px-4 py-2">${product?.cost.toFixed(2)}</td>
+                                                <td className="border px-4 py-2">${product?.price.toFixed(2)}</td>
+                                                <td className="border px-4 py-2">
+                                                    ${(quantitySold * (product?.price - product?.cost)).toFixed(2)}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     

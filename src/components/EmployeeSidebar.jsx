@@ -15,7 +15,6 @@ const EmployeeSidebar = () => {
 
     const Submenus = {
         Product: [
-            { title: "Add Product", path: "AddProduct", icon: "add-product" },
             { title: "Product List", path: "ProductList", icon: "list" },
             { title: "Manage Product", path: "ManageProduct", icon: "manage-product" },
         ],

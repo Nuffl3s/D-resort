@@ -17,6 +17,7 @@ function AdminDash () {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [products, setProducts] = useState([]);
     const [date, setDate] = useState(); 
+    const [totals, setTotals] = useState({ total_cottages: 0, total_lodges: 0 });
     const [salesSummaryModalOpen, setSalesSummaryModalOpen] = useState(false);
 
     // New state for filtering attendance
@@ -64,6 +65,16 @@ function AdminDash () {
         fetchProducts();
     }, []);
 
+    useEffect(() => {
+        api.get('/total-units/')
+            .then((response) => {
+            setTotals(response.data);
+            })
+            .catch((error) => {
+                console.error('Error fetching total units:', error);
+        });
+    }, []);
+
     // Update the current time every second
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -105,6 +116,8 @@ function AdminDash () {
                                 <div className="p-4">
                                     <h1 className="text-lg font-semibold mb-2 text-white">COTTAGE</h1>
                                     <p className="text-sm mb-4 text-white">
+                                        Number of Cottages: {totals.total_cottages}
+                                        <br />
                                         Number Booked: 5
                                         <br />
                                         Availability: 3
@@ -127,6 +140,8 @@ function AdminDash () {
                                 <div className="p-4">
                                     <h1 className="text-lg font-semibold mb-2 text-white">LODGE</h1>
                                     <p className="text-sm mb-4 text-white">
+                                        Number of Lodges: {totals.total_lodges}
+                                        <br />
                                         Number Booked: 8
                                         <br />
                                         Availability: 2

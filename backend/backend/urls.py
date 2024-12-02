@@ -3,7 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 from api.views import RegisterUserView, CustomLoginView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView, PayrollListCreate, PayrollDetail, UserDetailsView, LogView, WeeklyScheduleView
-from api.views import EditEmployeeView, DeleteEmployeeView, CottageListView, LodgeListView, AddUnitView
+from api.views import EditEmployeeView, DeleteEmployeeView, CottageListView, LodgeListView, AddUnitView, DeleteCottageView, DeleteLodgeView, TotalUnitsView, FilterUnitsView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
@@ -27,5 +27,9 @@ urlpatterns = [
     path('api/cottages/', CottageListView.as_view(), name='cottage-list'),
     path('api/lodges/', LodgeListView.as_view(), name='lodge-list'),
     path('api/add-unit/', AddUnitView.as_view(), name='add-unit'),
+    path("api/cottages/<int:pk>/", DeleteCottageView.as_view(), name="delete-cottage"),
+    path("api/lodges/<int:pk>/", DeleteLodgeView.as_view(), name="delete-lodge"),
+    path('api/total-units/', TotalUnitsView.as_view(), name='get_total_units'),
+    path('api/filter-units/', FilterUnitsView.as_view(), name='filter_units'),
     path("api-auth/", include("rest_framework.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

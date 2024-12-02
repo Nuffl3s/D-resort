@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
+import UnitModal from '../Modal/UnitModal';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import api from '../api'
 
 const AdminAddUnit = () => {
     const navigate = useNavigate();
-    const [type, setType] = useState('Cottage'); // Default to "Cottage"
+    const [type, setType] = useState('Cottage'); // Default to "Cottage" 
     const [images, setImages] = useState([]);
+    const [isModalOpen, setModalOpen] = useState(false);
     const [capacity, setCapacity] = useState('');
     const [formData, setFormData] = useState({
-        type: "Cottage", // Default to Cottage
+        type: "Cottage",
         image: null,
+        name: "",
         capacity: "",
         price1: "",
         price2: "",
@@ -22,8 +25,11 @@ const AdminAddUnit = () => {
     const [responseMessage, setResponseMessage] = useState("");
 
     const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+        const { name, type, value, files } = e.target;
+        setFormData({
+            ...formData,
+            [name]: type === "file" ? files[0] : type === "number" ? parseInt(value, 10) || "" : value,
+        });
     };
 
     const handleFileChange = (e) => {
@@ -43,12 +49,18 @@ const AdminAddUnit = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const data = new FormData();
     
-        // Ensure field names match the backend
+        if (!formData.name || !formData.type || !formData.image || !formData.capacity) {
+            alert("Please fill in all required fields including the name.");
+            return;
+        }
+    
+        const data = new FormData();
+        data.append("name", formData.name); // Append name
         data.append("type", formData.type);
         data.append("image", formData.image);
         data.append("capacity", formData.capacity);
+    
         if (formData.type === "Cottage") {
             data.append("time_6am_6pm_price", formData.price1);
             data.append("time_6am_12mn_price", formData.price2);
@@ -65,21 +77,13 @@ const AdminAddUnit = () => {
             const response = await api.post("/add-unit/", data, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            setResponseMessage("Unit added successfully!");
-            console.log("Response:", response.data);
+            alert("Unit added successfully!");
+            console.log(response.data);
         } catch (error) {
-            setResponseMessage("Error adding unit. Please try again.");
-            console.error("Error:", error.response?.data || error.message);
+            console.error("Error adding unit:", error.response?.data || error.message);
         }
-        Swal.fire({
-            title: 'Success!',
-            text: 'The new item has been added successfully.',
-            icon: 'success',
-            confirmButtonText: 'OK',
-        });
     };
-        
-
+    
     const handleTempoBtnBooking = () => {
         navigate('/booking');
     };
@@ -235,6 +239,20 @@ const AdminAddUnit = () => {
                             </select>
                         </div>
 
+                        {/* Name */}
+                        <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] dark:text-[#e7e6e6]">Name</label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value={formData.name || ""} 
+                                placeholder="Enter Name"
+                                onChange={handleInputChange} 
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                            />
+                        </div>
+
                         {/* Capacity */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] ">Capacity</label>
@@ -264,6 +282,14 @@ const AdminAddUnit = () => {
                         </div>
 
                         {renderPriceFields()}
+
+                        <div>
+                            <button className="button is-info" onClick={() => setModalOpen(true)}>
+                                Show Units
+                            </button>
+                            <UnitModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />
+                            </div>
+                        );
 
                         <div className="flex justify-end">
                             <button

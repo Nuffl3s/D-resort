@@ -10,6 +10,7 @@ function EmployeeDash() {
     const [selectedCategory, setSelectedCategory] = useState('Cottage');
     const [currentTime, setCurrentTime] = useState(new Date());
     const [date, setDate] = useState();
+    const [totals, setTotals] = useState({ total_cottages: 0, total_lodges: 0 });
 
     const tableHeaders =
         selectedCategory === 'Cottage'
@@ -29,7 +30,16 @@ function EmployeeDash() {
             console.error('Error fetching data:', error);
         }
     };
-
+    useEffect(() => {
+        api.get('/total-units/')
+            .then((response) => {
+            setTotals(response.data);
+            })
+            .catch((error) => {
+                console.error('Error fetching total units:', error);
+        });
+    }, []);
+    
     useEffect(() => {
         fetchData();
     }, [selectedCategory]);
@@ -57,7 +67,7 @@ function EmployeeDash() {
                                 <div className="relative flex h-full items-center gap-2 p-4">
                                     <div className="flex flex-col p-2">
                                         <h1 className="text-white font-bold text-[20px]">Cottage</h1>
-                                        <p className="text-white font-semibold line-clamp-3">Total of Lodges:</p>
+                                        <p className="text-white font-semibold line-clamp-3">Total of Cottage: {totals.total_cottages}</p>
                                         <p className="text-white font-semibold line-clamp-3">Availability:</p>
                                         <p className="text-white font-semibold line-clamp-3">Booked:</p>
                                     </div>
@@ -72,7 +82,7 @@ function EmployeeDash() {
                                 <div className="relative flex h-full w-full items-center gap-2 p-4">
                                     <div className="flex flex-col">
                                         <h1 className="text-white font-bold text-[20px]">Lodge</h1>
-                                        <p className="text-white font-semibold line-clamp-3">Total of Lodges:</p>
+                                        <p className="text-white font-semibold line-clamp-3">Total of Lodges: {totals.total_lodges}</p>
                                         <p className="text-white font-semibold line-clamp-3">Availability:</p>
                                         <p className="text-white font-semibold line-clamp-3">Booked:</p>
                                     </div>
@@ -83,7 +93,7 @@ function EmployeeDash() {
 
                         <div className="flex-row w-full h-[615px] mt-8 p-6 mx-auto bg-white shadow-lg rounded-lg border-gray-200">
                             <div className="flex justify-between mb-5">
-                                <h1 className="text-2xl font-bold">Ratings</h1>
+                                <h1 className="text-2xl font-bold">Rates</h1>
                                 <div>
                                     <button
                                         onClick={() => setSelectedCategory('Cottage')}

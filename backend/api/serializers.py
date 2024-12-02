@@ -64,20 +64,38 @@ class LogSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "action", "category", "timestamp"]
         
 class CottageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Cottage
         fields = [
-            'id', 'image', 'type', 'capacity', 
-            'time_6am_6pm_price', 'time_6am_12mn_price', 
-            'time_6pm_6am_price', 'time_24hrs_price'
-        ]
+                'id', 'name', 'image_url', 'type', 'capacity', 
+                'time_6am_6pm_price', 'time_6am_12mn_price', 
+                'time_6pm_6am_price', 'time_24hrs_price'
+                ]
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
 
 class LodgeSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Lodge
         fields = [
-            'id', 'image', 'type', 'capacity', 
+            'id', 'name', 'image_url', 'type', 'capacity', 
             'time_3hrs_price', 'time_6hrs_price', 
             'time_12hrs_price', 'time_24hrs_price'
         ]
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
 

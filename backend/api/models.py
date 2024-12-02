@@ -91,9 +91,9 @@ class Log(models.Model):
         return f"{self.username} - {self.action} - {self.category}"
 
 class Cottage(models.Model):
-    image = models.URLField()
-    type = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, default="Unnamed Cottage", unique=True)  # Enforce uniqueness on name
     image = models.ImageField(storage=image_storage, upload_to="cottage_images/")
+    type = models.CharField(max_length=255)  # Remove from unique constraint
     capacity = models.PositiveIntegerField()
     time_6am_6pm_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     time_6am_12mn_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -101,12 +101,12 @@ class Cottage(models.Model):
     time_24hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
-        return f"{self.type} - {self.capacity} people"
+        return f"{self.type} - {self.name}"
 
 class Lodge(models.Model):
-    image = models.URLField()
-    type = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, default="Unnamed Lodge", unique=True)  # Enforce uniqueness on name
     image = models.ImageField(storage=image_storage, upload_to="lodge_images/")
+    type = models.CharField(max_length=255)  # Remove from unique constraint
     capacity = models.PositiveIntegerField()
     time_3hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     time_6hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -114,4 +114,5 @@ class Lodge(models.Model):
     time_24hrs_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
-        return f"{self.type} - {self.capacity} people"
+        return f"{self.type} - {self.name}"
+

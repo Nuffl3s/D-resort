@@ -5,6 +5,7 @@ import Input from "../components/Inputs";
 import Loader from '../components/Loader';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import api from '../api';
 
 function BookingPage() {
     const navigate = useNavigate();
@@ -20,11 +21,22 @@ function BookingPage() {
         lodge: false,
     });
 
+    const [cottages, setCottages] = useState([]);
+    const [lodges, setLodges] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
+    const [filterType, setFilterType] = useState("");
+    const [priceRange, setPriceRange] = useState("");
     const [sortOption, setSortOption] = useState('recommended');
     const [zoomedImage, setZoomedImage] = useState(null); 
     const [showScrollButton, setShowScrollButton] = useState(false); 
     const [scrollProgress, setScrollProgress] = useState(0);
-
+    const [people, setPeople] = useState(1); // Number of people
+    const [recommendedUnits, setRecommendedUnits] = useState([]);
+    const [filteredCottages, setFilteredCottages] = useState([]);
+    const [filteredLodges, setFilteredLodges] = useState([]);
+    const [numCombinations, setNumCombinations] = useState('');
+    const [recommendations, setRecommendations] = useState([]);
+    const [showRecommendations, setShowRecommendations] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -59,6 +71,89 @@ function BookingPage() {
         };
     }, []);
 
+    const handleSearchRecommendations = async () => {
+        if (!people || !numCombinations) {
+            alert("Please provide both Number of People and Number of Combinations!");
+            return;
+        }
+    
+        setLoading(true);
+        try {
+            const response = await api.get("/filter-units/", {
+                params: {
+                people: parseInt(people), // Use input value for number of people
+                num_combinations: parseInt(numCombinations), // Use input value for combinations
+                },
+            });
+            setRecommendations(response.data.recommended || []);
+            setShowRecommendations(true); // Set to true when recommendations are fetched
+        } catch (error) {
+            console.error("Error fetching recommendations:", error.response?.data || error.message);
+            setRecommendations([]);
+          setShowRecommendations(false); // Reset on error
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        // Fetch cottages
+        api
+            .get("/cottages/") // Update the URL based on your Django REST API endpoint
+            .then((response) => {
+            setCottages(response.data);
+        })
+            .catch((error) => console.error("Error fetching cottages:", error));
+    
+        // Fetch lodges
+        api
+            .get("/lodges/") // Update the URL based on your Django REST API endpoint
+            .then((response) => {
+            setLodges(response.data);
+        })
+            .catch((error) => console.error("Error fetching lodges:", error));
+    }, []);
+
+    const fetchRecommendations = async () => {
+        const response = await fetch(`/api/filter-units/?people=${people}&num_combinations=${combinations}&type=${type}&price_range=${priceRange}`);
+        const data = await response.json();
+        setRecommendations(data.recommended);
+    };
+
+    useEffect(() => {
+        let data = [...cottages, ...lodges];
+    
+        // Apply type filter if selected
+        if (filterType === "Cottage") {
+            data = cottages;
+        } else if (filterType === "Lodge") {
+            data = lodges;
+        }
+    
+        // Apply price range filter if selected
+        if (priceRange === "Under 100") {
+            data = data.filter((item) =>
+            item.time_6am_6pm_price
+                ? item.time_6am_6pm_price < 100
+                : item.time_3hrs_price < 100
+            );
+        } else if (priceRange === "100-200") {
+            data = data.filter((item) =>
+                item.time_6am_6pm_price
+                ? item.time_6am_6pm_price >= 100 && item.time_6am_6pm_price <= 200
+                : item.time_3hrs_price >= 100 && item.time_3hrs_price <= 200
+            );
+            } else if (priceRange === "200 and above") {
+            data = data.filter((item) =>
+                item.time_6am_6pm_price
+                ? item.time_6am_6pm_price > 200
+                : item.time_3hrs_price > 200
+            );
+        }
+    
+        setFilteredData(data);
+        }, [filterType, priceRange, cottages, lodges]);
+        
     const handleBook = (cottageAndLodge) => {
         navigate('/payment', {
             state: {
@@ -91,34 +186,6 @@ function BookingPage() {
 
      // Array of cottage data
      const Data = [
-        { id: 1, imgSrc: "./src/assets/c-A.jpg", title: "Cottage A - FUNCTION HALL", type: "cottage", description: "Good for 5-10 person", price: "$150 per night" },
-        { id: 2, imgSrc: "./src/assets/c-B.jpg", title: "Cottage B", type: "cottage", description: "Enjoy breathtaking views from Cottage 2.", price: "$200 per night" },
-        { id: 3, imgSrc: "./src/assets/c-C.jpg", title: "Cottage C", type: "cottage", description: "Relax and unwind in Cottage 3's serene environment.", price: "$180 per night" },
-        { id: 4, imgSrc: "./src/assets/c-D.jpg", title: "Cottage D", type: "cottage", description: "Secluded and peaceful stay.", price: "$220 per night" },
-        { id: 5, imgSrc: "./src/assets/c-E.jpg", title: "Cottage E", type: "cottage", description: "Perfect for families and groups.", price: "$250 per night" },
-        { id: 6, imgSrc: "./src/assets/c-F.jpg", title: "Cottage F", type: "cottage", description: "Wake up to the sound of waves.", price: "$300 per night" },
-        { id: 7, imgSrc: "./src/assets/c-G.jpg", title: "Cottage G", type: "cottage", description: "Experience luxurious amenities at Cottage 1.", price: "$150 per night" },
-        { id: 8, imgSrc: "./src/assets/c-H.jpg", title: "Cottage H", type: "cottage", description: "Enjoy breathtaking views from Cottage 2.", price: "$200 per night" },
-        { id: 9, imgSrc: "./src/assets/c-I.jpg", title: "Cottage I", type: "cottage", description: "Relax and unwind in Cottage 3's serene environment.", price: "$180 per night" },
-        { id: 10, imgSrc: "./src/assets/c-J.jpg", title: "Cottage J", type: "cottage", description: "Secluded and peaceful stay.", price: "$220 per night" },
-        { id: 11, imgSrc: "./src/assets/c-K.jpg", title: "Cottage K", type: "cottage", description: "Perfect for families and groups.", price: "$250 per night" },
-        { id: 12, imgSrc: "./src/assets/c-L.jpg", title: "Cottage L", type: "cottage", description: "Wake up to the sound of waves.", price: "$300 per night" },
-        { id: 13, imgSrc: "./src/assets/c-M.jpg", title: "Cottage M", type: "cottage", description: "Experience luxurious amenities at Cottage 1.", price: "$150 per night" },
-        { id: 14, imgSrc: "./src/assets/c-N.jpg", title: "Cottage N", type: "cottage", description: "Enjoy breathtaking views from Cottage 2.", price: "$200 per night" },
-        { id: 15, imgSrc: "./src/assets/c-O.jpg", title: "Cottage O", type: "cottage", description: "Relax and unwind in Cottage 3's serene environment.", price: "$180 per night" },
-        { id: 16, imgSrc: "./src/assets/c-P.jpg", title: "Cottage P", type: "cottage", description: "Secluded and peaceful stay.", price: "$220 per night" },
-        { id: 17, imgSrc: "./src/assets/c-Q.jpg", title: "Cottage Q", type: "cottage", description: "Perfect for families and groups.", price: "$250 per night" },
-        { id: 18, imgSrc: "./src/assets/c-R.jpg", title: "Cottage R", type: "cottage", description: "Wake up to the sound of waves.", price: "$300 per night" },
-        { id: 19, imgSrc: "./src/assets/c-S.jpg", title: "Cottage S", type: "cottage", description: "Experience luxurious amenities at Cottage 1.", price: "$150 per night" },
-        { id: 20, imgSrc: "./src/assets/c-T.jpg", title: "Cottage T", type: "cottage", description: "Enjoy breathtaking views from Cottage 2.", price: "$200 per night" },
-        { id: 21, imgSrc: "./src/assets/c-U.jpg", title: "Cottage U", type: "cottage", description: "Relax and unwind in Cottage 3's serene environment.", price: "$180 per night" },
-        { id: 22, imgSrc: "./src/assets/c-V.jpg", title: "Cottage V", type: "cottage", description: "Secluded and peaceful stay.", price: "$220 per night" },
-        { id: 23, imgSrc: "./src/assets/c-W.jpg", title: "Cottage W - Social Hall", type: "cottage", description: "Perfect for families and groups.", price: "$250 per night" },
-        { id: 24, imgSrc: "./src/assets/l-A.jpg", title: "Lodge A", type: "lodge", description: "Experience luxurious amenities at Cottage 1.", price: "$150 per night" },
-        { id: 25, imgSrc: "./src/assets/l-B.jpg", title: "Lodge B", type: "lodge", description: "Enjoy breathtaking views from Cottage 2.", price: "$200 per night" },
-        { id: 26, imgSrc: "./src/assets/l-C.jpg", title: "Lodge C", type: "lodge", description: "Relax and unwind in Cottage 3's serene environment.", price: "$180 per night" },
-        { id: 27, imgSrc: "./src/assets/l-D.jpg", title: "Lodge D", type: "lodge", description: "Secluded and peaceful stay.", price: "$220 per night" },
-        { id: 28, imgSrc: "./src/assets/l-E.jpg", title: "Lodge E", type: "lodge", description: "Perfect for families and groups.", price: "$250 per night" },
     ];
 
     const handleTypeChange = (type) => {
@@ -132,27 +199,6 @@ function BookingPage() {
         setSortOption(e.target.value);
     };
 
-    // Filter the displayed data based on the selected filters
-    const filteredData = Data.filter(item => {
-        if (selectedTypes.cottage && selectedTypes.lodge) return true;
-        if (selectedTypes.cottage) return item.type === "cottage";
-        if (selectedTypes.lodge) return item.type === "lodge";
-        return true; // Default: show all
-    });
-
-    // Sort the data based on the selected sort option
-    const sortedData = [...filteredData].sort((a, b) => {
-        const priceA = parseFloat(a.price.replace(/[^0-9.-]+/g, ""));
-        const priceB = parseFloat(b.price.replace(/[^0-9.-]+/g, ""));
-
-        if (sortOption === 'price-low-high') {
-            return priceA - priceB;
-        } else if (sortOption === 'price-high-low') {
-            return priceB - priceA;
-        } else {
-            return 0; // No sorting for 'recommended'
-        }
-    });
 
     // Handle zoom on click and hold
     const handleZoomStart = (id) => {
@@ -203,87 +249,178 @@ function BookingPage() {
                 </div>
 
                 <div className="w-full max-w-[1200px] flex items-start mx-auto mt-5 space-x-4 con3">
-                    {/* Sidebar for filters */}
-                    <div className="w-1/4 p-4 bg-gray-100 rounded-lg shadow-md fil">
-                        <h3 className="text-lg font-semibold mb-4">Filter by</h3>
-                        <div className="sub-filter">
-                            <div className="mb-4">
-                                <h4 className="font-semibold mb-2">Type</h4>
-                                <div className="space-y-2">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            className="mr-2"
-                                            checked={selectedTypes.cottage}
-                                            onChange={() => handleTypeChange('cottage')}
-                                        />
-                                        Cottage
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            className="mr-2"
-                                            checked={selectedTypes.lodge}
-                                            onChange={() => handleTypeChange('lodge')}
-                                        />
-                                        Lodge
-                                    </label>
-                                </div>
-                            </div>
 
-                            <div className="mb-4">
-                                <h4 className="font-semibold mb-2">Price Range</h4>
-                                <div className="space-y-2">
-                                    <label className="flex items-center">
-                                        <input type="checkbox" name="price" className="mr-2" />
-                                        Under 100 per night
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input type="checkbox" name="price" className="mr-2" />
-                                        100 - 200 per night
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input type="checkbox" name="price" className="mr-2" />
-                                        200 and above
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main content */}
-                    <div className="w-3/4 flex flex-col space-y-4 cards">
-                        {sortedData.map((cottageAndlodge) => (
-                            <div key={cottageAndlodge.id} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto sub-card">
-                                <div className="w-1/3">
-                                    <img
-                                        src={cottageAndlodge.imgSrc}
-                                        alt={cottageAndlodge.title}
-                                        className={`md:w-[230px]  img rounded-lg transition-transform duration-300 ${zoomedImage === cottageAndlodge.id ? 'scale-150' : ''} cursor-zoom-in`}
-                                        onMouseDown={() => handleZoomStart(cottageAndlodge.id)}
-                                        onMouseUp={handleZoomEnd}
-                                        onMouseLeave={handleZoomEnd} 
+                    {/* Sidebar Filter Section */}
+                        <div  className="w-1/4 p-4 bg-gray-100 rounded-lg shadow-md fil">
+                            <h3 className="text-lg font-semibold mb-4">Filter by</h3>
+                            <div className="sub-filter">
+                                <div className="mb-4">
+                                <label className="block mb-4">
+                                    <span className="text-gray-700">Number of People:</span>
+                                    <input
+                                        type="number"
+                                        value={people}
+                                        onChange={(e) => setPeople(e.target.value)}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     />
+                                    </label>
+                                    <label className="block mb-4">
+                                    <span className="text-gray-700">Number of Combinations:</span>
+                                    <input
+                                        type="number"
+                                        value={numCombinations}
+                                        onChange={(e) => setNumCombinations(e.target.value)}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    />
+                                    </label>
+                                    <button
+                                    onClick={handleSearchRecommendations}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 focus:outline-none"
+                                    >
+                                    Show Recommendations
+                                    </button>
+                                    <h4 lassName="font-semibold mb-2">Type</h4>
+                                    <div className="space-y-2">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="type"
+                                                value=""
+                                                checked={filterType === ""}
+                                                onChange={() => setFilterType("")}
+                                            />
+                                                All
+                                            </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="type"
+                                                value="Cottage"
+                                                checked={filterType === "Cottage"}
+                                                onChange={() => setFilterType("Cottage")}
+                                            />
+                                                Cottage
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="type"
+                                                value="Lodge"
+                                                checked={filterType === "Lodge"}
+                                                onChange={() => setFilterType("Lodge")}
+                                            />
+                                                Lodge
+                                            </label>
+                                    </div>
                                 </div>
-                                <div className="w-2/3 ml-10">
-                                    <h2 className="text-2xl font-bold mb-2">{cottageAndlodge.title}</h2>
-                                    <p className="text-gray-600 mb-4">{cottageAndlodge.description}</p>
-                                    <p className="text-lg font-semibold mb-2">{cottageAndlodge.price}</p>
-                                    <div className="flex space-x-2">
-                                        <button onClick={() => handleBook(cottageAndlodge)} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
-                                            Book
-                                        </button>
-                                        <button
-                                            className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md"
-                                            onClick={() => handleCheckAvailability(cottageAndlodge.title)}
-                                        >
-                                            Check Availability
-                                        </button>
+                            
+                                <div className="mb-4">
+                                    <h4 className="font-semibold mb-2">Price Range</h4>
+                                    <div className="space-y-2">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="price"
+                                                value=""
+                                                checked={priceRange === ""}
+                                                onChange={() => setPriceRange("")}
+                                            />
+                                            All
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="price"
+                                                value="Under 100"
+                                                checked={priceRange === "Under 100"}
+                                                onChange={() => setPriceRange("Under 100")}
+                                            />
+                                            Under 100 per night
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="price"
+                                                value="100-200"
+                                                checked={priceRange === "100-200"}
+                                                onChange={() => setPriceRange("100-200")}
+                                            />
+                                            100-200 per night
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="price"
+                                                value="200 and above"
+                                                checked={priceRange === "200 and above"}
+                                                onChange={() => setPriceRange("200 and above")}
+                                            />
+                                            200 and above
+                                        </label>
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        </div>
+
+                        {/* Main Content Section */}
+                        <div style={{ flex: 1 }}>
+                            {recommendations.map((unit) => (
+                                <div key={unit.id} className="unit-card">
+                                    {unit.image_url ? (
+                                        <img src={unit.image_url} alt={unit.name} className="unit-image" />
+                                    ) : (
+                                        <div>No Image Available</div>
+                                    )}
+                                    <h3>{unit.name}</h3>
+                                    <p>Capacity: {unit.capacity}</p>
+                                    <p>Price: ${unit.time_24hrs_price || unit.time_12hrs_price || unit.time_6hrs_price}</p>
+                                    <button>Book</button>
+                                    <button>Check Availability</button>
+                                </div>
+                                ))}
+                        <div className="w-3/4 flex flex-col space-y-4 cards">
+                            {filteredData.length > 0 ? (
+                                filteredData.map((item) => (
+                                <div key={item.id} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto sub-card">
+                                    <div className="w-1/3">
+                                        
+                                        <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className={`md:w-[230px]  img rounded-lg transition-transform duration-300 ${zoomedImage === item.id ? 'scale-150' : ''} cursor-zoom-in`}
+                                            onMouseDown={() => handleZoomStart(cottageAndlodge.id)}
+                                            onMouseUp={handleZoomEnd}
+                                            onMouseLeave={handleZoomEnd} 
+                                        />
+                                    </div>
+                                    <div className="w-2/3 ml-10">
+                                        <h4 className="text-2xl font-bold mb-2">{item.name}</h4>
+                                        <p className="text-gray-600 mb-4">Capacity: {item.capacity}</p>
+                                        <p className="text-lg font-semibold mb-2">
+                                            Price: $
+                                            {item.time_6am_6pm_price
+                                                ? item.time_6am_6pm_price
+                                                : item.time_3hrs_price}
+                                        </p>
+                                        <div className="flex space-x-2">
+                                            <button onClick={() => handleBook(cottageAndlodge)} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
+                                                Book
+                                            </button>
+                                            <button
+                                                className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md"
+                                                onClick={() => handleCheckAvailability(cottageAndlodge.title)}
+                                            >
+                                                Check Availability
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                ))
+                            ) : (
+                                <p>No results found.</p>
+                            )}
+                            </div>
+                        </div>
 
                     {showScrollButton && (
                         <div

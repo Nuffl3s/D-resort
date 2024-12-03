@@ -1,296 +1,452 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import Input from "../components/Inputs";
+import Loader from '../components/Loader';
+import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import api from '../api';
-import Swal from 'sweetalert2';
-import moment from 'moment';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight, faDownload, faTrash } from '@fortawesome/free-solid-svg-icons';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
 
-const Logs = () => {
-    const [logs, setLogs] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const logsPerPage = 10;
+function BookingPage() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { startDate: initialStartDate = null, endDate: initialEndDate = null, persons: initialPersons = 1 } = location.state || {};
+    const [startDate, setStartDate] = useState(initialStartDate);
+    const [endDate, setEndDate] = useState(initialEndDate);
+    const [persons, setPersons] = useState(initialPersons);
+    const [loading, setLoading] = useState(true);
+    const [showGuestDropdown, setShowGuestDropdown] = useState(false);
+    const [selectedTypes, setSelectedTypes] = useState({
+        cottage: false,
+        lodge: false,
+    });
 
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterBy, setFilterBy] = useState('all');
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo] = useState('');
-
-    const [userRole, setUserRole] = useState('');
+    const [cottages, setCottages] = useState([]);
+    const [lodges, setLodges] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
+    const [filterType, setFilterType] = useState("");
+    const [priceRange, setPriceRange] = useState("");
+    const [sortOption, setSortOption] = useState('recommended');
+    const [zoomedImage, setZoomedImage] = useState(null); 
+    const [showScrollButton, setShowScrollButton] = useState(false); 
+    const [scrollProgress, setScrollProgress] = useState(0);
+    const [people, setPeople] = useState(1); // Number of people
+    const [recommendedUnits, setRecommendedUnits] = useState([]);
+    const [filteredCottages, setFilteredCottages] = useState([]);
+    const [filteredLodges, setFilteredLodges] = useState([]);
+    const [numCombinations, setNumCombinations] = useState('');
+    const [recommendations, setRecommendations] = useState([]);
+    const [showRecommendations, setShowRecommendations] = useState(false);
 
     useEffect(() => {
-        const fetchLogs = async () => {
-            try {
-                setLoading(true);
-                const response = await api.get('http://localhost:8000/api/logs/');
-                const data = response.data;
-                setLogs(data);
-                setLoading(false);
-            } catch (error) {
-                setError(error.message);
-                setLoading(false);
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 2000); 
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handleSearch = () => {
+        console.log("Search clicked", { startDate, endDate, persons });
+        // Implement your search logic here
+    };
+    
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = (scrollTop / docHeight) * 100;
+
+            setScrollProgress(scrollPercent); // Update progress percentage
+
+            if (scrollTop > 300) {
+                setShowScrollButton(true);
+            } else {
+                setShowScrollButton(false);
             }
         };
-        fetchLogs();
+
+        window.addEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, []);
+
+    const handleSearchRecommendations = async () => {
+        if (!people || !numCombinations) {
+            alert("Please provide both Number of People and Number of Combinations!");
+            return;
+        }
+    
+        setLoading(true);
+        try {
+            const response = await api.get("/filter-units/", {
+                params: {
+                people: parseInt(people), // Use input value for number of people
+                num_combinations: parseInt(numCombinations), // Use input value for combinations
+                },
+            });
+            setRecommendations(response.data.recommended || []);
+            setShowRecommendations(true); // Set to true when recommendations are fetched
+        } catch (error) {
+            console.error("Error fetching recommendations:", error.response?.data || error.message);
+            setRecommendations([]);
+          setShowRecommendations(false); // Reset on error
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const role = localStorage.getItem('role');
-        setUserRole(role);
+        // Fetch cottages
+        api
+            .get("/cottages/") // Update the URL based on your Django REST API endpoint
+            .then((response) => {
+            setCottages(response.data);
+        })
+            .catch((error) => console.error("Error fetching cottages:", error));
+    
+        // Fetch lodges
+        api
+            .get("/lodges/") // Update the URL based on your Django REST API endpoint
+            .then((response) => {
+            setLodges(response.data);
+        })
+            .catch((error) => console.error("Error fetching lodges:", error));
     }, []);
 
-    const handleClearLogs = async () => {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                api.delete('http://localhost:8000/api/logs/')
-                    .then(() => {
-                        setLogs([]);
-                        Swal.fire('Deleted!', 'Logs have been deleted.', 'success');
-                    })
-                    .catch((error) => {
-                        setError(error.message);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Could not delete logs.',
-                        });
-                    });
-            }
+    const fetchRecommendations = async () => {
+        const response = await fetch(`/api/filter-units/?people=${people}&num_combinations=${combinations}&type=${type}&price_range=${priceRange}`);
+        const data = await response.json();
+        setRecommendations(data.recommended);
+    };
+
+    useEffect(() => {
+        let data = [...cottages, ...lodges];
+    
+        // Apply type filter if selected
+        if (filterType === "Cottage") {
+            data = cottages;
+        } else if (filterType === "Lodge") {
+            data = lodges;
+        }
+    
+        // Apply price range filter if selected
+        if (priceRange === "Under 100") {
+            data = data.filter((item) =>
+            item.time_6am_6pm_price
+                ? item.time_6am_6pm_price < 100
+                : item.time_3hrs_price < 100
+            );
+        } else if (priceRange === "100-200") {
+            data = data.filter((item) =>
+                item.time_6am_6pm_price
+                ? item.time_6am_6pm_price >= 100 && item.time_6am_6pm_price <= 200
+                : item.time_3hrs_price >= 100 && item.time_3hrs_price <= 200
+            );
+            } else if (priceRange === "200 and above") {
+            data = data.filter((item) =>
+                item.time_6am_6pm_price
+                ? item.time_6am_6pm_price > 200
+                : item.time_3hrs_price > 200
+            );
+        }
+    
+        setFilteredData(data);
+        }, [filterType, priceRange, cottages, lodges]);
+        
+    const handleBook = (cottageAndLodge) => {
+        navigate('/payment', {
+            state: {
+                title: cottageAndLodge.title,
+                price: cottageAndLodge.price,
+                imgSrc: cottageAndLodge.imgSrc,
+                description: cottageAndLodge.description,
+                startDate, // pass the check-in/check-out date if needed
+                endDate,
+                persons, 
+            },
         });
     };
 
-    const handleExportLogs = () => {
-        const data = logs.map((log) => ({
-            username: log.username,
-            action: log.action,
-            timestamp: moment(log.timestamp).format('MMMM D, YYYY h:mm:ss A'),
+    const handleCheckAvailability = (title) => {
+        navigate(`/calendar/${title}`);
+    };
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
+    // Return the loader if still loading
+    if (loading) {
+        return <Loader />;
+    }
+
+     // Array of cottage data
+     const Data = [
+    ];
+
+    const handleTypeChange = (type) => {
+        setSelectedTypes((prevSelectedTypes) => ({
+            ...prevSelectedTypes,
+            [type]: !prevSelectedTypes[type],
         }));
-
-        // Create a new workbook and worksheet
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Logs');
-
-        // Define the columns
-        worksheet.columns = [
-            { header: 'Username', key: 'username', width: 25 },
-            { header: 'Action', key: 'action', width: 35 },
-            { header: 'Timestamp', key: 'timestamp', width: 45 },
-        ];
-
-        // Add the data
-        data.forEach(log => worksheet.addRow(log)); // Add rows properly
-
-        // Apply styles to the header and increase its height
-        worksheet.getRow(1).height = 30;  // Set header row height to 25 (adjust as needed)
-        worksheet.getRow(1).eachCell(cell => {
-            cell.font = { bold: true };
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FFFFF0' },  // Light fill color
-            };
-        });
-
-
-        // Apply styles to data rows
-        worksheet.eachRow((row, rowNumber) => {
-            row.eachCell((cell) => {
-                cell.alignment = { horizontal: 'center', vertical: 'middle' };
-                cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' },
-                };
-            });
-
-            // Alternate row color
-            if (rowNumber % 2 === 0) {
-                row.eachCell((cell) => {
-                    cell.fill = {
-                        type: 'pattern',
-                        pattern: 'solid',
-                        fgColor: { argb: 'FFEEEEEE' }, // Light grey for even rows
-                    };
-                });
-            }
-        });
-
-        // Save the workbook to file
-        workbook.xlsx.writeBuffer().then((buffer) => {
-            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            saveAs(blob, 'logs.xlsx');
-        });
     };
 
-    const indexOfLastLog = currentPage * logsPerPage;
-    const indexOfFirstLog = indexOfLastLog - logsPerPage;
-    const filteredLogs = logs.filter((log) => {
-        if (filterBy === 'all') {
-            return true;
-        } else if (filterBy === 'username') {
-            return log.username.toLowerCase().includes(searchQuery.toLowerCase());
-        } else if (filterBy === 'action') {
-            return log.action.toLowerCase().includes(searchQuery.toLowerCase());
-        } else {
-            return false;
-        }
-    }).filter((log) => {
-        if (dateFrom && dateTo) {
-            const logDate = moment(log.timestamp).format('YYYY-MM-DD');
-            return moment(logDate).isBetween(dateFrom, dateTo, undefined, '[]');
-        } else if (dateFrom) {
-            const logDate = moment(log.timestamp).format('YYYY-MM-DD');
-            return moment(logDate).isSameOrAfter(dateFrom);
-        } else if (dateTo) {
-            const logDate = moment(log.timestamp).format('YYYY-MM-DD');
-            return moment(logDate).isSameOrBefore(dateTo);
-        } else {
-            return true;
-        }
-    });
-    const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog);
-    const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+    const handleSortChange = (e) => {
+        setSortOption(e.target.value);
+    };
 
-    const handlePreviousPage = () => setCurrentPage(currentPage - 1);
-    const handleNextPage = () => setCurrentPage(currentPage + 1);
+
+    // Handle zoom on click and hold
+    const handleZoomStart = (id) => {
+        setZoomedImage(id);
+    };
+
+    const handleZoomEnd = () => {
+        setZoomedImage(null);
+    };
 
     return (
-        <div className="container mx-auto">
-            <div className="flex justify-between mb-2">
-                <h2 className="text-3xl font-bold text-gray-800">Audit Logs</h2>
-                <div className="flex justify-between">
-                    <button
-                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded flex justify-center items-center"
-                        title="Export Logs"
-                        onClick={handleExportLogs}
-                    >
-                        <FontAwesomeIcon icon={faDownload} className="text-sm" />
-                    </button>
-                    {userRole !== 'admin' && (
-                        <button
-                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded flex justify-center items-center ml-4"
-                            title="Clear Logs"
-                            onClick={handleClearLogs}
+        <div className="min-h-screen flex flex-col bg-white parent">
+            <Header />
+            <Input
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                persons={persons}
+                setPersons={setPersons}
+                showGuestDropdown={showGuestDropdown}
+                setShowGuestDropdown={setShowGuestDropdown}
+                handleSearch={handleSearch}
+            />
+            <div className="flex-grow">
+                <div className="w-full max-w-[1200px] mx-auto mt-10 flex justify-end sort-con">
+                    <div className="w-1/3 relative sort">
+                        <select 
+                            id="sort-by" 
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md pr-10 appearance-none"
+                            value={sortOption} 
+                            onChange={handleSortChange}
+                            style={{ paddingTop: '20px', paddingLeft: '10px' }}  
                         >
-                            <FontAwesomeIcon icon={faTrash} className="text-sm" />
-                        </button>
+                            <option value="recommended">Recommended</option>
+                            <option value="price-low-high">Price: low to high</option>
+                            <option value="price-high-low">Price: high to low</option>
+                        </select>
+
+                        <span className="absolute left-3 top-0 font-bold pt-1 text-gray-500 text-xs pointer-events-none">
+                            Sort by
+                        </span>
+
+                        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                            <img src="./src/assets/down.png" alt="Dropdown Icon" className="w-5 h-5 text-gray-500" />
+                        </span>
+                    </div>
+                </div>
+
+                <div className="w-full max-w-[1200px] flex items-start mx-auto mt-5 space-x-4 con3">
+
+                    {/* Sidebar Filter Section */}
+                        <div  className="w-1/4 p-4 bg-gray-100 rounded-lg shadow-md fil">
+                            <div className="filter-section">
+                                <h3 className="text-lg font-semibold mb-4">Filter by</h3>
+                                <div className="sub-filter">
+                                    <div className="mb-4">
+                                    <label className="block mb-4">
+                                        <span className="text-gray-700">Number of People:</span>
+                                        <input
+                                            type="number"
+                                            value={people}
+                                            onChange={(e) => setPeople(e.target.value)}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        />
+                                        </label>
+                                        <label className="block mb-4">
+                                        <span className="text-gray-700">Number of Combinations:</span>
+                                        <input
+                                            type="number"
+                                            value={numCombinations}
+                                            onChange={(e) => setNumCombinations(e.target.value)}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        />
+                                        </label>
+                                        <button
+                                        onClick={handleSearchRecommendations}
+                                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 focus:outline-none"
+                                        >
+                                        Show Recommendations
+                                        </button>
+                                        <h4 lassName="font-semibold mb-2">Type</h4>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="type"
+                                                    value=""
+                                                    checked={filterType === ""}
+                                                    onChange={() => setFilterType("")}
+                                                />
+                                                    All
+                                                </label>
+                                            <label className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="type"
+                                                    value="Cottage"
+                                                    checked={filterType === "Cottage"}
+                                                    onChange={() => setFilterType("Cottage")}
+                                                />
+                                                    Cottage
+                                            </label>
+                                            <label className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="type"
+                                                    value="Lodge"
+                                                    checked={filterType === "Lodge"}
+                                                    onChange={() => setFilterType("Lodge")}
+                                                />
+                                                    Lodge
+                                                </label>
+                                        </div>
+                                    </div>
+                                
+                                    <div className="mb-4">
+                                        <h4 className="font-semibold mb-2">Price Range</h4>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="price"
+                                                    value=""
+                                                    checked={priceRange === ""}
+                                                    onChange={() => setPriceRange("")}
+                                                />
+                                                All
+                                            </label>
+                                            <label className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="price"
+                                                    value="Under 100"
+                                                    checked={priceRange === "Under 100"}
+                                                    onChange={() => setPriceRange("Under 100")}
+                                                />
+                                                Under 100 per night
+                                            </label>
+                                            <label className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="price"
+                                                    value="100-200"
+                                                    checked={priceRange === "100-200"}
+                                                    onChange={() => setPriceRange("100-200")}
+                                                />
+                                                100-200 per night
+                                            </label>
+                                            <label className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="price"
+                                                    value="200 and above"
+                                                    checked={priceRange === "200 and above"}
+                                                    onChange={() => setPriceRange("200 and above")}
+                                                />
+                                                200 and above
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Main Content Section */}
+                        <div style={{ flex: 1 }}>
+                            {recommendations.map((unit) => (
+                                <div key={unit.id} className="unit-card">
+                                    {unit.image_url ? (
+                                        <img src={unit.image_url} alt={unit.name} className="unit-image" />
+                                    ) : (
+                                        <div>No Image Available</div>
+                                    )}
+                                    <h3>{unit.name}</h3>
+                                    <p>Capacity: {unit.capacity}</p>
+                                    <p>Price: ${unit.time_24hrs_price || unit.time_12hrs_price || unit.time_6hrs_price}</p>
+                                    <button>Book</button>
+                                    <button>Check Availability</button>
+                                </div>
+                                ))}
+                        <div className="w-3/4 flex flex-col space-y-4 cards">
+                            {filteredData.length > 0 ? (
+                                filteredData.map((item) => (
+                                <div key={item.id} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto sub-card">
+                                    <div className="w-1/3">
+                                        
+                                        <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className={`md:w-[230px]  img rounded-lg transition-transform duration-300 ${zoomedImage === item.id ? 'scale-150' : ''} cursor-zoom-in`}
+                                            onMouseDown={() => handleZoomStart(cottageAndlodge.id)}
+                                            onMouseUp={handleZoomEnd}
+                                            onMouseLeave={handleZoomEnd} 
+                                        />
+                                    </div>
+                                    <div className="w-2/3 ml-10">
+                                        <h4 className="text-2xl font-bold mb-2">{item.name}</h4>
+                                        <p className="text-gray-600 mb-4">Capacity: {item.capacity}</p>
+                                        <p className="text-lg font-semibold mb-2">
+                                            Price: $
+                                            {item.time_6am_6pm_price
+                                                ? item.time_6am_6pm_price
+                                                : item.time_3hrs_price}
+                                        </p>
+                                        <div className="flex space-x-2">
+                                            <button onClick={() => handleBook(cottageAndlodge)} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
+                                                Book
+                                            </button>
+                                            <button
+                                                className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md"
+                                                onClick={() => handleCheckAvailability(cottageAndlodge.title)}
+                                            >
+                                                Check Availability
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                ))
+                            ) : (
+                                <p>No results found.</p>
+                            )}
+                            </div>
+                        </div>
+
+                    {showScrollButton && (
+                        <div
+                            className="fixed bottom-5 right-5 z-50"
+                            onClick={scrollToTop}
+                        >
+                            <div className="relative w-14 h-14 flex items-center justify-center">
+                                <div
+                                    style={{
+                                        background: `conic-gradient(#ffdeba ${scrollProgress}%, #f7f5f5 ${scrollProgress}% 100%)`
+                                    }}
+                                    className="absolute inset-0 rounded-full"
+                                />
+                                <button className="bg-[#12B1D1] text-white p-3 w-[70%] h-[70%] rounded-full shadow-lg hover:bg-[#3ebae7] transition-colors z-10 flex justify-center items-center">
+                                    <img src="/src/assets/up2.png" alt="Up Arrow" className="fill-current w-5 h-5" style={{ filter: 'invert(100%)' }} />
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
-            <div className="flex justify-between mb-4">
-                <div className="w-1/3">
-                    <input
-                        type="search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search logs..."
-                        className="w-full py-2 pl-10 text-sm text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600"
-                    />
-                </div>
-                <div className="w-1/6 ml-4">
-                    <select
-                        value={filterBy}
-                        onChange={(e) => setFilterBy(e.target.value)}
-                        className="w-full py-2 pl-10 text-sm text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600"
-                    >
-                        <option value="all">All</option>
-                        <option value="username">Username</option>
-                        <option value="action">Action</option>
-                    </select>
-                </div>
-                <div className="w-1/3 ml-4">
-                    <div className="flex justify-between">
-                        <input
-                            type="date"
-                            value={dateFrom}
-                            onChange={(e) => setDateFrom(e.target.value)}
-                            placeholder="Date From"
-                            className="w-1/2 py-2 pl-10 text-sm text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600 mr-4"
-                        />
-                        <input
-                            type="date"
-                            value={dateTo}
-                            onChange={(e) => setDateTo(e.target.value)}
-                            placeholder="Date To"
-                            className="w-1/2 py-2 pl-10 text-sm text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600"
-                        />
-                    </div>
-                </div>
-            </div>
-            {loading ? (
-                <p className="text-lg text-gray-600">Loading...</p>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr className="bg-blue-900">
-                                <th className="px-6 py-2 text-sm font-semibold text-white uppercase tracking-wider text-center rounded-tl-lg">
-                                    Username
-                                </th>
-                                <th className="px-6 py-2 text-sm font-semibold text-white uppercase tracking-wider text-center">
-                                    Action
-                                </th>
-                                <th className="px-6 py-2 text-sm font-semibold text-white uppercase tracking-wider text-center rounded-tr-lg">
-                                    Timestamp
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {currentLogs.map((log, index) => (
-                                <tr key={index} className="hover:bg-gray-100">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">
-                                        {log.username}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">
-                                        {log.action}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">
-                                        {moment(log.timestamp).format('MMMM D, YYYY h:mm:ss A')}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            <div className="flex justify-between items-center mt-2">
-                <button
-                    className={`p-2 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                >
-                    <FontAwesomeIcon icon={faChevronLeft} className="text-xl" />
-                </button>
-                <span className="font-semibold text-gray-700">
-                    Page {currentPage} of {totalPages}
-                </span>
-                <button
-                    className={`p-2 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                >
-                    <FontAwesomeIcon icon={faChevronRight} className="text-xl" />
-                </button>
-            </div>
-
-            {error && <p className="text-red-600 mt-4">{error}</p>}
+            <Footer />
         </div>
     );
-};
+}
 
-export default Logs;
+export default BookingPage

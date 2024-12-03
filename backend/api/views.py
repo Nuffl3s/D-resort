@@ -6,7 +6,7 @@ from django.contrib.auth.models import update_last_login
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -15,6 +15,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from itertools import combinations
 from django.conf import settings
 from .permissions import IsAdminOrEmployee, IsAdminOnly
+import json
+
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -334,25 +336,37 @@ class AddUnitView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
-        unit_type = request.data.get("type", "").lower()
-        name = request.data.get("name", "").strip()
+        # Extract fields from request.data
+        custom_prices = request.data.get("custom_prices", "[]")
+        try:
+            # Ensure custom_prices is converted to a Python list/dict
+            custom_prices = json.loads(custom_prices) if isinstance(custom_prices, str) else custom_prices
+        except json.JSONDecodeError:
+            return Response({"custom_prices": ["Value must be valid JSON."]}, status=400)
 
-        if unit_type == "cottage":
-            # Check for uniqueness based on name and type
-            if Cottage.objects.filter(name=name, type=request.data.get("type")).exists():
-                return Response({"error": "Cottage with the same name exists."}, status=400)
-            serializer = CottageSerializer(data=request.data)
-        elif unit_type == "lodge":
-            # Check for uniqueness based on name and type
-            if Lodge.objects.filter(name=name, type=request.data.get("type")).exists():
-                return Response({"error": "Lodge with the same name exists."}, status=400)
-            serializer = LodgeSerializer(data=request.data)
-        else:
-            return Response({"error": "Invalid type provided."}, status=400)
+        unit_type = request.data.get("unit_type", "").lower()
+        if not unit_type:
+            return Response({"unit_type": ["This field is required."]}, status=400)
+
+        # Prepare the data dictionary without copying the file object
+        data = {
+            "name": request.data.get("name"),
+            "image": request.data.get("image"),
+            "capacity": request.data.get("capacity"),
+            "custom_prices": custom_prices,
+            "unit_type": unit_type,
+        }
+
+        # Choose the appropriate serializer
+        serializer_class = CottageSerializer if unit_type == "cottage" else LodgeSerializer
+        serializer = serializer_class(data=data)
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
+
+        # Log validation errors for debugging
+        print("Validation Errors:", serializer.errors)
         return Response(serializer.errors, status=400)
 
     

@@ -62,35 +62,29 @@ class LogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Log
         fields = ["id", "username", "action", "category", "timestamp"]
-        
+
 class CottageSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
+    unit_type = serializers.CharField(write_only=True)  # Accept 'unit_type' from frontend
 
     class Meta:
         model = Cottage
-        fields = [
-                'id', 'name', 'image_url', 'type', 'capacity', 
-                'time_6am_6pm_price', 'time_6am_12mn_price', 
-                'time_6pm_6am_price', 'time_24hrs_price'
-                ]
+        fields = ['id', 'name', 'image', 'capacity', 'custom_prices', 'unit_type', 'type']
+        extra_kwargs = {'type': {'required': False}}  # 'type' will be populated from 'unit_type'
 
-    def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
-        return None
-
+    def create(self, validated_data):
+        validated_data['type'] = validated_data.pop('unit_type', None)  # Map 'unit_type' to 'type'
+        return super().create(validated_data)
 
 class LodgeSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    unit_type = serializers.CharField(write_only=True)  # Add this to handle unit_type
 
     class Meta:
         model = Lodge
-        fields = [
-            'id', 'name', 'image_url', 'type', 'capacity', 
-            'time_3hrs_price', 'time_6hrs_price', 
-            'time_12hrs_price', 'time_24hrs_price'
-        ]
+        fields = ['id', 'name', 'image_url', 'type', 'unit_type', 'capacity', 'custom_prices']
+        extra_kwargs = {
+            'type': {'required': True},  # Ensure type is required
+        }
 
     def get_image_url(self, obj):
         request = self.context.get('request')
@@ -98,4 +92,7 @@ class LodgeSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.image.url)
         return None
 
-
+    def create(self, validated_data):
+        # Map unit_type to type
+        validated_data['type'] = validated_data.pop('unit_type')
+        return super().create(validated_data)

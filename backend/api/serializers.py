@@ -63,36 +63,32 @@ class LogSerializer(serializers.ModelSerializer):
         model = Log
         fields = ["id", "username", "action", "category", "timestamp"]
 
-class CottageSerializer(serializers.ModelSerializer):
-    unit_type = serializers.CharField(write_only=True)  # Accept 'unit_type' from frontend
+class BaseUnitSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        custom_prices = data.get("custom_prices", {})
+        normalized_prices = {key.upper(): value for key, value in custom_prices.items()}
+        data["custom_prices"] = normalized_prices
+        return data
 
+    def validate_custom_prices(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("custom_prices must be a dictionary.")
+        return {str(key).upper(): val for key, val in value.items()}
+
+    def validate_type(self, value):
+        # Default to "Cottage" if type is missing or blank
+        if not value:
+            return "Cottage"
+        return value.capitalize()
+
+class CottageSerializer(BaseUnitSerializer):
     class Meta:
         model = Cottage
-        fields = ['id', 'name', 'image', 'capacity', 'custom_prices', 'unit_type', 'type']
-        extra_kwargs = {'type': {'required': False}}  # 'type' will be populated from 'unit_type'
+        fields = ['id', 'name', 'type', 'capacity', 'custom_prices', 'image']
 
-    def create(self, validated_data):
-        validated_data['type'] = validated_data.pop('unit_type', None)  # Map 'unit_type' to 'type'
-        return super().create(validated_data)
 
-class LodgeSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
-    unit_type = serializers.CharField(write_only=True)  # Add this to handle unit_type
-
+class LodgeSerializer(BaseUnitSerializer):
     class Meta:
         model = Lodge
-        fields = ['id', 'name', 'image_url', 'type', 'unit_type', 'capacity', 'custom_prices']
-        extra_kwargs = {
-            'type': {'required': True},  # Ensure type is required
-        }
-
-    def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
-        return None
-
-    def create(self, validated_data):
-        # Map unit_type to type
-        validated_data['type'] = validated_data.pop('unit_type')
-        return super().create(validated_data)
+        fields = ['id', 'name', 'type', 'capacity', 'custom_prices', 'image']

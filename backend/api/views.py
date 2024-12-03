@@ -315,8 +315,27 @@ class LogView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CottageListView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated, IsAdminOnly]
     queryset = Cottage.objects.all()
     serializer_class = CottageSerializer
+
+    def get_queryset(self):
+        # Get the queryset properly
+        cottages = super().get_queryset()
+        
+        # Normalize custom_prices for each cottage
+        for cottage in cottages:
+            if isinstance(cottage.custom_prices, list):
+                # Convert list to dictionary using timeRange as keys
+                normalized_prices = {
+                    price['timeRange'].upper(): price['price'] 
+                    for price in cottage.custom_prices 
+                    if 'timeRange' in price and 'price' in price
+                }
+                cottage.custom_prices = normalized_prices
+                cottage.save()
+        return cottages
+
 
 class LodgeListView(generics.ListCreateAPIView):
     queryset = Lodge.objects.all()
@@ -336,39 +355,52 @@ class AddUnitView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
-        # Extract fields from request.data
+        # Extract and normalize custom_prices
         custom_prices = request.data.get("custom_prices", "[]")
         try:
-            # Ensure custom_prices is converted to a Python list/dict
-            custom_prices = json.loads(custom_prices) if isinstance(custom_prices, str) else custom_prices
+            if isinstance(custom_prices, str):
+                custom_prices = json.loads(custom_prices)
+            if isinstance(custom_prices, list):
+                custom_prices = {
+                    price_entry["timeRange"]: price_entry["price"]
+                    for price_entry in custom_prices
+                    if "timeRange" in price_entry and "price" in price_entry
+                }
         except json.JSONDecodeError:
             return Response({"custom_prices": ["Value must be valid JSON."]}, status=400)
 
+        # Ensure unit_type and type are valid
         unit_type = request.data.get("unit_type", "").lower()
         if not unit_type:
             return Response({"unit_type": ["This field is required."]}, status=400)
 
-        # Prepare the data dictionary without copying the file object
+        # Dynamically set the default `type` based on unit_type
+        default_type = "Cottage" if unit_type == "cottage" else "Lodge"
+
+        # Prepare data
         data = {
             "name": request.data.get("name"),
             "image": request.data.get("image"),
             "capacity": request.data.get("capacity"),
             "custom_prices": custom_prices,
-            "unit_type": unit_type,
+            "type": request.data.get("type", default_type),  # Use dynamic default
         }
 
-        # Choose the appropriate serializer
-        serializer_class = CottageSerializer if unit_type == "cottage" else LodgeSerializer
+        # Select serializer
+        if unit_type == "cottage":
+            serializer_class = CottageSerializer
+        elif unit_type == "lodge":
+            serializer_class = LodgeSerializer
+        else:
+            return Response({"unit_type": ["Invalid unit type. Choose 'cottage' or 'lodge'."]}, status=400)
+
         serializer = serializer_class(data=data)
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
 
-        # Log validation errors for debugging
-        print("Validation Errors:", serializer.errors)
         return Response(serializer.errors, status=400)
-
     
 class DeleteCottageView(DestroyAPIView):
     queryset = Cottage.objects.all()  # Ensure this matches the Cottage model

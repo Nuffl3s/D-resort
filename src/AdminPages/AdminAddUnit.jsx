@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../components/AdminSidebar'; // Importing AdminSidebar
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,15 @@ export default function AdminAddUnit() {
     const [customPrices, setCustomPrices] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [unitList, setUnitList] = useState([]); // Stores fetched cottages or lodges
+    const [timeSlots, setTimeSlots] = useState([]); // Time slots for cottages or lodges
+    const [formData, setFormData] = useState({
+        name: "",
+        capacity: "",
+        type: unitType,
+        custom_prices: [],
+        image: null,
+    });
 
     const addCustomPrice = () => {
         setCustomPrices([...customPrices, { timeRange: '', price: '' }]);
@@ -74,6 +83,32 @@ export default function AdminAddUnit() {
             Swal.fire('Error', 'An error occurred while adding the unit.', 'error');
         }
     };
+
+    useEffect(() => {
+        const fetchUnits = async () => {
+        try {
+            const endpoint = unitType === "cottage" ? "/cottages/" : "/lodges/";
+            const response = await api.get(endpoint);
+
+            // Extract time slots or hourly rates from custom prices
+            const uniqueKeys = new Set();
+            response.data.forEach((item) => {
+            const customPrices = item.custom_prices || {};
+            Object.keys(customPrices).forEach((key) => {
+                uniqueKeys.add(key.toUpperCase());
+            });
+            });
+
+            setTimeSlots([...uniqueKeys].sort());
+            setUnitList(response.data);
+        } catch (error) {
+            console.error(`Error fetching ${unitType} data:`, error);
+        }
+        };
+
+        fetchUnits();
+    }, [unitType]);
+
     
     return (
         <div className="flex">
@@ -163,6 +198,62 @@ export default function AdminAddUnit() {
                         Add Unit
                     </button>
                 </form>
+                {/* Unit List */}
+                <div className="w-1/2 p-4 border-l">
+                    <h1 className="text-2xl font-bold mb-4">Rates</h1>
+                    <div className="flex mb-4">
+                    <button
+                        onClick={() => setUnitType("cottage")}
+                        className={`px-4 py-2 mr-2 ${
+                        unitType === "cottage" ? "bg-blue-500 text-white" : "bg-gray-200"
+                        }`}
+                    >
+                        Cottage
+                    </button>
+                    <button
+                        onClick={() => setUnitType("lodge")}
+                        className={`px-4 py-2 ${
+                        unitType === "lodge" ? "bg-blue-500 text-white" : "bg-gray-200"
+                        }`}
+                    >
+                        Lodge
+                    </button>
+                    </div>
+                    <table className="table-auto border-collapse border border-gray-300 w-full">
+                    <thead>
+                        <tr className="bg-gray-200">
+                        <th className="border border-gray-300 px-4 py-2">#</th>
+                        <th className="border border-gray-300 px-4 py-2">Type</th>
+                        <th className="border border-gray-300 px-4 py-2">Capacity</th>
+                        {timeSlots.map((slot) => (
+                            <th key={slot} className="border border-gray-300 px-4 py-2">
+                            {slot}
+                            </th>
+                        ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {unitList.map((row, index) => (
+                        <tr key={index} className="hover:bg-gray-100">
+                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            {index + 1}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            {row.type}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            {row.capacity}
+                            </td>
+                            {timeSlots.map((slot) => (
+                            <td key={slot} className="border border-gray-300 px-4 py-2 text-center">
+                                {row.custom_prices?.[slot] || "-"}
+                            </td>
+                            ))}
+                        </tr>
+                        ))}
+                    </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

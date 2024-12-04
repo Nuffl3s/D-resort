@@ -103,7 +103,7 @@ class Cottage(models.Model):
 
 class Lodge(models.Model):
     name = models.CharField(max_length=255, default="Unnamed Lodge", unique=True)
-    image = models.ImageField(storage=image_storage, upload_to="lodge_images/")
+    image = models.ImageField(storage=image_storage, upload_to="lodge_images/", null=True, blank=True)
     type = models.CharField(max_length=255)
     capacity = models.PositiveIntegerField()
     custom_prices = models.JSONField(default=dict)  # Updated import used here

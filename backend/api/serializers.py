@@ -74,7 +74,7 @@ class BaseUnitSerializer(serializers.ModelSerializer):
     def validate_custom_prices(self, value):
         if not isinstance(value, dict):
             raise serializers.ValidationError("custom_prices must be a dictionary.")
-        return {str(key).upper(): val for key, val in value.items()}
+        return value
 
     def validate_type(self, value):
         # Default to "Cottage" if type is missing or blank
@@ -90,8 +90,11 @@ class CottageSerializer(serializers.ModelSerializer):
             'type': {'required': False},  # Allow PUT without explicitly sending type if it doesn't change
         }
 
-
-class LodgeSerializer(BaseUnitSerializer):
+class LodgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lodge
-        fields = ['id', 'name', 'type', 'capacity', 'custom_prices', 'image']
+        fields = '__all__'
+        extra_kwargs = {
+            'type': {'required': False},
+            'image': {'required': False},  # Make image optional
+        }

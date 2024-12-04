@@ -356,66 +356,109 @@ class AddUnitView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
-        # Extract and normalize custom_prices
-        custom_prices = request.data.get("custom_prices", "[]")
+        print("Incoming data:", request.data)  # Debug incoming data
+
+        # Validate required fields
+        required_fields = ["name", "unit_type", "capacity", "custom_prices"]
+        missing_fields = [field for field in required_fields if not request.data.get(field)]
+        if missing_fields:
+            print(f"Missing fields: {missing_fields}")
+            return Response({"error": f"Missing fields: {', '.join(missing_fields)}"}, status=400)
+
+        # Parse custom_prices
         try:
-            if isinstance(custom_prices, str):
+            custom_prices = request.data.get("custom_prices", "[]")
+            print("Raw custom_prices:", custom_prices)
+            if isinstance(custom_prices, str):  # Parse JSON string
                 custom_prices = json.loads(custom_prices)
-            if isinstance(custom_prices, list):
-                custom_prices = {
-                    price_entry["timeRange"]: price_entry["price"]
-                    for price_entry in custom_prices
-                    if "timeRange" in price_entry and "price" in price_entry
-                }
-        except json.JSONDecodeError:
-            return Response({"custom_prices": ["Value must be valid JSON."]}, status=400)
+            if not isinstance(custom_prices, list):
+                raise ValueError("custom_prices must be a list of dictionaries.")
+            custom_prices = {
+                price_entry["timeRange"]: price_entry["price"]
+                for price_entry in custom_prices
+                if "timeRange" in price_entry and "price" in price_entry
+            }
+            print("Parsed custom_prices:", custom_prices)
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Error parsing custom_prices: {e}")
+            return Response({"error": f"Invalid custom_prices format: {str(e)}"}, status=400)
 
-        # Ensure unit_type and type are valid
+        # Validate unit_type
         unit_type = request.data.get("unit_type", "").lower()
-        if not unit_type:
-            return Response({"unit_type": ["This field is required."]}, status=400)
+        if unit_type not in ["cottage", "lodge"]:
+            print(f"Invalid unit_type: {unit_type}")
+            return Response({"error": "Invalid unit_type. Must be 'cottage' or 'lodge'."}, status=400)
 
-        # Dynamically set the default `type` based on unit_type
-        default_type = "Cottage" if unit_type == "cottage" else "Lodge"
-
-        # Prepare data
+        # Prepare data for the serializer
         data = {
             "name": request.data.get("name"),
             "image": request.data.get("image"),
             "capacity": request.data.get("capacity"),
             "custom_prices": custom_prices,
-            "type": request.data.get("type", default_type),  # Use dynamic default
+            "type": request.data.get("type", unit_type.capitalize()),
         }
+        print("Prepared data for serializer:", data)
 
-        # Select serializer
-        if unit_type == "cottage":
-            serializer_class = CottageSerializer
-        elif unit_type == "lodge":
-            serializer_class = LodgeSerializer
-        else:
-            return Response({"unit_type": ["Invalid unit type. Choose 'cottage' or 'lodge'."]}, status=400)
-
+        # Select the appropriate serializer
+        serializer_class = CottageSerializer if unit_type == "cottage" else LodgeSerializer
         serializer = serializer_class(data=data)
 
         if serializer.is_valid():
-            serializer.save()
+            saved_instance = serializer.save()
+            print("Unit saved successfully:", saved_instance)
             return Response(serializer.data, status=201)
-
+        print("Serializer errors:", serializer.errors)
         return Response(serializer.errors, status=400)
 
 class UpdateCottageView(RetrieveUpdateDestroyAPIView):
     queryset = Cottage.objects.all()
     serializer_class = CottageSerializer
+    permission_classes = [IsAuthenticated, IsAdminOnly]
 
     def update(self, request, *args, **kwargs):
-        print("Request data:", request.data)  # Debug incoming data
-        return super().update(request, *args, **kwargs)
+        instance = self.get_object()  # Retrieve the instance being updated
 
+        # Check if the name field is being updated
+        new_name = request.data.get("name", instance.name)
+        if new_name != instance.name:
+            if Cottage.objects.filter(name=new_name).exclude(pk=instance.pk).exists():
+                return Response(
+                    {"error": f"A cottage with the name '{new_name}' already exists."},
+                    status=400,
+                )
+
+        # Update the instance
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
 
 class UpdateLodgeView(RetrieveUpdateDestroyAPIView):
-    queryset = Lodge.objects.all()
-    serializer_class = LodgeSerializer
+    queryset = Lodge.objects.all()  # Correctly use the Lodge model
+    serializer_class = LodgeSerializer  # Correctly use the Lodge serializer
     permission_classes = [IsAuthenticated, IsAdminOnly]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()  # Retrieve the instance being updated
+
+        # Check if the name field is being updated
+        new_name = request.data.get("name", instance.name)
+        if new_name != instance.name:
+            if Lodge.objects.filter(name=new_name).exclude(pk=instance.pk).exists():
+                return Response(
+                    {"error": f"A Lodge with the name '{new_name}' already exists."},
+                    status=400,
+                )
+
+        # Update the instance
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
 
 class DeleteCottageView(DestroyAPIView):
     queryset = Cottage.objects.all()  # Ensure this matches the Cottage model

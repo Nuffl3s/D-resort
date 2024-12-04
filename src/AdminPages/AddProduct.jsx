@@ -203,20 +203,20 @@ function AddProduct() {
     };
 
     return (
-        <div className="flex bg-gray-100">
+        <div className="flex bg-gray-100 dark:bg-[#111827]">
             <Sidebar />
             <div id="dashboard" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
-                <h1 className="text-4xl font-bold mb-4">PRODUCT</h1>
-                <div className=" rounded-md w-full mt-8 overflow-x-hidden flex justify-between">
+                <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">PRODUCT</h1>
+                <div className=" rounded-md w-full mt-6 overflow-x-hidden flex justify-between">
                     <div className="flex-col">
                         <div className="lg:ml-30 space-x-8">
-                            <div className="w-[700px] rounded-md border p-5 bg-white shadow">
+                            <div className="w-[700px] rounded-md border p-5 bg-white shadow dark:bg-[#374151] dark:border-[#374151]">
                                 <form className="grid grid-cols-1 gap-3" onSubmit={handleSubmit}>
                                     <div className="flex space-x-4">
                                         <input
                                             type="text"
                                             placeholder="Product Name"
-                                            className="w-full p-2 border border-gray-300 rounded"
+                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                                             value={productName}
                                             onChange={handleProductNameChange}
                                             ref={inputRef}
@@ -248,35 +248,35 @@ function AddProduct() {
 
                                     <div className="flex justify-between space-x-2">
                                         <div className="w-full flex-col space-y-2">
-                                            <p className="text-gray-500">Quantity</p>
+                                            <p className="text-gray-500 dark:text-[#e7e6e6]">Quantity</p>
                                             <input
                                                 type="number"
                                                 placeholder="Quantity"
-                                                className="w-full p-2 border border-gray-300 rounded"
+                                                className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                                                 value={quantity}
                                                 onChange={handleQuantityChange}
                                             />
                                         </div>
 
                                         <div className="w-full flex-col space-y-2">
-                                            <p className="text-gray-500">Acquisition Cost</p>
+                                            <p className="text-gray-500 dark:text-[#e7e6e6]">Acquisition Cost</p>
                                             <input
                                                 type="number"
                                                 step="0.01"
                                                 placeholder="Average Price"
-                                                className="w-full p-2 border border-gray-300 rounded"
+                                                className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                                                 value={avgPrice}
                                                 onChange={handleAvgPriceChange}
                                             />
                                         </div>
 
                                         <div className="w-full flex-col space-y-2">
-                                            <p className="text-gray-500">Selling Price</p>
+                                            <p className="text-gray-500 dark:text-[#e7e6e6]">Selling Price</p>
                                             <input
                                                 type="number"
                                                 step="0.01"
                                                 placeholder="Average Price"
-                                                className="w-full p-2 border border-gray-300 rounded"
+                                                className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                                                 value={avgPrice}
                                                 onChange={handleAvgPriceChange}
                                             />
@@ -284,12 +284,12 @@ function AddProduct() {
                                     </div>
 
                                     <div className="flex flex-col space-y-2">
-                                        <p className="text-gray-500">Total Profit</p>
+                                        <p className="text-gray-500 dark:text-[#e7e6e6]">Total Profit</p>
                                         <input
                                             type="number"
                                             step="0.01"
                                             placeholder="Total Amount"
-                                            className="w-full p-2 border border-gray-300 rounded"
+                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                                             value={totalAmount}
                                             readOnly
                                         />
@@ -305,27 +305,27 @@ function AddProduct() {
                             </div>
                         </div>
 
-                        <div className="bg-white shadow-md p-4 rounded-sm mt-5 min-h-[500px]">
+                        <div className="bg-white shadow-md p-4 rounded-sm mt-5 min-h-[500px] dark:bg-[#374151] dark:border-[#374151]">
                             <div className="flex items-center gap-x-2 mb-2 justify-between">
                                 <div className="flex items-center gap-x-2">
-                                    <img src="src/assets/grid.png" alt="" className="w-4 h-4"/>
-                                    <h2 className="text-xl font-semibold uppercase">Product list</h2>
+                                    <img src="src/assets/grid.png" alt="" className="w-4 h-4 dark:invert"/>
+                                    <h2 className="text-xl font-semibold uppercase dark:text-[#e7e6e6]">Product list</h2>
                                 </div>
 
                                 <div>
-                                    <button className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white p-2 px-3 rounded text-sm">View all</button>
+                                    <button className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white p-1 px-2 rounded text-sm">View all</button>
                                 </div>
                                 
                             </div>
-                            <table className="w-full border border-gray-300 text-left">
-                                <thead>
+                            <table className="w-full text-left mt-5">
+                                <thead className="dark:bg-[#1f2937] bg-gray-100">
                                     <tr>
-                                        <th className="thDesign">#</th>
-                                        <th className="thDesign">Product Name</th>
-                                        <th className="thDesign">Qty</th>
-                                        <th className="thDesign">Acquisition Cost</th>
-                                        <th className="thDesign">Selling Price</th>
-                                        <th className="thDesign">Total Profit</th>
+                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:text-[#e7e6e6]">#</th>
+                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:text-[#e7e6e6]">Product Name</th>
+                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:text-[#e7e6e6]">Qty</th>
+                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:text-[#e7e6e6]">Acquisition Cost</th>
+                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:text-[#e7e6e6]">Selling Price</th>
+                                        <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:text-[#e7e6e6]">Total Profit</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -352,26 +352,37 @@ function AddProduct() {
                         </div>
                     </div>
                     
-                    <div className="bg-white rounded-md p-6 min-h-[800px] w-full ml-5 border shadow">
+                    <div className="bg-white rounded-md p-6 min-h-[800px] w-full ml-5 border shadow dark:bg-[#374151] dark:border-[#374151]">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2 text-xs xs:text-sm text-gray-900">
-                                <span className="text-[13px] font-semibold text-gray-600 uppercase">No. of entries</span>
+                                <span className="text-[13px] font-semibold text-gray-600 uppercase dark:text-[#e7e6e6]">No. of entries</span>
                                 <div className="relative inline-block">
-                                    <div className="appearance-none border border-gray-300 bg-white py-1 px-3 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                    <div className="appearance-none border border-gray-300 bg-white py-1 px-3 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6]">
                                         <span value="1">{products.length}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex items-center justify-around space-x-2">
-                                <div className="flex bg-white items-center p-2 rounded-md border">
-                                    <img src="./src/assets/search.png" className="fill-current w-5 h-5"/>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none">
+                                        <svg
+                                            className="w-5 h-5 text-gray-500"
+                                            aria-hidden="true"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
                                     <input
-                                        className="bg-white outline-none ml-1 block"
                                         type="text"
-                                        placeholder="search..."
+                                        id="table-search"
                                         value={searchQuery}
-                                        onChange={handleSearchChange} 
+                                        onChange={handleSearchChange}
+                                        className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-md w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                                        placeholder="Search by name"
                                     />
                                 </div>
                                 <div className="flex space-x-2">
@@ -386,24 +397,24 @@ function AddProduct() {
                         </div>
 
                         <div className="-mx-4 sm:-mx-8 px-8  py-2 overflow-x-auto">
-                            <div className="inline-block min-w-full shadow overflow-hidden">
+                            <div className="inline-block min-w-full rounded-md shadow overflow-hidden">
                                 <table className="min-w-full bg-white">
-                                    <thead>
+                                    <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                         <tr>
-                                            <th className="thDesign">NO.</th>
-                                            <th className="thDesign">Product Name</th>
-                                            <th className="thDesign">Qty</th>
-                                            <th className="thDesign">Acquisition Cost</th>
-                                            <th className="thDesign">Selling Price</th>
-                                            <th className="thDesign">Total Profit</th>
-                                            <th className="thDesign">Action</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">NO.</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Product Name</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Qty</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Acq. Cost</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Selling Price</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Total Profit</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {currentProducts.map((product) => (
                                             <tr key={product.id}>
-                                                <td className="px-5 py-5 border-b border-r  border-gray-200 bg-white text-sm">{product.id}</td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                <td className="px-5 py-5 border-b border-r  border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">{product.id}</td>
+                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
                                                     {editProductId === product.id ? (
                                                         <input
                                                             type="text"
@@ -416,7 +427,7 @@ function AddProduct() {
                                                         product.name
                                                     )}
                                                 </td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
                                                     {editProductId === product.id ? (
                                                         <input
                                                             type="number"
@@ -429,7 +440,7 @@ function AddProduct() {
                                                         product.quantity
                                                     )}
                                                 </td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
                                                     {editProductId === product.id ? (
                                                         <input
                                                             type="number"
@@ -443,7 +454,7 @@ function AddProduct() {
                                                         product.avgPrice
                                                     )}
                                                 </td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
                                                     {editProductId === product.id ? (
                                                         <input
                                                             type="number"
@@ -457,7 +468,20 @@ function AddProduct() {
                                                         product.amount
                                                     )}
                                                 </td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm">
+                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                                    {editProductId === product.id ? (
+                                                        <input
+                                                            type="number"
+                                                            name="quantity"
+                                                            value={editedProduct.quantity}
+                                                            onChange={handleEditChange}
+                                                            className="w-full p-2 border border-gray-300 "
+                                                        />
+                                                    ) : (
+                                                        product.quantity
+                                                    )}
+                                                </td>
+                                                <td className="px-5 py-5 border-b border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
                                                     <div className="space-x-2">
                                                         {editProductId === product.id ? (
                                                             <button
@@ -498,7 +522,7 @@ function AddProduct() {
                                 </table>
                                 
                                 {/* pagination */}
-                                <div className="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-end justify-between">
+                                <div className="px-5 py-5 bg-white flex flex-col xs:flex-row items-end justify-between dark:bg-[#66696e]">
                                     <div className="inline-flex mt-2 xs:mt-0">
                                         <button
                                             className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#09B0EF] shadow font-semibold py-2 px-4 rounded-l"
@@ -529,7 +553,7 @@ function AddProduct() {
                                     </div>
 
                                     {/* Showing current page and total pages */}
-                                    <div className="mt-2 xs:mt-0 text-gray-600">
+                                    <div className="mt-2 xs:mt-0 text-gray-600 dark:text-[#e7e6e6]">
                                         Page {currentPage} of {totalPages}
                                     </div>
                                 </div>

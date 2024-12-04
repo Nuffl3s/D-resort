@@ -239,6 +239,7 @@ const AdminAddUnit = () => {
                                 <tr>
                                     <th className="px-4 py-2">Name</th>
                                     <th className="px-4 py-2">Capacity</th>
+                                    <th className="px-4 py-2">Time - Price</th>
                                     <th className="px-4 py-2">Actions</th>
                                 </tr>
                             </thead>
@@ -247,6 +248,21 @@ const AdminAddUnit = () => {
                                     <tr key={unit.id}>
                                         <td className="border px-4 py-2">{unit.name}</td>
                                         <td className="border px-4 py-2">{unit.capacity}</td>
+                                        <td className="px-4 py-2 border">
+                                            {Array.isArray(unit.custom_prices)
+                                                ? unit.custom_prices.map((priceEntry, index) => (
+                                                    <div key={index}>
+                                                        {priceEntry.timeRange}: {priceEntry.price}
+                                                    </div>
+                                                ))
+                                                : unit.custom_prices
+                                                ? Object.entries(unit.custom_prices).map(([timeRange, price]) => (
+                                                    <div key={timeRange}>
+                                                        {timeRange}: {price}
+                                                    </div>
+                                                ))
+                                                : "N/A"}
+                                        </td>
                                         <td className="border px-4 py-2">
                                             <button
                                                 onClick={() => handleEdit(unit)}

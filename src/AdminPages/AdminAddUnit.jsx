@@ -1,315 +1,274 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import api from "../api";
 import AdminSidebar from '../components/AdminSidebar';
-import UnitModal from '../Modal/UnitModal';
-import Swal from 'sweetalert2';
-import { useNavigate } from 'react-router-dom';
-import api from '../api'
 
 const AdminAddUnit = () => {
-    const navigate = useNavigate();
-    const [type, setType] = useState('Cottage'); // Default to "Cottage" 
-    const [images, setImages] = useState([]);
-    const [isModalOpen, setModalOpen] = useState(false);
-    const [capacity, setCapacity] = useState('');
-    const [formData, setFormData] = useState({
-        type: "Cottage",
-        image: null,
-        name: "",
-        capacity: "",
-        price1: "",
-        price2: "",
-        price3: "",
-        price4: "",
-        });
+    const [unitType, setUnitType] = useState("Cottage"); // Default to Cottage
+    const [name, setName] = useState("");
+    const [capacity, setCapacity] = useState("");
+    const [image, setImage] = useState(null);
+    const [customPrices, setCustomPrices] = useState([]);
+    const [cottages, setCottages] = useState([]);
+    const [lodges, setLodges] = useState([]);
+    const [selectedUnitId, setSelectedUnitId] = useState(null); // Track the unit being edited
 
-    const [responseMessage, setResponseMessage] = useState("");
-
-    const handleInputChange = (e) => {
-        const { name, type, value, files } = e.target;
-        setFormData({
-            ...formData,
-            [name]: type === "file" ? files[0] : type === "number" ? parseInt(value, 10) || "" : value,
-        });
+    // Fetch units
+    const fetchUnits = async () => {
+        try {
+            const cottageResponse = await api.get("/cottages/");
+            setCottages(cottageResponse.data);
+            const lodgeResponse = await api.get("/lodges/");
+            setLodges(lodgeResponse.data);
+        } catch (error) {
+            console.error("Error fetching units:", error);
+        }
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        const maxSizeInMB = 2; // Set max file size to 2MB
-        if (file && file.size > maxSizeInMB * 1024 * 1024) {
-            Swal.fire({
-                title: 'Error!',
-                text: 'File size should not exceed 2MB.',
-                icon: 'error',
-                confirmButtonText: 'OK',
-            });
-            return;
-        }
-        setFormData({ ...formData, image: file });
-    };
+    useEffect(() => {
+        fetchUnits();
+    }, []);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-    
-        if (!formData.name || !formData.type || !formData.image || !formData.capacity) {
-            alert("Please fill in all required fields including the name.");
-            return;
-        }
-    
-        const data = new FormData();
-        data.append("name", formData.name); // Append name
-        data.append("type", formData.type);
-        data.append("image", formData.image);
-        data.append("capacity", formData.capacity);
-    
-        if (formData.type === "Cottage") {
-            data.append("time_6am_6pm_price", formData.price1);
-            data.append("time_6am_12mn_price", formData.price2);
-            data.append("time_6pm_6am_price", formData.price3);
-            data.append("time_24hrs_price", formData.price4);
-        } else if (formData.type === "Lodge") {
-            data.append("time_3hrs_price", formData.price1);
-            data.append("time_6hrs_price", formData.price2);
-            data.append("time_12hrs_price", formData.price3);
-            data.append("time_24hrs_price", formData.price4);
-        }
+    const handleCustomPriceChange = (index, field, value) => {
+        setCustomPrices((prevPrices) =>
+            prevPrices.map((price, i) =>
+                i === index ? { ...price, [field]: value } : price
+            )
+        );
+        
+    };
+    const handleDelete = async (unitId, unitType) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this unit?");
+        if (!confirmDelete) return;
     
         try {
-            const response = await api.post("/add-unit/", data, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            alert("Unit added successfully!");
-            console.log(response.data);
+            const endpoint = `/${unitType.toLowerCase()}/${unitId}/`;
+            await api.delete(endpoint);
+            alert("Unit deleted successfully");
+            fetchUnits(); // Refresh the unit list after deletion
         } catch (error) {
-            console.error("Error adding unit:", error.response?.data || error.message);
+            console.error("Error deleting unit:", error.response?.data || error.message);
+            alert("Failed to delete the unit. Please try again.");
         }
     };
     
-    const handleTempoBtnBooking = () => {
-        navigate('/booking');
-    };
+    const handleAddOrEditUnit = async () => {
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("unit_type", unitType.toLowerCase());
+        formData.append("capacity", capacity);
+        if (image) formData.append("image", image);
+        formData.append("custom_prices", JSON.stringify(customPrices));
 
-    const renderPriceFields = () => {
-        if (formData.type === "Cottage") {
-            return (
-            <>
-                <div className="mb-4">
-                    <label htmlFor="price1" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                        6AM-6PM Price
-                    </label>
-                    <input
-                        type="number"
-                        id="price1"
-                        name="price1"
-                        placeholder="Price for 6AM-6PM"
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                    />
-                </div>
-                <div className="mb-4">
-                    <label htmlFor="price2" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                        6AM-12MN Price
-                    </label>
-                    <input
-                        type="number"
-                        id="price2"
-                        name="price2"
-                        placeholder="Price for 6AM-12MN"
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                    />
-                </div>
-                <div className="mb-4">
-                    <label htmlFor="price3" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                        6PM-6AM Price
-                    </label>
-                    <input
-                        type="number"
-                        id="price3"
-                        name="price3"
-                        placeholder="Price for 6PM-6AM"
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                    />
-                </div>
-                <div className="mb-4">
-                    <label htmlFor="price4" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                        24 Hours Price
-                    </label>
-                    <input
-                        type="number"
-                        id="price4"
-                        name="price4"
-                        placeholder="Price for 24 Hours"
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                    />
-                </div>
-            </>
-            );
-        } else if (formData.type === "Lodge") {
-            return (
-            <>
-                <div className="mb-4">
-                    <label htmlFor="price1" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                        3 Hours Price
-                    </label>
-                    <input
-                        type="number"
-                        id="price1"
-                        name="price1"
-                        placeholder="Price for 3 Hours"
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                    />
-                </div>
-                <div className="mb-4">
-                    <label htmlFor="price2" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                        6 Hours Price
-                    </label>
-                    <input
-                        type="number"
-                        id="price2"
-                        name="price2"
-                        placeholder="Price for 6 Hours"
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                    />
-                </div>
-                <div className="mb-4">
-                    <label htmlFor="price3" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                        12 Hours Price
-                    </label>
-                    <input
-                        type="number"
-                        id="price3"
-                        name="price3"
-                        placeholder="Price for 12 Hours"
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                    />
-                </div>
-                <div className="mb-4">
-                    <label htmlFor="price4" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                        24 Hours Price
-                    </label>
-                    <input
-                        type="number"
-                        id="price4"
-                        name="price4"
-                        placeholder="Price for 24 Hours"
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                    />
-                </div>
-            </>
+        try {
+            if (selectedUnitId) {
+                // Edit existing unit
+                const endpoint = `/${unitType.toLowerCase()}/${selectedUnitId}/`;
+                await api.put(endpoint, formData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+                alert("Unit updated successfully");
+            } else {
+                // Add new unit
+                await api.post("/add-unit/", formData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+                alert("Unit added successfully");
+            }
+            fetchUnits(); // Refresh the table data
+            resetForm(); // Reset the form after submission
+        } catch (error) {
+            console.error(
+                `Error ${selectedUnitId ? "updating" : "adding"} unit:`,
+                error.response?.data || error.message
             );
         }
-        };
+    };
+
+    const resetForm = () => {
+        setName("");
+        setCapacity("");
+        setImage(null);
+        setCustomPrices([]);
+        setSelectedUnitId(null);
+    };
+
+    const handleEdit = (unit) => {
+        setSelectedUnitId(unit.id);
+        setName(unit.name);
+        setCapacity(unit.capacity);
+        setCustomPrices(
+            Object.entries(unit.custom_prices || {}).map(([timeRange, price]) => ({
+                timeRange,
+                price,
+            }))
+        );
+        setUnitType(unitType.charAt(0).toUpperCase() + unitType.slice(1)); // Keep the tab selected
+    };
 
     return (
-        <div className="flex dark:bg-[#111827] bg-gray-100">
+        <div className="flex h-screen">
+            {/* Sidebar */}
             <AdminSidebar />
-            <div className="p-6 pl-10 flex-1 h-screen overflow-y-auto">
-                <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">ADD UNIT</h1>
 
-                <div className="mt-10">
-                    <form onSubmit={handleSubmit} className=" bg-white p-8 shadow rounded dark:bg-[#374151]">
-                        <div className="flex justify-between mb-5">
-                            <h2 className="text-2xl font-bold uppercase dark:text-[#e7e6e6]">Add New {type}</h2>
-                            <button
-                                onClick={handleTempoBtnBooking}
-                                type="submit"
-                                className="text-white bg-[#70b8d3] hover:bg-[#09B0EF] font-medium shadow px-4 py-2 rounded"
-                            >
-                                Go to Booking
-                            </button>
-                        </div>
-                        {/* Type Selection */}
+            {/* Main Content */}
+            <div className="flex-grow p-4 bg-gray-100">
+                <h2 className="text-2xl font-bold mb-4">{selectedUnitId ? "Edit Unit" : "Add New Unit"}</h2>
+
+                {/* Form */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">Type</label>
+                            <label className="block font-medium mb-2">Unit Type</label>
                             <select
-                                type="text"
-                                name="type"
-                                value={formData.type}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-3 border dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                                value={unitType}
+                                onChange={(e) => setUnitType(e.target.value)}
+                                className="border rounded px-3 py-2 w-full"
                             >
                                 <option value="Cottage">Cottage</option>
                                 <option value="Lodge">Lodge</option>
                             </select>
                         </div>
-
-                        {/* Name */}
                         <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] dark:text-[#e7e6e6]">Name</label>
+                            <label className="block font-medium mb-2">Name</label>
                             <input
                                 type="text"
-                                id="name"
-                                name="name"
-                                value={formData.name || ""} 
-                                placeholder="Enter Name"
-                                onChange={handleInputChange} 
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#303030] dark:text-[#e7e6e6] dark:placeholder-white"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="border rounded px-3 py-2 w-full"
                             />
                         </div>
-
-                        {/* Capacity */}
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6] ">Capacity</label>
+                            <label className="block font-medium mb-2">Capacity</label>
                             <input
                                 type="number"
-                                id="capacity"
-                                name="capacity"
-                                placeholder="Enter capacity"
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm p-3 border-b-2 dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                                value={capacity}
+                                onChange={(e) => setCapacity(e.target.value)}
+                                className="border rounded px-3 py-2 w-full"
                             />
                         </div>
-
-                        {/* File Upload */}
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                                Upload Images
-                            </label>
+                            <label className="block font-medium mb-2">Image</label>
                             <input
                                 type="file"
-                                id="image"
-                                name="image"
-                                onChange={handleFileChange}
-                                className="mt-1 block w-full text-gray-600 border border-gray-300 rounded dark:border-[#bebdbd] dark:border dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                                onChange={(e) => setImage(e.target.files[0])}
+                                className="border rounded px-3 py-2 w-full"
                             />
-                            <p className="text-xs text-gray-500 dark:text-[#e7e6e6]">Selected: {images.length} file(s)</p>
                         </div>
-
-                        {renderPriceFields()}
-
-                        <div>
-                            <button className="button is-info" onClick={() => setModalOpen(true)}>
-                                Show Units
-                            </button>
-                            <UnitModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />
-                            </div>
-                        );
-
-                        <div className="flex justify-end">
+                        <div className="mb-4">
+                            <label className="block font-medium mb-2">Custom Prices</label>
+                            {customPrices.map((price, index) => (
+                                <div key={index} className="flex items-center space-x-2 mb-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Time Range"
+                                        value={price.timeRange}
+                                        onChange={(e) =>
+                                            handleCustomPriceChange(index, "timeRange", e.target.value)
+                                        }
+                                        className="border rounded px-3 py-2 w-1/2"
+                                    />
+                                    <input
+                                        type="number"
+                                        placeholder="Price"
+                                        value={price.price}
+                                        onChange={(e) =>
+                                            handleCustomPriceChange(index, "price", e.target.value)
+                                        }
+                                        className="border rounded px-3 py-2 w-1/2"
+                                    />
+                                    <button
+                                        onClick={() =>
+                                            setCustomPrices(customPrices.filter((_, i) => i !== index))
+                                        }
+                                        className="text-red-500"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            ))}
                             <button
-                                type="reset"
-                                className="text-white bg-red-600 hover:bg-red-500 font-medium shadow px-4 py-2 rounded mr-2"
+                                onClick={() =>
+                                    setCustomPrices([...customPrices, { timeRange: "", price: "" }])
+                                }
+                                className="text-blue-500 underline"
                             >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="text-white bg-[#70b8d3] hover:bg-[#09B0EF] font-medium shadow px-4 py-2 rounded"
-                            >
-                                Save
+                                Add Price
                             </button>
                         </div>
-                    </form>
+                        <button
+                            onClick={handleAddOrEditUnit}
+                            className="bg-blue-500 text-white px-4 py-2 rounded"
+                        >
+                            {selectedUnitId ? "Update Unit" : "Add Unit"}
+                        </button>
+
+                        <button
+                            onClick={resetForm}
+                            className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
+                        >
+                            Clear
+                        </button>
+                    </div>
+
+                    {/* Tables */}
+                    <div>
+                        <div className="flex space-x-4 mb-4">
+                            <button
+                                onClick={() => setUnitType("Cottage")}
+                                className={`px-4 py-2 rounded ${
+                                    unitType === "Cottage"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-gray-200"
+                                }`}
+                            >
+                                Cottage
+                            </button>
+                            <button
+                                onClick={() => setUnitType("Lodge")}
+                                className={`px-4 py-2 rounded ${
+                                    unitType === "Lodge"
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-gray-200"
+                                }`}
+                            >
+                                Lodge
+                            </button>
+                        </div>
+                        <table className="table-auto w-full">
+                            <thead>
+                                <tr>
+                                    <th className="px-4 py-2">Name</th>
+                                    <th className="px-4 py-2">Capacity</th>
+                                    <th className="px-4 py-2">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(unitType === "Cottage" ? cottages : lodges).map((unit) => (
+                                    <tr key={unit.id}>
+                                        <td className="border px-4 py-2">{unit.name}</td>
+                                        <td className="border px-4 py-2">{unit.capacity}</td>
+                                        <td className="border px-4 py-2">
+                                            <button
+                                                onClick={() => handleEdit(unit)}
+                                                className="text-blue-500"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(unit.id, unitType)}
+                                                className="text-red-500 underline"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
-        
     );
 };
 

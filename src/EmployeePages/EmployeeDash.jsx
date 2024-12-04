@@ -10,12 +10,39 @@ function EmployeeDash() {
     const [selectedCategory, setSelectedCategory] = useState('Cottage');
     const [currentTime, setCurrentTime] = useState(new Date());
     const [date, setDate] = useState();
+    const [units, setUnits] = useState([]);
+    const [timeRanges, setTimeRanges] = useState([]);
+    const [unitType, setUnitType] = useState("cottage"); // Default to cottage
     const [totals, setTotals] = useState({ total_cottages: 0, total_lodges: 0 });
+    const [timeSlots, setTimeSlots] = useState([]);
 
-    const tableHeaders =
-        selectedCategory === 'Cottage'
-            ? ['#', 'Type', 'Capacity', '6AM - 6PM', '6AM - 12MN', '6PM - 6AM', '24 HRS', 'Status']
-            : ['#', 'Type', 'Capacity', '3 Hrs', '6 Hrs', '12 Hrs', '24 Hrs', 'Status'];
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const endpoint = unitType === "cottage" ? "/cottages/" : "/lodges/";
+            const response = await api.get(endpoint);
+                const jsonData = response.data;
+        
+                console.log("Cottages Data:", jsonData);
+        
+                // Collect all unique time ranges from the API data
+                const uniqueKeys = new Set();
+                jsonData.forEach((item) => {
+                const customPrices = item.custom_prices || {};
+                Object.keys(customPrices).forEach((key) => {
+                    uniqueKeys.add(key.toUpperCase());
+                });
+            });
+        
+                setTimeSlots([...uniqueKeys].sort()); // Sort keys alphabetically
+                setData(jsonData);
+            } catch (error) {
+                console.error(`Error fetching ${unitType} data:`, error);
+            }
+        };
+    
+        fetchData();
+    }, [unitType]);
 
     const fetchData = async () => {
         const endpoint = selectedCategory === 'Cottage' ? '/cottages/' : '/lodges/';
@@ -51,6 +78,13 @@ function EmployeeDash() {
 
         return () => clearInterval(intervalId);
     }, []);
+
+    
+    const handleUnitTypeChange = (type) => {
+        setUnitType(type);
+        setData([]);
+        setTimeSlots([]);
+    };
     return (
         <div className="flex bg-gray-100">
             <Sidebar />
@@ -96,12 +130,12 @@ function EmployeeDash() {
                                 <h1 className="text-2xl font-bold">Rates</h1>
                                 <div>
                                     <button
-                                        onClick={() => setSelectedCategory('Cottage')}
+                                        onClick={() => handleUnitTypeChange("cottage")}
                                         className={`text-sm p-2 w-[100px] mr-3 text-white cursor-pointer rounded-[5px] bg-[#70b8d3] hover:bg-[#09B0EF] shadow`}>
                                         Cottage
                                     </button>
                                     <button
-                                        onClick={() => setSelectedCategory('Lodge')}
+                                        onClick={() => handleUnitTypeChange("lodge")}
                                         className={`text-sm p-2 w-[100px] text-white cursor-pointer rounded-[5px] bg-[#70b8d3] hover:bg-[#09B0EF] shadow`}>
                                         Lodge
                                     </button>
@@ -111,40 +145,34 @@ function EmployeeDash() {
                             <div className="overflow-x-auto">
                                 <div className="relative">
                                     <div className="max-h-[500px] overflow-y-auto">
-                                        <table className="w-full">
-                                            <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100">
-                                                <tr className="text-center">
-                                                    {tableHeaders.map((header, index) => (
-                                                        <th key={index} className="px-3 py-3 text-sm font-bold uppercase tracking-wider" >{header}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {data.map((item, index) => (
-                                                    <tr key={item.id} className="px-3 py-3 border-b bg-white text-sm">
-                                                    <td className="px-3 py-3 border-b bg-white text-sm">{index + 1}</td>
-                                                    <td className="px-3 py-3 border-b bg-white text-sm">{item.type}</td>
-                                                    <td className="px-3 py-3 border-b bg-white text-sm">{item.capacity}</td>
-                                                    {selectedCategory === "Cottage" ? (
-                                                        <>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6am_6pm_price}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6am_12mn_price}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6pm_6am_price}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_24hrs_price}</td>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_3hrs_price}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_6hrs_price}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_12hrs_price}</td>
-                                                        <td className="px-3 py-3 border-b bg-white text-sm">{item.time_24hrs_price}</td>
-                                                        </>
-                                                    )}
-                                                    <td className="px-3 py-3 border-b bg-white text-sm">{item.status}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                    <table className="table-auto border-collapse border border-gray-300 w-full">
+                                        <thead>
+                                        <tr className="bg-gray-200">
+                                            <th className="border border-gray-300 px-4 py-2">#</th>
+                                            <th className="border border-gray-300 px-4 py-2">Type</th>
+                                            <th className="border border-gray-300 px-4 py-2">Capacity</th>
+                                            {timeSlots.map((slot) => (
+                                            <th key={slot} className="border border-gray-300 px-4 py-2">
+                                                {slot}
+                                            </th>
+                                            ))}
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {data.map((row, index) => (
+                                            <tr key={index} className="hover:bg-gray-100">
+                                            <td className="border border-gray-300 px-4 py-2 text-center">{index + 1}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-center">{row.type}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-center">{row.capacity}</td>
+                                            {timeSlots.map((slot) => (
+                                                <td key={slot} className="border border-gray-300 px-4 py-2 text-center">
+                                                {row.custom_prices?.[slot] || "-"}
+                                                </td>
+                                            ))}
+                                            </tr>
+                                        ))}
+                                        </tbody>
+                                    </table>
                                     </div>
                                 </div>
                             </div>

@@ -62,40 +62,39 @@ class LogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Log
         fields = ["id", "username", "action", "category", "timestamp"]
-        
-class CottageSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
 
+class BaseUnitSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        custom_prices = data.get("custom_prices", {})
+        normalized_prices = {key.upper(): value for key, value in custom_prices.items()}
+        data["custom_prices"] = normalized_prices
+        return data
+
+    def validate_custom_prices(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("custom_prices must be a dictionary.")
+        return value
+
+    def validate_type(self, value):
+        # Default to "Cottage" if type is missing or blank
+        if not value:
+            return "Cottage"
+        return value.capitalize()
+
+class CottageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cottage
-        fields = [
-                'id', 'name', 'image_url', 'type', 'capacity', 
-                'time_6am_6pm_price', 'time_6am_12mn_price', 
-                'time_6pm_6am_price', 'time_24hrs_price'
-                ]
-
-    def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
-        return None
-
+        fields = '__all__'
+        extra_kwargs = {
+            'type': {'required': False},  # Allow PUT without explicitly sending type if it doesn't change
+        }
 
 class LodgeSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
-
     class Meta:
         model = Lodge
-        fields = [
-            'id', 'name', 'image_url', 'type', 'capacity', 
-            'time_3hrs_price', 'time_6hrs_price', 
-            'time_12hrs_price', 'time_24hrs_price'
-        ]
-
-    def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
-        return None
-
-
+        fields = '__all__'
+        extra_kwargs = {
+            'type': {'required': False},
+            'image': {'required': False},  # Make image optional
+        }

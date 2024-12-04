@@ -15,6 +15,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from itertools import combinations
 from django.conf import settings
 from .permissions import IsAdminOrEmployee, IsAdminOnly
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 import json
 
 
@@ -401,7 +402,21 @@ class AddUnitView(APIView):
             return Response(serializer.data, status=201)
 
         return Response(serializer.errors, status=400)
-    
+
+class UpdateCottageView(RetrieveUpdateDestroyAPIView):
+    queryset = Cottage.objects.all()
+    serializer_class = CottageSerializer
+
+    def update(self, request, *args, **kwargs):
+        print("Request data:", request.data)  # Debug incoming data
+        return super().update(request, *args, **kwargs)
+
+
+class UpdateLodgeView(RetrieveUpdateDestroyAPIView):
+    queryset = Lodge.objects.all()
+    serializer_class = LodgeSerializer
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+
 class DeleteCottageView(DestroyAPIView):
     queryset = Cottage.objects.all()  # Ensure this matches the Cottage model
     serializer_class = CottageSerializer

@@ -82,10 +82,13 @@ class BaseUnitSerializer(serializers.ModelSerializer):
             return "Cottage"
         return value.capitalize()
 
-class CottageSerializer(BaseUnitSerializer):
+class CottageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cottage
-        fields = ['id', 'name', 'type', 'capacity', 'custom_prices', 'image']
+        fields = '__all__'
+        extra_kwargs = {
+            'type': {'required': False},  # Allow PUT without explicitly sending type if it doesn't change
+        }
 
 
 class LodgeSerializer(BaseUnitSerializer):

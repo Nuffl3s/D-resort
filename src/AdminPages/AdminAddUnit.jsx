@@ -34,6 +34,21 @@ const AdminAddUnit = () => {
                 i === index ? { ...price, [field]: value } : price
             )
         );
+        
+    };
+    const handleDelete = async (unitId, unitType) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this unit?");
+        if (!confirmDelete) return;
+    
+        try {
+            const endpoint = `/${unitType.toLowerCase()}/${unitId}/`;
+            await api.delete(endpoint);
+            alert("Unit deleted successfully");
+            fetchUnits(); // Refresh the unit list after deletion
+        } catch (error) {
+            console.error("Error deleting unit:", error.response?.data || error.message);
+            alert("Failed to delete the unit. Please try again.");
+        }
     };
     
     const handleAddOrEditUnit = async () => {
@@ -238,6 +253,12 @@ const AdminAddUnit = () => {
                                                 className="text-blue-500"
                                             >
                                                 Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(unit.id, unitType)}
+                                                className="text-red-500 underline"
+                                            >
+                                                Delete
                                             </button>
                                         </td>
                                     </tr>

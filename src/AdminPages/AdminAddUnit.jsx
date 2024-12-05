@@ -55,16 +55,14 @@ const AdminAddUnit = () => {
     };
     
     const handleAddOrEditUnit = async () => {
-        // Transform customPrices into a dictionary
         const formattedCustomPrices = customPrices.reduce((acc, price) => {
             acc[price.timeRange] = price.price;
             return acc;
         }, {});
     
-        // Prepare the form data
         const formData = new FormData();
         formData.append("name", name);
-        formData.append("unit_type", unitType.toLowerCase()); // Ensure correct field name
+        formData.append("type", unitType.toLowerCase()); // Explicitly include "type"
         formData.append("capacity", capacity);
         if (image) formData.append("image", image);
         formData.append("custom_prices", JSON.stringify(formattedCustomPrices));
@@ -72,7 +70,7 @@ const AdminAddUnit = () => {
         try {
             const endpoint = selectedUnitId
                 ? `/${unitType.toLowerCase()}/${selectedUnitId}/`
-                : "/add-unit/";
+                : "/api/add-unit/";
             const method = selectedUnitId ? "put" : "post";
     
             const response = await api[method](endpoint, formData, {
@@ -91,7 +89,7 @@ const AdminAddUnit = () => {
                 `Failed to ${selectedUnitId ? "update" : "add"} unit. Check console for more details.`
             );
         }
-    };    
+    };
 
     const resetForm = () => {
         setName("");

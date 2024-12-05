@@ -52,43 +52,47 @@ const AdminAddUnit = () => {
     };
     
     const handleAddOrEditUnit = async () => {
-        // Format customPrices as an array of objects
-        const formattedCustomPrices = customPrices.map((price) => ({
-            timeRange: price.timeRange,
-            price: price.price,
-        }));
+        // Transform customPrices into a dictionary
+        const formattedCustomPrices = customPrices.reduce((acc, price) => {
+            acc[price.timeRange] = price.price;
+            return acc;
+        }, {});
     
+        // Prepare the form data
         const formData = new FormData();
         formData.append("name", name);
-        formData.append("unit_type", unitType.toLowerCase());
+        formData.append("type", unitType.toLowerCase()); // This differentiates between Cottage and Lodge
         formData.append("capacity", capacity);
         if (image) formData.append("image", image);
-        formData.append("custom_prices", JSON.stringify(formattedCustomPrices)); // Ensure correct format
+        formData.append("custom_prices", JSON.stringify(formattedCustomPrices));
+    
+        console.log("FormData being sent:");
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}:`, value);
+        }
     
         try {
-            if (selectedUnitId) {
-                // Edit existing unit
-                const endpoint = `/${unitType.toLowerCase()}/${selectedUnitId}/`;
-                await api.put(endpoint, formData, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
-                alert("Unit updated successfully");
-            } else {
-                // Add new unit
-                await api.post("/add-unit/", formData, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
-                alert("Unit added successfully");
-            }
-            fetchUnits(); // Refresh the table data
-            resetForm(); // Reset the form after submission
+            const endpoint = selectedUnitId
+                ? `/${unitType.toLowerCase()}/${selectedUnitId}/`
+                : "/add-unit/";
+            const method = selectedUnitId ? "put" : "post";
+            const response = await api[method](endpoint, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            console.log("Response:", response.data);
+            alert(`Unit ${selectedUnitId ? "updated" : "added"} successfully`);
+            fetchUnits();
+            resetForm();
         } catch (error) {
             console.error(
                 `Error ${selectedUnitId ? "updating" : "adding"} unit:`,
                 error.response?.data || error.message
             );
+            alert(
+                `Failed to ${selectedUnitId ? "update" : "add"} unit. Check console for more details.`
+            );
         }
-    };    
+    };
 
     const resetForm = () => {
         setName("");

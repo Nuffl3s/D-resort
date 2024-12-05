@@ -401,52 +401,43 @@ class AddUnitView(APIView):
 class UpdateCottageView(RetrieveUpdateDestroyAPIView):
     queryset = Cottage.objects.all()
     serializer_class = CottageSerializer
-    permission_classes = [IsAuthenticated, IsAdminOnly]
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()  # Retrieve the instance being updated
+        print("Request Data Received in Backend:", request.data)
+        custom_prices = request.data.get("custom_prices")
+        if isinstance(custom_prices, str):
+            try:
+                custom_prices = json.loads(custom_prices)
+            except json.JSONDecodeError:
+                return Response({"error": "Invalid custom_prices format."}, status=400)
+        print("Parsed custom_prices:", custom_prices)
 
-        # Check if the name field is being updated
-        new_name = request.data.get("name", instance.name)
-        if new_name != instance.name:
-            if Cottage.objects.filter(name=new_name).exclude(pk=instance.pk).exists():
-                return Response(
-                    {"error": f"A cottage with the name '{new_name}' already exists."},
-                    status=400,
-                )
+        # Ensure `type` is included
+        if "type" not in request.data:
+            return Response({"type": ["This field is required."]}, status=400)
 
-        # Update the instance
-        partial = kwargs.pop('partial', False)
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        return Response(serializer.data)
+        return super().update(request, *args, **kwargs)
 
 class UpdateLodgeView(RetrieveUpdateDestroyAPIView):
-    queryset = Lodge.objects.all()  # Correctly use the Lodge model
-    serializer_class = LodgeSerializer  # Correctly use the Lodge serializer
-    permission_classes = [IsAuthenticated, IsAdminOnly]
+    queryset = Lodge.objects.all()  # Ensure it uses the Lodge model
+    serializer_class = LodgeSerializer
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()  # Retrieve the instance being updated
+        instance = self.get_object()
+        custom_prices = request.data.get("custom_prices")
+        if isinstance(custom_prices, str):
+            try:
+                custom_prices = json.loads(custom_prices)
+            except json.JSONDecodeError:
+                return Response({"error": "Invalid custom_prices format."}, status=400)
 
-        # Check if the name field is being updated
-        new_name = request.data.get("name", instance.name)
-        if new_name != instance.name:
-            if Lodge.objects.filter(name=new_name).exclude(pk=instance.pk).exists():
-                return Response(
-                    {"error": f"A Lodge with the name '{new_name}' already exists."},
-                    status=400,
-                )
+        print("Parsed custom_prices:", custom_prices)
 
-        # Update the instance
-        partial = kwargs.pop('partial', False)
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        # Ensure type is included
+        if "type" not in request.data:
+            return Response({"type": ["This field is required."]}, status=400)
 
-        return Response(serializer.data)
+        return super().update(request, *args, **kwargs)
 
 class DeleteCottageView(DestroyAPIView):
     queryset = Cottage.objects.all()  # Ensure this matches the Cottage model

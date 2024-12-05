@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import api from "../api";
 import AdminSidebar from '../components/AdminSidebar';
+import { useRef } from "react";
+
 
 const AdminAddUnit = () => {
     const [unitType, setUnitType] = useState("Cottage"); // Default to Cottage
@@ -11,6 +13,7 @@ const AdminAddUnit = () => {
     const [cottages, setCottages] = useState([]);
     const [lodges, setLodges] = useState([]);
     const [selectedUnitId, setSelectedUnitId] = useState(null); // Track the unit being edited
+    const imageInputRef = useRef(null); // Add this at the top of your component
 
     // Fetch units
     const fetchUnits = async () => {
@@ -61,21 +64,17 @@ const AdminAddUnit = () => {
         // Prepare the form data
         const formData = new FormData();
         formData.append("name", name);
-        formData.append("type", unitType.toLowerCase()); // This differentiates between Cottage and Lodge
+        formData.append("unit_type", unitType.toLowerCase()); // Ensure correct field name
         formData.append("capacity", capacity);
         if (image) formData.append("image", image);
         formData.append("custom_prices", JSON.stringify(formattedCustomPrices));
-    
-        console.log("FormData being sent:");
-        for (let [key, value] of formData.entries()) {
-            console.log(`${key}:`, value);
-        }
     
         try {
             const endpoint = selectedUnitId
                 ? `/${unitType.toLowerCase()}/${selectedUnitId}/`
                 : "/add-unit/";
             const method = selectedUnitId ? "put" : "post";
+    
             const response = await api[method](endpoint, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
@@ -92,7 +91,7 @@ const AdminAddUnit = () => {
                 `Failed to ${selectedUnitId ? "update" : "add"} unit. Check console for more details.`
             );
         }
-    };
+    };    
 
     const resetForm = () => {
         setName("");
@@ -100,6 +99,9 @@ const AdminAddUnit = () => {
         setImage(null);
         setCustomPrices([]);
         setSelectedUnitId(null);
+        if (imageInputRef.current) {
+            imageInputRef.current.value = "";
+        }
     };
 
     const handleEdit = (unit) => {
@@ -160,6 +162,7 @@ const AdminAddUnit = () => {
                             <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Image</label>
                             <input
                                 type="file"
+                                ref={imageInputRef} // Attach the ref here
                                 onChange={(e) => setImage(e.target.files[0])}
                                 className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                             />

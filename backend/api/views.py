@@ -380,13 +380,21 @@ class AddUnitView(APIView):
                     if "timeRange" in entry and "price" in entry
                 }
 
+            # Get and validate unit_type
+            unit_type = request.data.get("unit_type", "").capitalize()
+            if not unit_type:
+                return Response({"error": "unit_type is required."}, status=400)
+
+            if unit_type not in ["Cottage", "Lodge"]:
+                return Response({"error": f"Invalid unit_type: {unit_type}"}, status=400)
+
             # Prepare data for saving
-            unit_type = request.data.get("unit_type").capitalize()
             data = {
                 "name": request.data.get("name"),
                 "capacity": request.data.get("capacity"),
                 "custom_prices": custom_prices,
                 "type": unit_type,
+                "image": request.data.get("image"),  # Ensure image is included
             }
             serializer_class = CottageSerializer if unit_type == "Cottage" else LodgeSerializer
             serializer = serializer_class(data=data)

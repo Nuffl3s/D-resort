@@ -130,7 +130,7 @@ function AdminAttendance() {
                         <tbody className="text-gray-900 bg-white dark:bg-[#66696e] dark:text-[#e7e6e6]">
                         {tableRows.map((row, index) => (
                             <tr key={row.id}>
-                            <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{index + 1}</td>
+                                <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{index + 1}</td>
                                 <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.name}</td>
                                 <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.employeeId}</td>
                                 <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.date}</td>

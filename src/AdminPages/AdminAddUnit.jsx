@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import api from "../api";
 import AdminSidebar from '../components/AdminSidebar';
 
@@ -112,56 +112,56 @@ const AdminAddUnit = () => {
     };
 
     return (
-        <div className="flex h-screen">
+        <div className="flex h-screen overflow-hidden dark:bg-[#111827] bg-gray-100">
             {/* Sidebar */}
             <AdminSidebar />
 
             {/* Main Content */}
-            <div className="flex-grow p-4 bg-gray-100">
-                <h2 className="text-2xl font-bold mb-4">{selectedUnitId ? "Edit Unit" : "Add New Unit"}</h2>
+            <div className="p-7 flex-1 h-screen overflow-hidden">
+                <h2 className="text-4xl font-bold mb-5 dark:text-[#e7e6e6]">{selectedUnitId ? "Edit Unit" : "ADD NEW UNIT"}</h2>
 
                 {/* Form */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="bg-white p-6 rounded-lg shadow dark:bg-[#374151] dark:shadow">
                         <div className="mb-4">
-                            <label className="block font-medium mb-2">Unit Type</label>
+                            <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Unit Type</label>
                             <select
                                 value={unitType}
                                 onChange={(e) => setUnitType(e.target.value)}
-                                className="border rounded px-3 py-2 w-full"
+                                className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                             >
                                 <option value="Cottage">Cottage</option>
                                 <option value="Lodge">Lodge</option>
                             </select>
                         </div>
                         <div className="mb-4">
-                            <label className="block font-medium mb-2">Name</label>
+                            <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Name</label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="border rounded px-3 py-2 w-full"
+                                className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block font-medium mb-2">Capacity</label>
+                            <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Capacity</label>
                             <input
                                 type="number"
                                 value={capacity}
                                 onChange={(e) => setCapacity(e.target.value)}
-                                className="border rounded px-3 py-2 w-full"
+                                className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block font-medium mb-2">Image</label>
+                            <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Image</label>
                             <input
                                 type="file"
                                 onChange={(e) => setImage(e.target.files[0])}
-                                className="border rounded px-3 py-2 w-full"
+                                className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block font-medium mb-2">Custom Prices</label>
+                            <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Custom Prices</label>
                             {customPrices.map((price, index) => (
                                 <div key={index} className="flex items-center space-x-2 mb-2">
                                     <input
@@ -171,7 +171,7 @@ const AdminAddUnit = () => {
                                         onChange={(e) =>
                                             handleCustomPriceChange(index, "timeRange", e.target.value)
                                         }
-                                        className="border rounded px-3 py-2 w-1/2"
+                                        className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                                     />
                                     <input
                                         type="number"
@@ -180,13 +180,13 @@ const AdminAddUnit = () => {
                                         onChange={(e) =>
                                             handleCustomPriceChange(index, "price", e.target.value)
                                         }
-                                        className="border rounded px-3 py-2 w-1/2"
+                                        className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                                     />
                                     <button
                                         onClick={() =>
                                             setCustomPrices(customPrices.filter((_, i) => i !== index))
                                         }
-                                        className="text-red-500"
+                                        className="bg-[#FF6767] hover:bg-[#f35656] text-white px-4 py-2 rounded ml-2 font-medium"
                                     >
                                         Remove
                                     </button>
@@ -196,45 +196,45 @@ const AdminAddUnit = () => {
                                 onClick={() =>
                                     setCustomPrices([...customPrices, { timeRange: "", price: "" }])
                                 }
-                                className="text-blue-500 underline"
+                                className="underline text-[#70b8d3] hover:text-[#62c5e9] font-medium rounded"
                             >
                                 Add Price
                             </button>
                         </div>
                         <button
                             onClick={handleAddOrEditUnit}
-                            className="bg-blue-500 text-white px-4 py-2 rounded"
+                            className="bg-[#70b8d3] hover:bg-[#62c5e9] text-white px-4 py-2 rounded font-medium"
                         >
                             {selectedUnitId ? "Update Unit" : "Add Unit"}
                         </button>
 
                         <button
                             onClick={resetForm}
-                            className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
+                            className="bg-[#FF6767] hover:bg-[#f35656] text-white px-4 py-2 rounded ml-2 font-medium"
                         >
                             Clear
                         </button>
                     </div>
 
                     {/* Tables */}
-                    <div>
+                    <div className="bg-white p-6 rounded-lg shadow dark:bg-[#374151] dark:shadow">
                         <div className="flex space-x-4 mb-4">
                             <button
                                 onClick={() => setUnitType("Cottage")}
-                                className={`px-4 py-2 rounded ${
+                                className={`px-4 py-2 rounded font-medium ${
                                     unitType === "Cottage"
-                                        ? "bg-blue-500 text-white"
-                                        : "bg-gray-200"
+                                        ? "bg-[#70b8d3] text-white hover:text-white"
+                                        : "bg-gray-200 hover:bg-[#70b8d3] hover:text-white"
                                 }`}
                             >
                                 Cottage
                             </button>
                             <button
                                 onClick={() => setUnitType("Lodge")}
-                                className={`px-4 py-2 rounded ${
+                                className={`px-4 py-2 rounded font-medium ${
                                     unitType === "Lodge"
-                                        ? "bg-blue-500 text-white"
-                                        : "bg-gray-200"
+                                        ? "bg-[#70b8d3] text-white hover:text-white"
+                                        : "bg-gray-200 hover:bg-[#70b8d3] hover:text-white"
                                 }`}
                             >
                                 Lodge

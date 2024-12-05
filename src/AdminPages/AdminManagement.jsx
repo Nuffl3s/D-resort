@@ -233,11 +233,11 @@ function AdminManagement() {
                                         <table className="min-w-full leading-normal">
                                             <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                                 <tr>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">ID</th>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Name</th>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Address</th>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Mobile Number</th>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider ">Action</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">ID</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Name</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Address</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Mobile Number</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Action</th>
                                                 </tr>
                                             </thead>
 

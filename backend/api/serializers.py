@@ -82,19 +82,29 @@ class BaseUnitSerializer(serializers.ModelSerializer):
             return "Cottage"
         return value.capitalize()
 
-class CottageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Cottage
-        fields = '__all__'
-        extra_kwargs = {
-            'type': {'required': False},  # Allow PUT without explicitly sending type if it doesn't change
-        }
-
 class LodgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lodge
         fields = '__all__'
-        extra_kwargs = {
-            'type': {'required': False},
-            'image': {'required': False},  # Make image optional
-        }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        custom_prices = data.get("custom_prices", {})
+        # Normalize keys: remove spaces and convert to uppercase
+        normalized_prices = {key.replace(" ", "").upper(): value for key, value in custom_prices.items()}
+        data["custom_prices"] = normalized_prices
+        return data
+
+
+class CottageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cottage
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        custom_prices = data.get("custom_prices", {})
+        # Normalize keys: remove spaces and convert to uppercase
+        normalized_prices = {key.replace(" ", "").upper(): value for key, value in custom_prices.items()}
+        data["custom_prices"] = normalized_prices
+        return data

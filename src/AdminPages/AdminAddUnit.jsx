@@ -52,13 +52,19 @@ const AdminAddUnit = () => {
     };
     
     const handleAddOrEditUnit = async () => {
+        // Format customPrices as an array of objects
+        const formattedCustomPrices = customPrices.map((price) => ({
+            timeRange: price.timeRange,
+            price: price.price,
+        }));
+    
         const formData = new FormData();
         formData.append("name", name);
         formData.append("unit_type", unitType.toLowerCase());
         formData.append("capacity", capacity);
         if (image) formData.append("image", image);
-        formData.append("custom_prices", JSON.stringify(customPrices));
-
+        formData.append("custom_prices", JSON.stringify(formattedCustomPrices)); // Ensure correct format
+    
         try {
             if (selectedUnitId) {
                 // Edit existing unit
@@ -82,7 +88,7 @@ const AdminAddUnit = () => {
                 error.response?.data || error.message
             );
         }
-    };
+    };    
 
     const resetForm = () => {
         setName("");
@@ -239,6 +245,7 @@ const AdminAddUnit = () => {
                                 <tr>
                                     <th className="px-4 py-2">Name</th>
                                     <th className="px-4 py-2">Capacity</th>
+                                    <th className="px-4 py-2">Time and Prices</th>
                                     <th className="px-4 py-2">Actions</th>
                                 </tr>
                             </thead>
@@ -247,6 +254,13 @@ const AdminAddUnit = () => {
                                     <tr key={unit.id}>
                                         <td className="border px-4 py-2">{unit.name}</td>
                                         <td className="border px-4 py-2">{unit.capacity}</td>
+                                        <td className="border border-gray-300 px-4 py-2 text-center">
+                                            {Object.entries(unit.custom_prices || {}).map(
+                                                ([time, price]) => (
+                                                    <div key={time}>{`${time}: ${price}`}</div>
+                                                )
+                                            )}
+                                        </td>
                                         <td className="border px-4 py-2">
                                             <button
                                                 onClick={() => handleEdit(unit)}

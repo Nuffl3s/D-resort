@@ -20,33 +20,29 @@ function EmployeeDash() {
         const fetchData = async () => {
             try {
                 const endpoint = unitType === "cottage" ? "/cottages/" : "/lodges/";
-                const response = await api.get(endpoint);
+            const response = await api.get(endpoint);
                 const jsonData = response.data;
-    
-                console.log("Fetched Data:", jsonData);
-    
-                // Normalize custom_prices keys and collect unique time slots
+        
+                console.log("Cottages Data:", jsonData);
+        
+                // Collect all unique time ranges from the API data
                 const uniqueKeys = new Set();
-                const normalizedData = jsonData.map((item) => {
-                    const customPrices = item.custom_prices || {};
-                    const normalizedPrices = Object.entries(customPrices).reduce((acc, [key, value]) => {
-                        const normalizedKey = key.replace(/\s+/g, "").toUpperCase(); // Remove spaces and make uppercase
-                        acc[normalizedKey] = value;
-                        uniqueKeys.add(normalizedKey); // Add normalized key to the unique set
-                        return acc;
-                    }, {});
-                    return { ...item, custom_prices: normalizedPrices }; // Return the item with normalized prices
+                jsonData.forEach((item) => {
+                const customPrices = item.custom_prices || {};
+                Object.keys(customPrices).forEach((key) => {
+                    uniqueKeys.add(key.toUpperCase());
                 });
-    
+            });
+        
                 setTimeSlots([...uniqueKeys].sort()); // Sort keys alphabetically
-                setData(normalizedData); // Update state with normalized data
+                setData(jsonData);
             } catch (error) {
                 console.error(`Error fetching ${unitType} data:`, error);
             }
         };
     
         fetchData();
-    }, [unitType]);    
+    }, [unitType]);
 
     const fetchData = async () => {
         const endpoint = selectedCategory === 'Cottage' ? '/cottages/' : '/lodges/';
@@ -156,9 +152,9 @@ function EmployeeDash() {
                                             <th className="border border-gray-300 px-4 py-2">Type</th>
                                             <th className="border border-gray-300 px-4 py-2">Capacity</th>
                                             {timeSlots.map((slot) => (
-                                                <th key={slot} className="border border-gray-300 px-4 py-2">
-                                                    {slot}
-                                                </th>
+                                            <th key={slot} className="border border-gray-300 px-4 py-2">
+                                                {slot}
+                                            </th>
                                             ))}
                                         </tr>
                                         </thead>

@@ -223,7 +223,7 @@ const AdminAddUnit = () => {
 
                     {/* Tables */}
                     <div className="bg-white p-6 rounded-lg shadow dark:bg-[#374151] dark:shadow">
-                        <div className="flex space-x-4 mb-4">
+                        <div className="flex space-x-2 mb-4">
                             <button
                                 onClick={() => setUnitType("Cottage")}
                                 className={`px-4 py-2 rounded font-medium ${
@@ -245,45 +245,49 @@ const AdminAddUnit = () => {
                                 Lodge
                             </button>
                         </div>
-                        <table className="table-auto w-full">
-                            <thead>
-                                <tr>
-                                    <th className="px-4 py-2">Name</th>
-                                    <th className="px-4 py-2">Capacity</th>
-                                    <th className="px-4 py-2">Time and Prices</th>
-                                    <th className="px-4 py-2">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(unitType === "Cottage" ? cottages : lodges).map((unit) => (
-                                    <tr key={unit.id}>
-                                        <td className="border px-4 py-2">{unit.name}</td>
-                                        <td className="border px-4 py-2">{unit.capacity}</td>
-                                        <td className="border border-gray-300 px-4 py-2 text-center">
-                                            {Object.entries(unit.custom_prices || {}).map(
-                                                ([time, price]) => (
-                                                    <div key={time}>{`${time}: ${price}`}</div>
-                                                )
-                                            )}
-                                        </td>
-                                        <td className="border px-4 py-2">
-                                            <button
-                                                onClick={() => handleEdit(unit)}
-                                                className="text-blue-500"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(unit.id, unitType)}
-                                                className="text-red-500 underline"
-                                            >
-                                                Delete
-                                            </button>
-                                        </td>
+
+                        <div className="inline-block min-w-full shadow rounded-lg overflow-hidden">
+                            <table className="min-w-full leading-normal">
+                                <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                    <tr>
+                                        <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Name</th>
+                                        <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Capacity</th>
+                                        <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Time and Prices</th>
+                                        <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {(unitType === "Cottage" ? cottages : lodges).map((unit) => (
+                                        <tr key={unit.id}>
+                                            <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">{unit.name}</td>
+                                            <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">{unit.capacity}</td>
+                                            <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                                {Object.entries(unit.custom_prices || {}).map(
+                                                    ([time, price]) => (
+                                                        <div key={time}>{`${time}: ${price}`}</div>
+                                                    )
+                                                )}
+                                            </td>
+
+                                            <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                <div className="flex space-x-1">
+                                                    <button 
+                                                        onClick={() => handleEdit(unit)}
+                                                        className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
+                                                            <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDelete(unit.id, unitType)}
+                                                        className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full">
+                                                            <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
+                                                    </button>
+                                                </div>
+                                            </td>                
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

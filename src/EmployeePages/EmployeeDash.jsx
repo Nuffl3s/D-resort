@@ -148,35 +148,35 @@ function EmployeeDash() {
 
                             <div className="overflow-x-auto">
                                 <div className="relative">
-                                    <div className="max-h-[500px] overflow-y-auto">
-                                    <table className="table-auto border-collapse border border-gray-300 w-full">
-                                        <thead>
-                                        <tr className="bg-gray-200">
-                                            <th className="border border-gray-300 px-4 py-2">#</th>
-                                            <th className="border border-gray-300 px-4 py-2">Type</th>
-                                            <th className="border border-gray-300 px-4 py-2">Capacity</th>
-                                            {timeSlots.map((slot) => (
-                                                <th key={slot} className="border border-gray-300 px-4 py-2">
-                                                    {slot}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {data.map((row, index) => (
-                                            <tr key={index} className="hover:bg-gray-100">
-                                            <td className="border border-gray-300 px-4 py-2 text-center">{index + 1}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-center">{row.type}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-center">{row.capacity}</td>
-                                            {timeSlots.map((slot) => (
-                                                <td key={slot} className="border border-gray-300 px-4 py-2 text-center">
-                                                {row.custom_prices?.[slot] || "-"}
-                                                </td>
-                                            ))}
-                                            </tr>
-                                        ))}
-                                        </tbody>
-                                    </table>
+                                    <div className="max-h-[500px] overflow-y-auto shadow rounded-lg">
+                                        <table className="table-auto border-gray-300 w-full">
+                                            <thead>
+                                                <tr className="bg-gray-200">
+                                                    <th className="bg-gray-100 p-4 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">#</th>
+                                                    <th className="bg-gray-100 p-4 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">Type</th>
+                                                    <th className="bg-gray-100 p-4 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">Capacity</th>
+                                                    {timeSlots.map((slot) => (
+                                                        <th key={slot} className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                                            {slot}
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {data.map((row, index) => (
+                                                    <tr key={index} className="hover:bg-gray-100 border-t">
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">{index + 1}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">{row.type}</td>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">{row.capacity}</td>
+                                                        {timeSlots.map((slot) => (
+                                                            <td key={slot} className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
+                                                            {row.custom_prices?.[slot] || "-"}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>

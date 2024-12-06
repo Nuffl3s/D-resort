@@ -1,6 +1,6 @@
 import Sidebar from '../components/EmployeeSidebar';
 import { useState } from 'react';
-import { Pie } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import Swal from 'sweetalert2';
 import {
     Chart as ChartJS,
@@ -21,7 +21,7 @@ function BookingReport() {
 
 
     // Pie Chart Data
-    const pieData = {
+    const BarData = {
         labels: ['Cottage', 'Lodge', 'Other'], // Example labels
         datasets: [
             {
@@ -168,7 +168,7 @@ function BookingReport() {
                     {/* Pie Chart Section */}
                     <div className="w-[40%]">
                         <div className="bg-white rounded-md shadow border-gray-300 p-4 flex justify-center mb-2 h-[395px]">
-                            <Pie data={pieData} />
+                            <Bar data={BarData} />
                         </div>
 
                         <div className="bg-white rounded-md shadow border-gray-300 p-4 h-[395px]">

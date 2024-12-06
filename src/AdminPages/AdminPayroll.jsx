@@ -311,7 +311,7 @@ function AdminPayroll() {
                                 </thead>
                                 <tbody>
                                     {filteredData.map((payroll, index) => (
-                                        <tr key={payroll.id} className="border-b hover:bg-gray-50">
+                                        <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
                                             <td className="p-4">
                                                 <input
                                                     type="checkbox"
@@ -464,7 +464,7 @@ function AdminPayroll() {
                                     </thead>
                                     <tbody>
                                         {payrollEntries.map((entry, index) => (
-                                            <tr key={index} className="border-b hover:bg-gray-50">
+                                            <tr key={index} className="border-b dark:text-[#e7e6e6]">
                                                 <td className="px-6 py-4">{entry.name}</td>
                                                 <td className="px-6 py-4">{entry.hours || 0}</td>
                                                 <td className="px-6 py-4">${entry.rate ? entry.rate.toFixed(2) : '0.00'}</td>

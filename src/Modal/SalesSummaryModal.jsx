@@ -119,7 +119,7 @@ const SalesSummaryModal = ({ isOpen, onClose, products }) => {
                     {/* Table Wrapper with Scroll */}
                     <div className="max-h-[800px] overflow-y-auto"> {/* Adjust max-height as needed */}
                         <table className="min-w-full shadow rounded-lg border-collapse">
-                            <thead className="sticky text-gray-800 top-0 bg-gray-200 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                            <thead className="sticky text-gray-700 top-0 bg-gray-200 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                 <tr className="text-center">
                                     <th className="px-5 py-3 text-sm font-bold uppercase tracking-wider text-start">Product Name</th>
                                     <th className="px-5 py-3 text-sm font-bold uppercase tracking-wider text-start">Date</th>

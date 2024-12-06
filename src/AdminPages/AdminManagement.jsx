@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
 import api from '../api';
+import axios from 'axios';
 
 function AdminManagement() {
     const [employeeList, setEmployeeList] = useState([]);
@@ -37,69 +38,56 @@ function AdminManagement() {
         });
     };
 
-    // Handle employee registration
-    const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevent form submission
+     // Handle employee registration
+     const handleSubmit = async (e) => {
+        e.preventDefault();
 
-        // SweetAlert prompt for biometric confirmation
-        Swal.fire({
-            title: 'Biometric Registration',
-            text: 'Please put your finger on the biometric device to proceed.',
-            icon: 'info',
-            confirmButtonText: 'OK',
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                console.log("Form Submitted", formData);
+        try {
+            // Submit employee data to the Flask backend
+            const response = await axios.post('http://localhost:5000/api/register_employee/', formData);
+            alert(response.data.message); // Show success message for employee registration
 
-                try {
-                    // Submit form data via POST request
-                    const response = await fetch('http://localhost:8000/api/registeremployee/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formData),
-                    });
+            // SweetAlert prompt for biometric confirmation
+            Swal.fire({
+                title: 'Biometric Registration',
+                text: 'Please place your finger on the biometric device to proceed. You will need to scan it 3 times.',
+                icon: 'info',
+                confirmButtonText: 'OK',
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        // Call the endpoint for biometric registration
+                        const biometricResponse = await axios.post('http://localhost:5000/api/register_biometric/', formData);
 
-                    if (response.ok) {
-                        const responseData = await response.json();
-                        console.log('Employee Registered:', responseData);
-
-                        // Fetch updated employee list
-                        fetchEmployeeList();
-
-                        // Reset form
-                        setFormData({
-                            name: '',
-                            address: '',
-                            mobile_number: '',
-                        });
-
-                        // SweetAlert success notification
+                        // Handle the biometric registration completion
                         Swal.fire({
                             title: 'Success',
-                            text: 'Employee registered successfully!',
+                            text: 'Fingerprint registration complete!',
                             icon: 'success',
+                            confirmButtonText: 'Done',
+                        }).then(() => {
+                            // You can perform additional actions like redirecting the user or resetting the form
+                        });
+                    } catch (error) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Failed to register fingerprint. Please try again.',
+                            icon: 'error',
                             confirmButtonText: 'OK',
                         });
-                    } else {
-                        throw new Error('Failed to register employee');
                     }
-                } catch (error) {
-                    console.error('Error registering employee:', error);
-
-                    // SweetAlert error notification
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Failed to register employee. Please try again.',
-                        icon: 'error',
-                        confirmButtonText: 'OK',
-                    });
                 }
-            }
-        });
+            });
+        } catch (error) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Failed to register employee. Please try again.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+        }
     };
-
+    
     // Handle search input change
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value); // Update the search term
@@ -138,7 +126,9 @@ function AdminManagement() {
                                 <h2 className="font-semibold text-[18px] mb-4 dark:text-[#e7e6e6]">Employee Information</h2>
                                 <form className="space-y-4" onSubmit={handleSubmit}>
                                     <div>
-                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">Name</label>
+                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                                            Name
+                                        </label>
                                         <input
                                             type="text"
                                             id="name"
@@ -150,7 +140,9 @@ function AdminManagement() {
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">Address</label>
+                                        <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                                            Address
+                                        </label>
                                         <input
                                             type="text"
                                             id="address"
@@ -162,7 +154,9 @@ function AdminManagement() {
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="mobile_number" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">Mobile Number</label>
+                                        <label htmlFor="mobile_number" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
+                                            Mobile Number
+                                        </label>
                                         <input
                                             type="text"
                                             id="mobile_number"
@@ -244,19 +238,19 @@ function AdminManagement() {
                                             <tbody>
                                                 {filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee).map((employee, index) => (
                                                     <tr key={employee.id}>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm ">
-                                                            <p className="text-gray-900 whitespace-no-wrap">{indexOfFirstEmployee + index + 1}</p>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{indexOfFirstEmployee + index + 1}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                                            <p className="text-gray-900 whitespace-no-wrap">{employee.name}</p>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.name}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                                            <p className="text-gray-900 whitespace-no-wrap">{employee.address}</p>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.address}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                                            <p className="text-gray-900 whitespace-no-wrap">{employee.mobile_number}</p>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.mobile_number}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
                                                             <div className="flex space-x-1">
                                                                 <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
                                                                     <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />

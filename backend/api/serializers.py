@@ -108,3 +108,4 @@ class CottageSerializer(serializers.ModelSerializer):
         normalized_prices = {key.replace(" ", "").upper(): value for key, value in custom_prices.items()}
         data["custom_prices"] = normalized_prices
         return data
+

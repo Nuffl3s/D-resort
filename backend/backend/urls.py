@@ -5,6 +5,7 @@ from django.urls import path, include
 from api.views import RegisterUserView, CustomLoginView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView, PayrollListCreate, PayrollDetail, UserDetailsView, LogView, WeeklyScheduleView
 from api.views import EditEmployeeView, DeleteEmployeeView, CottageListView, LodgeListView, AddUnitView, DeleteCottageView, DeleteLodgeView, TotalUnitsView, FilterUnitsView, UpdateCottageView, UpdateLodgeView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from api.views import EmployeeCreateView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -34,4 +35,5 @@ urlpatterns = [
     path('api/total-units/', TotalUnitsView.as_view(), name='get_total_units'),
     path('api/filter-units/', FilterUnitsView.as_view(), name='filter_units'),
     path("api-auth/", include("rest_framework.urls")),
+    path('api/employees/', EmployeeCreateView.as_view(), name='api_employee'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -38,9 +38,11 @@ class CustomUser(AbstractUser):
 class Employee(models.Model):
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
-
+    biometric_data = models.BinaryField(null=True, blank=True)
+    
     def __str__(self):
         return self.name
+
 
 class WeeklySchedule(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
@@ -110,4 +112,3 @@ class Lodge(models.Model):
 
     def __str__(self):
         return f"{self.type} - {self.name}"
-

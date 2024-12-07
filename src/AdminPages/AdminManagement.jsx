@@ -3,91 +3,51 @@ import Swal from 'sweetalert2';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
 import api from '../api';
-import axios from 'axios';
 
 function AdminManagement() {
-    const [employeeList, setEmployeeList] = useState([]);
+    const [employeeList, setEmployeeList] = useState([]); // List of all employees
+    const [previousEmployeeCount, setPreviousEmployeeCount] = useState(0); // Keep track of the previous employee count
     const [searchTerm, setSearchTerm] = useState(""); // Search term
     const [currentPage, setCurrentPage] = useState(1); // Current page
     const employeesPerPage = 5; // Number of employees per page
-    const [formData, setFormData] = useState({
-        name: '',
-        address: '',
-        mobile_number: '',
-    });
 
+    
+  
     useEffect(() => {
-        fetchEmployeeList();
-    }, []);
+        fetchEmployeeList(); // Fetch employee list on mount
+        const intervalId = setInterval(fetchEmployeeList, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(intervalId); // Clean up interval on component unmount
+    }, []); // Empty dependency array ensures this only runs once on mount
 
     // Fetch employees from the backend
     const fetchEmployeeList = async () => {
         try {
             const response = await api.get('http://localhost:8000/api/employees/');
-            setEmployeeList(response.data);
+            const newEmployeeList = response.data;
+            console.log("Fetched Employees: ", newEmployeeList);
+            
+            if (JSON.stringify(newEmployeeList) !== JSON.stringify(employeeList)) {
+                setEmployeeList(newEmployeeList);
+            }
+       
+            if (newEmployeeList.length > previousEmployeeCount) {
+                if (previousEmployeeCount !== 0) {
+                    Swal.fire({
+                        title: 'New Employee Added',
+                        text: 'A new employee has been added to the system.',
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                    });
+                }
+                setPreviousEmployeeCount(newEmployeeList.length);
+            }
         } catch (error) {
             console.error('Error fetching employees:', error);
         }
     };
-
-    // Handle input changes for the form
-    const handleInputChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
-    };
-
-     // Handle employee registration
-     const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        try {
-            // Submit employee data to the Flask backend
-            const response = await axios.post('http://localhost:5000/api/register_employee/', formData);
-            alert(response.data.message); // Show success message for employee registration
-
-            // SweetAlert prompt for biometric confirmation
-            Swal.fire({
-                title: 'Biometric Registration',
-                text: 'Please place your finger on the biometric device to proceed. You will need to scan it 3 times.',
-                icon: 'info',
-                confirmButtonText: 'OK',
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    try {
-                        // Call the endpoint for biometric registration
-                        const biometricResponse = await axios.post('http://localhost:5000/api/register_biometric/', formData);
-
-                        // Handle the biometric registration completion
-                        Swal.fire({
-                            title: 'Success',
-                            text: 'Fingerprint registration complete!',
-                            icon: 'success',
-                            confirmButtonText: 'Done',
-                        }).then(() => {
-                            // You can perform additional actions like redirecting the user or resetting the form
-                        });
-                    } catch (error) {
-                        Swal.fire({
-                            title: 'Error',
-                            text: 'Failed to register fingerprint. Please try again.',
-                            icon: 'error',
-                            confirmButtonText: 'OK',
-                        });
-                    }
-                }
-            });
-        } catch (error) {
-            Swal.fire({
-                title: 'Error',
-                text: 'Failed to register employee. Please try again.',
-                icon: 'error',
-                confirmButtonText: 'OK',
-            });
-        }
-    };
     
+   
     // Handle search input change
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value); // Update the search term
@@ -121,62 +81,7 @@ function AdminManagement() {
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">EMPLOYEE MANAGEMENT</h1>
                 <div className="w-ful">
                     <div className="flex">
-                        <div className="flex-col">
-                            <div className="w-[700px] h-[400px] shadow-md rounded-md bg-white p-8  dark:bg-[#374151] dark:shadow-md">
-                                <h2 className="font-semibold text-[18px] mb-4 dark:text-[#e7e6e6]">Employee Information</h2>
-                                <form className="space-y-4" onSubmit={handleSubmit}>
-                                    <div>
-                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                                            Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="name"
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleInputChange}
-                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6]"
-                                            autoComplete="name"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                                            Address
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="address"
-                                            name="address"
-                                            value={formData.address}
-                                            onChange={handleInputChange}
-                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6]"
-                                            autoComplete="address-line1"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="mobile_number" className="block text-sm font-medium text-gray-700 dark:text-[#e7e6e6]">
-                                            Mobile Number
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="mobile_number"
-                                            name="mobile_number"
-                                            value={formData.mobile_number}
-                                            onChange={handleInputChange}
-                                            className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6]"
-                                        />
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        className="px-5 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#70b8d3] hover:bg-[#62c5e9]"
-                                    >
-                                        Register
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-md shadow-md p-6 w-full ml-5 h-[850px] dark:bg-[#374151]">
+                        <div className="bg-white rounded-md shadow-md p-6 w-full h-[850px] dark:bg-[#374151]">
                             <div className="justify-between border-b mb-4 pb-3">
                                 <h1 className="font-semibold text-[18px] dark:text-[#e7e6e6]">Employee List</h1>
                                 <div className="w-full flex justify-between">
@@ -224,74 +129,61 @@ function AdminManagement() {
                             <div className="w-full">
                                 <div className="-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto">
                                     <div className="inline-block min-w-full shadow rounded-lg overflow-hidden">
-                                        <table className="min-w-full leading-normal">
-                                            <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
-                                                <tr>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">ID</th>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Name</th>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Address</th>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Mobile Number</th>
-                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Action</th>
+                                    <table className="min-w-full leading-normal">
+                                        <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                            <tr>
+                                                <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">ID</th>
+                                                <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Name</th>
+                                                <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Action</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            {filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee).map((employee, index) => (
+                                                <tr key={employee.id}>
+                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                        <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{indexOfFirstEmployee + index + 1}</p>
+                                                    </td>
+                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                        <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.name}</p>
+                                                    </td>
+                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                        <div className="flex space-x-1">
+                                                            <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
+                                                                <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
+                                                            </button>
+                                                            <button className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full">
+                                                                <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
                                                 </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                {filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee).map((employee, index) => (
-                                                    <tr key={employee.id}>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
-                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{indexOfFirstEmployee + index + 1}</p>
-                                                        </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
-                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.name}</p>
-                                                        </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
-                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.address}</p>
-                                                        </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
-                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.mobile_number}</p>
-                                                        </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
-                                                            <div className="flex space-x-1">
-                                                                <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
-                                                                    <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
-                                                                </button>
-                                                                <button className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full">
-                                                                    <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-
-                                        {/* Pagination Controls */}
-                                        <div className="inline-flex justify-end w-full p-4 dark:bg-[#66696e]">
-                                            <button
-                                                onClick={() => handlePageChange(currentPage - 1)}
-                                                disabled={currentPage === 1}
-                                                className={`text-sm text-indigo-50 transition duration-150 font-semibold py-2 px-4 rounded-l ${
-                                                    currentPage === 1
-                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                                        : "bg-[#70b8d3] hover:bg-[#09B0EF]"
-                                                }`}
-                                            >
-                                                Prev
-                                            </button>
-                                            &nbsp; &nbsp;
-                                            <button
-                                                onClick={() => handlePageChange(currentPage + 1)}
-                                                disabled={currentPage === totalPages}
-                                                className={`text-sm text-indigo-50 transition duration-150 font-semibold py-2 px-4 rounded-r ${
-                                                    currentPage === totalPages
-                                                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                                        : "bg-[#70b8d3] hover:bg-[#09B0EF]"
-                                                }`}
-                                            >
-                                                Next
-                                            </button>
-                                        </div>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between mt-5">
+                                <div className="text-sm text-gray-600 dark:text-[#e7e6e6]">
+                                    Showing {indexOfFirstEmployee + 1} to {Math.min(indexOfLastEmployee, filteredEmployees.length)} of {filteredEmployees.length} entries
+                                </div>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-4 py-2 text-sm font-semibold text-gray-900 border rounded-md dark:text-[#e7e6e6] dark:border-gray-600 dark:bg-[#374151] dark:hover:bg-[#1f2937]"
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-4 py-2 text-sm font-semibold text-gray-900 border rounded-md dark:text-[#e7e6e6] dark:border-gray-600 dark:bg-[#374151] dark:hover:bg-[#1f2937]"
+                                    >
+                                        Next
+                                    </button>
                                 </div>
                             </div>
                         </div>

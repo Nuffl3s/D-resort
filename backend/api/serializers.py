@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge
+from .models import Attendance
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -129,3 +130,10 @@ class CottageSerializer(serializers.ModelSerializer):
         # Return custom_prices directly
         return obj.custom_prices
 
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='user.name', read_only=True)
+
+    class Meta:
+        model = Attendance
+        fields = ['user', 'name', 'date', 'time_in', 'time_out']

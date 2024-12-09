@@ -39,10 +39,22 @@ class Employee(models.Model):
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     biometric_data = models.BinaryField(null=True, blank=True)
-    
+
     def __str__(self):
         return self.name
 
+class Attendance(models.Model):
+    date = models.DateField()
+    user = models.ForeignKey('Employee', on_delete=models.CASCADE)  # Link to Employee model
+    time_in = models.TimeField()
+    time_out = models.TimeField(null=True, blank=True)  # Allow null for time_out
+
+    def __str__(self):
+        return f"{self.user.name} - {self.date}"
+
+    @property
+    def name(self):
+        return self.user.name  # Fetches the name from the related Employee model
 
 class WeeklySchedule(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)

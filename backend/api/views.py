@@ -23,7 +23,14 @@ from .models import Employee
 from .serializers import EmployeeSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-
+from django.db import IntegrityError
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Attendance
+from .serializers import AttendanceSerializer
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -42,7 +49,6 @@ class RegisterUserView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-    
 @method_decorator(csrf_exempt, name='dispatch')
 class CustomLoginView(APIView):
     permission_classes = [AllowAny]
@@ -124,6 +130,20 @@ class DeleteEmployeeView(DestroyAPIView):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsAdminOnly]
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            # This is the default destroy method behavior.
+            employee = self.get_object()
+            self.perform_destroy(employee)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        except Employee.DoesNotExist:
+            raise NotFound(detail="Employee not found")
+        except IntegrityError:
+            return Response({"detail": "This employee cannot be deleted due to existing dependencies."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class WeeklyScheduleView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
@@ -546,3 +566,19 @@ class EmployeeCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+
+class AttendanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AttendanceSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Attendance recorded successfully!"}, status=201)
+        return Response(serializer.errors, status=400)
+
+    def get(self, request):
+        attendances = Attendance.objects.all()
+        serializer = AttendanceSerializer(attendances, many=True)
+        return Response(serializer.data, status=200)

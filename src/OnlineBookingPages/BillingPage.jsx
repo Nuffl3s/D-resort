@@ -2,18 +2,28 @@ import { useState, useEffect } from "react";
 import ReceiptModal from "../Modal/ReceiptModal";
 import Loader from "../components/Loader";
 import Swal from "sweetalert2"; // Import SweetAlert2
-import { useNavigate } from "react-router-dom"; // For navigation
+import { useNavigate, useLocation } from "react-router-dom"; // For navigation
+
 
 function BillingPage() {
     const [showModal, setShowModal] = useState(false);
     const [note, setNote] = useState("");
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate(); // Hook for navigation
+    const location = useLocation();
+    const billingData = location.state || {};
+
+    const { customerInfo, units } = billingData;
+    console.log("BillingPage Units:", units);
 
     // Temporary data for testing
     const customerName = "John Doe";
     const customerPhone = "+1 (234) 567-890";
-    const transactionDate = "Oct 1, 2024";
+    const transactionDate = new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+    });
 
     const transactions = [
         { name: "Cottage A", date: "Oct 1 - Oct 3", price: 500 },
@@ -21,7 +31,9 @@ function BillingPage() {
         { name: "Cottage C", date: "Oct 8 - Oct 10", price: 600 },
     ];
 
-    const totalPrice = transactions.reduce((total, transaction) => total + transaction.price, 0);
+    const totalPrice = units?.reduce((total, unit) => {
+        return total + unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0);
+    }, 0);
 
     const handleContinue = () => {
         Swal.fire({
@@ -65,8 +77,9 @@ function BillingPage() {
                 <h1 className="text-[30px] font-bold uppercase mb-6">Billing Details</h1>
                 <div className="mb-4 space-y-2">
                     <h2 className="font-bold text-[20px]">Customer Information</h2>
-                    <p className="text-md text-gray-700">Name: {customerName}</p>
-                    <p className="text-md text-gray-700">Phone: {customerPhone}</p>
+                    <p className="text-md text-gray-700">Name: {customerInfo?.firstName}{customerInfo?.lastName}</p>
+                    <p className="text-md text-gray-700">Email Address: {customerInfo?.email}</p>
+                    <p className="text-md text-gray-700">Phone: {customerInfo?.mobile}</p>
                     <p className="text-md text-gray-700">Transaction Date: {transactionDate}</p>
                 </div>
 
@@ -74,27 +87,43 @@ function BillingPage() {
                     <table className="w-full text-sm text-left rtl:text-right text-gray-500">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
-                                <th scope="col" className="px-6 py-3">Name type</th>
-                                <th scope="col" className="px-6 py-3">DATE OF USE</th>
+                                <th scope="col" className="px-6 py-3">Name Type</th>
+                                <th scope="col" className="px-6 py-3">Date of Use</th>
                                 <th scope="col" className="px-6 py-3">Price</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {transactions.map((transaction, index) => (
-                                <tr key={index} className="bg-white border-b">
-                                    <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                        {transaction.name}
-                                    </th>
-                                    <td className="px-6 py-4">{transaction.date}</td>
-                                    <td className="px-6 py-4">${transaction.price}</td>
+                            {units?.length > 0 ? (
+                                units.map((unit, index) =>
+                                    unit.timeAndPrice?.length > 0 ? (
+                                        unit.timeAndPrice.map(({ time, price }, idx) => (
+                                            <tr key={`${index}-${idx}`} className="bg-white border-b">
+                                                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                                    {unit.name} ({unit.type})
+                                                </td>
+                                                <td className="px-6 py-4">{time}</td> {/* Display time */}
+                                                <td className="px-6 py-4">₱{price}</td> {/* Display price */}
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr key={index}>
+                                            <td colSpan="3" className="px-6 py-4 text-center">
+                                                No prices available for {unit.name} ({unit.type})
+                                            </td>
+                                        </tr>
+                                    )
+                                )
+                            ) : (
+                                <tr>
+                                    <td colSpan="3" className="px-6 py-4 text-center">No units selected.</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                         <tfoot>
                             <tr className="font-semibold text-gray-700 uppercase">
                                 <th scope="row" className="px-6 py-3 text-base">Total</th>
                                 <td className="px-6 py-3"></td>
-                                <td className="px-6 py-3">${totalPrice}</td>
+                                <td className="px-6 py-3">₱{totalPrice.toFixed(2)}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -133,8 +162,8 @@ function BillingPage() {
                 customerName={customerName}
                 transactionDate={transactionDate}
                 totalPrice={totalPrice}
-                note={note}
-                setNote={setNote}
+                customerInfo={customerInfo} // Ensure this is passed
+                units={units} // Pass units for table rendering
             />
         </div>
     );

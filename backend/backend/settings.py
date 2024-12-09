@@ -45,10 +45,11 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  # Use the default Django auth backend
 ]
 
+
 AUTH_USER_MODEL = "api.CustomUser"
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
@@ -69,12 +70,13 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.common.CommonMiddleware',
 ]
 
@@ -107,7 +109,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'dresort',        # Replace with your database name
         'USER': 'root',  # Replace with your MySQL username
-        'PASSWORD': 'mars102202',# Replace with your MySQL password
+        'PASSWORD': 'Nuffles012!@#',# Replace with your MySQL password
         'HOST': 'localhost',        # Or '127.0.0.1' if you're running MySQL on the same machine
         'PORT': '3306',             # Default MySQL port
     }

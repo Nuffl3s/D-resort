@@ -21,6 +21,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Employee
 from .serializers import EmployeeSerializer
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -40,6 +43,7 @@ class RegisterUserView(APIView):
 
 
     
+@method_decorator(csrf_exempt, name='dispatch')
 class CustomLoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -56,7 +60,6 @@ class CustomLoginView(APIView):
             refresh = RefreshToken.for_user(user)
             update_last_login(None, user)
 
-            # Log the login action
             Log.objects.create(
                 username=user.username,
                 action=f"{user.username} logged in.",
@@ -238,6 +241,9 @@ class PayrollListCreate(APIView):
         # Ensure all employees have a payroll entry
         employees = Employee.objects.all()
         for employee in employees:
+            # Remove duplicate payroll records for the same employee
+            Payroll.objects.filter(employee=employee).exclude(status="Not yet").delete()
+            # Ensure a single payroll entry per employee
             Payroll.objects.get_or_create(employee=employee, defaults={'status': 'Not yet'})
 
         payrolls = Payroll.objects.select_related('employee').all()
@@ -252,24 +258,27 @@ class PayrollListCreate(APIView):
         for entry in data:
             try:
                 employee = Employee.objects.get(name=entry['employee_name'])
-                payroll = Payroll.objects.create(
+                # Use update_or_create to avoid creating duplicates
+                payroll, created = Payroll.objects.update_or_create(
                     employee=employee,
-                    net_pay=entry['net_pay'],
-                    status=entry['status']
+                    defaults={
+                        'net_pay': entry['net_pay'],
+                        'status': entry['status']
+                    }
                 )
-                # Log the payroll creation
+                # Log the payroll creation or update
+                action = "created" if created else "updated"
                 Log.objects.create(
                     username=request.user.username,
-                    action=f"Payroll created for {employee.name}, Net Pay: {payroll.net_pay}.",
+                    action=f"Payroll {action} for {employee.name}, Net Pay: {payroll.net_pay}.",
                     category="Payroll"
                 )
             except Employee.DoesNotExist:
                 return Response({"error": f"Employee '{entry['employee_name']}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({"message": "Payroll entries created successfully!"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Payroll entries processed successfully!"}, status=status.HTTP_201_CREATED)
 
 
-    
 class PayrollDetail(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
 
@@ -285,19 +294,26 @@ class PayrollDetail(APIView):
             return Response({"message": "Payroll entry deleted successfully!"}, status=status.HTTP_204_NO_CONTENT)
         except Payroll.DoesNotExist:
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+class UpdatePayrollView(UpdateAPIView):
+    queryset = Payroll.objects.all()
+    serializer_class = PayrollSerializer
+    permission_classes = [IsAuthenticated]
 
-    def patch(self, request, pk):
-        try:
-            payroll = Payroll.objects.get(pk=pk)
-            data = request.data
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data
+        if 'status' in data:
+            instance.status = data['status']
+        if 'net_pay' in data:
+            instance.net_pay = data['net_pay']
+        instance.save()
 
-            # Update the status field
-            payroll.status = data.get('status', payroll.status)
-            payroll.save()
-            
-            return Response({"message": "Payroll status updated successfully!"}, status=status.HTTP_200_OK)
-        except Payroll.DoesNotExist:
-            return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            "id": instance.id,
+            "status": instance.status,
+            "net_pay": instance.net_pay
+        }, status=200)
 
 class LogView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]

@@ -25,7 +25,7 @@ function BookingPage() {
     const [lodges, setLodges] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [filterType, setFilterType] = useState("");
-    const [priceRange, setPriceRange] = useState("");
+    const [priceRange, setPriceRange] = useState("all");
     const [sortOption, setSortOption] = useState('recommended');
     const [zoomedImage, setZoomedImage] = useState(null); 
     const [showScrollButton, setShowScrollButton] = useState(false); 
@@ -121,51 +121,55 @@ function BookingPage() {
     };
 
     useEffect(() => {
-            let data = [...cottages, ...lodges];
-        
-            // Apply type filter if selected
-            if (filterType === "Cottage") {
+        let data = [...cottages, ...lodges];
+    
+        // Apply type filter
+        if (filterType === "Cottage") {
             data = cottages;
-            } else if (filterType === "Lodge") {
+        } else if (filterType === "Lodge") {
             data = lodges;
-            }
-        
-            // Apply price range filter if selected
-            if (priceRange === "Under 100") {
-            data = data.filter(item =>
-                item.time_6am_6pm_price
-                ? item.time_6am_6pm_price < 100
-                : item.time_3hrs_price < 100
-            );
-            } else if (priceRange === "100-200") {
-            data = data.filter(item =>
-                item.time_6am_6pm_price
-                ? item.time_6am_6pm_price >= 100 && item.time_6am_6pm_price <= 200
-                : item.time_3hrs_price >= 100 && item.time_3hrs_price <= 200
-            );
-            } else if (priceRange === "200 and above") {
+        }
+    
+        // Debugging: Log the data structure
+        console.log("Unfiltered Data:", data);
+    
+        // Apply price range filter
+        if (priceRange === "Under 100") {
             data = data.filter(item => {
-                const price = item.time_6am_6pm_price || item.time_3hrs_price || 0;
-                return price > 200;
+                const prices = extractPrices(item.custom_prices);
+                return prices.some(price => price < 100);
             });
-            }
-        
-            setFilteredData(data);
-        }, [filterType, priceRange, cottages, lodges]);
-
-        
-    const handleBook = (cottageAndLodge) => {
-        navigate('/payment', {
-            state: {
-                title: cottageAndLodge.title,
-                price: cottageAndLodge.price,
-                imgSrc: cottageAndLodge.imgSrc,
-                description: cottageAndLodge.description,
-                startDate, // pass the check-in/check-out date if needed
-                endDate,
-                persons, 
-            },
-        });
+        } else if (priceRange === "100-200") {
+            data = data.filter(item => {
+                const prices = extractPrices(item.custom_prices);
+                return prices.some(price => price >= 100 && price <= 200);
+            });
+        } else if (priceRange === "200 and above") {
+            data = data.filter(item => {
+                const prices = extractPrices(item.custom_prices);
+                return prices.some(price => price > 200);
+            });
+        }
+    
+        // Debugging: Log filtered results
+        console.log("Filtered Data:", data);
+    
+        setFilteredData(data);
+    }, [filterType, priceRange, cottages, lodges]);
+    
+    // Helper function to extract and sanitize prices
+    const extractPrices = (customPrices) => {
+        if (!customPrices || typeof customPrices !== "object") {
+            return [];
+        }
+        // Convert all values in customPrices to numbers
+        return Object.values(customPrices)
+            .map(price => parseFloat(price))
+            .filter(price => !isNaN(price));
+    };
+    
+    const handleBookClick = (unit) => {
+        navigate("/payment", { state: { unit } });
     };
 
     const handleCheckAvailability = (title) => {
@@ -254,7 +258,7 @@ function BookingPage() {
                             <h3 className="text-lg font-semibold mb-4">Filter by</h3>
                             <div className="sub-filter flex flex-col gap-4">
                                 <div className="mb-4">
-                                    <h4 className="font-semibold mb-2">Number of People</h4>
+                                    {/* <h4 className="font-semibold mb-2">Number of People</h4>
                                     <div className="space-y-2">
                                         <label className="block mb-4">
                                                 <input
@@ -279,7 +283,7 @@ function BookingPage() {
                                                 >
                                                 Show Recommendations
                                             </button>
-                                    </div>
+                                    </div> */}
                                     <h4 lassName="font-semibold mb-2">Type</h4>
                                     <div className="space-y-2">
                                         <label className="flex items-center">
@@ -364,24 +368,33 @@ function BookingPage() {
 
                         {/* Main Content Section */}
                         <div style={{ flex: 1 }}>
-                        {recommendations.map((unit) => (
-                                <div key={unit.id} className="unit-card">
-                                    {unit.image_url ? (
-                                        <img src={unit.image_url} alt={unit.name} className="unit-image" />
+                        {/* {recommendations.map((unit) => (
+                            <div key={unit.id} className="unit-card">
+                                {unit.image_url ? (
+                                    <img src={unit.image_url} alt={unit.name} className="unit-image" />
+                                ) : (
+                                    <div>No Image Available</div>
+                                )}
+                                <h3>{unit.name}</h3>
+                                <p>Capacity: {unit.capacity}</p>
+                                <div>
+                                    <h4>Prices:</h4>
+                                    {unit.prices && Object.entries(unit.prices).length > 0 ? (
+                                        Object.entries(unit.prices).map(([key, value]) => (
+                                            <p key={key}>{key}: ${value}</p>
+                                        ))
                                     ) : (
-                                        <div>No Image Available</div>
+                                        <p>No prices available</p>
                                     )}
-                                    <h3>{unit.name}</h3>
-                                    <p>Capacity: {unit.capacity}</p>
-                                    <p>Price: ${unit.time_24hrs_price || unit.time_12hrs_price || unit.time_6hrs_price}</p>
-                                    <button>Book</button>
-                                    <button>Check Availability</button>
                                 </div>
-                            ))}
+                                <button onClick={() => handleBookClick(unit)} >Book</button>
+                                <button>Check Availability</button>
+                            </div>
+                        ))} */}
                         <div className="w-3/4 flex flex-col space-y-4 cards">
                             {filteredData.length > 0 ? (
                                 filteredData.map((item) => (
-                                <div key={item.id} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto sub-card">
+                                <div key={item.id || index} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto sub-card">
                                     <div className="w-1/3">
                                         
                                         <img
@@ -397,13 +410,17 @@ function BookingPage() {
                                         <h4 className="text-2xl font-bold mb-2">{item.name}</h4>
                                         <p className="text-gray-600 mb-4">Capacity: {item.capacity}</p>
                                         <p className="text-lg font-semibold mb-2">
-                                            Price: $
-                                            {item.time_6am_6pm_price
-                                                ? item.time_6am_6pm_price
-                                                : item.time_3hrs_price}
+                                        <h4>Prices:</h4>
+                                            {item.custom_prices && Object.entries(item.custom_prices).length > 0 ? (
+                                                Object.entries(item.custom_prices).map(([key, value]) => (
+                                                    <p key={`${item.id}-${key}`}>{key}: ${value}</p>
+                                                ))
+                                            ) : (
+                                                <p>No prices available</p>
+                                            )}
                                         </p>
                                         <div className="flex space-x-2">
-                                            <button onClick={() => handleBook(cottageAndlodge)} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
+                                            <button onClick={() => handleBookClick(item)} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
                                                 Book
                                             </button>
                                             <button

@@ -1,8 +1,18 @@
 import PropTypes from 'prop-types';
 import html2pdf from "html2pdf.js";
 
-function ReceiptModal({ showModal, setShowModal, transactions, customerName, transactionDate, totalPrice }) {
 
+function ReceiptModal({ 
+    showModal, 
+    setShowModal, 
+    transactions, 
+    customerName, 
+    transactionDate, 
+    totalPrice, 
+    customerInfo,
+    units // Include units for the table
+}) {
+    
     // Function to print receipt
     const handlePrint = () => {
         window.print();
@@ -35,8 +45,8 @@ function ReceiptModal({ showModal, setShowModal, transactions, customerName, tra
                         <div>
                             <h3 className="font-bold mb-2">D.Yasay Beach Resort</h3>
                             <p>Misamis Oriental Zone 2 Tabic, D. Yasay Beach Resort</p>
-                            <p>Phone: 0917 708 4368</p>
-                            <p>Email: gemma.sierra@gmail.com</p>
+                            <p>Phone: {customerInfo.mobile}</p>
+                            <p>Email: {customerInfo.email}</p>
                         </div>
                         <div>
                             <p>Date: {transactionDate}</p>
@@ -46,7 +56,7 @@ function ReceiptModal({ showModal, setShowModal, transactions, customerName, tra
                     <div className="flex justify-between mt-4">
                         <div>
                             <p className="font-bold">To:</p>
-                            <p>{customerName}</p>
+                            <p>{customerInfo.firstName} {customerInfo.lastName}</p>
                         </div>
                         <div>
                             <p>Confirmation ID: ZXC7HWC3</p>
@@ -54,22 +64,40 @@ function ReceiptModal({ showModal, setShowModal, transactions, customerName, tra
                         </div>
                     </div>
 
-                    <table className="w-full mt-4 text-sm">
-                        <thead className="bg-gray-100">
+                    <table className="w-full mt-6 text-sm text-left text-gray-500">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
-                                <th className="p-2 text-left">Room</th>
-                                <th className="p-2 text-left">Description</th>
-                                <th className="p-2 text-right">Price</th>
+                                <th className="px-6 py-3">Name Type</th>
+                                <th className="px-6 py-3">Date of Use</th>
+                                <th className="px-6 py-3 text-right">Price</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {transactions.map((transaction, index) => (
-                                <tr key={index} className="border-b">
-                                    <td className="p-2">{transaction.name}</td>
-                                    <td className="p-2">Standard booking</td>
-                                    <td className="p-2 text-right">${transaction.price}</td>
+                            {units?.length > 0 ? (
+                                units.map((unit, index) =>
+                                    unit.timeAndPrice?.length > 0 ? (
+                                        unit.timeAndPrice.map(({ time, price }, idx) => (
+                                            <tr key={`${index}-${idx}`} className="bg-white border-b">
+                                                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                                    {unit.name} ({unit.type})
+                                                </td>
+                                                <td className="px-6 py-4">{time}</td>
+                                                <td className="px-6 py-4 text-right">₱{price}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr key={index}>
+                                            <td colSpan="3" className="px-6 py-4 text-center">
+                                                No prices available for {unit.name} ({unit.type})
+                                            </td>
+                                        </tr>
+                                    )
+                                )
+                            ) : (
+                                <tr>
+                                    <td colSpan="3" className="px-6 py-4 text-center">No units selected.</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                         <tfoot>
                             <tr className="font-bold">
@@ -111,11 +139,14 @@ ReceiptModal.propTypes = {
             price: PropTypes.number.isRequired,
         })
     ).isRequired,
-    customerName: PropTypes.string.isRequired,
-    transactionDate: PropTypes.string.isRequired,
-    totalPrice: PropTypes.number.isRequired,
-    note: PropTypes.string.isRequired,
-    setNote: PropTypes.func.isRequired,
+    customerInfo: PropTypes.shape({
+        firstName: PropTypes.string.isRequired,
+        lastName: PropTypes.string.isRequired,
+        email: PropTypes.string.isRequired,
+        mobile: PropTypes.string.isRequired,
+    }).isRequired,
+    units: PropTypes.array.isRequired,
+    
 };
 
 export default ReceiptModal;

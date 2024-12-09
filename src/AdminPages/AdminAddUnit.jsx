@@ -62,7 +62,7 @@ const AdminAddUnit = () => {
     
         const formData = new FormData();
         formData.append("name", name);
-        formData.append("type", unitType.toLowerCase()); // Explicitly include "type"
+        formData.append("unit_type", unitType.toLowerCase()); //always have it on unit_type (bugged)
         formData.append("capacity", capacity);
         if (image) formData.append("image", image);
         formData.append("custom_prices", JSON.stringify(formattedCustomPrices));
@@ -70,7 +70,7 @@ const AdminAddUnit = () => {
         try {
             const endpoint = selectedUnitId
                 ? `/${unitType.toLowerCase()}/${selectedUnitId}/`
-                : "/api/add-unit/";
+                : "/add-unit/";
             const method = selectedUnitId ? "put" : "post";
     
             const response = await api[method](endpoint, formData, {

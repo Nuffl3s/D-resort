@@ -67,7 +67,7 @@ class Payroll(models.Model):
         ('Not yet', 'Not yet'),
     ]
 
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, default=1)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)  # Changed to OneToOneField
     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
 

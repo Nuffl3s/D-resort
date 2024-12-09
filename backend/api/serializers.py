@@ -83,6 +83,8 @@ class BaseUnitSerializer(serializers.ModelSerializer):
         return value.capitalize()
 
 class LodgeSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    prices = serializers.SerializerMethodField()
     class Meta:
         model = Lodge
         fields = '__all__'
@@ -94,9 +96,19 @@ class LodgeSerializer(serializers.ModelSerializer):
         normalized_prices = {key.replace(" ", "").upper(): value for key, value in custom_prices.items()}
         data["custom_prices"] = normalized_prices
         return data
+    
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+    def get_prices(self, obj):
+        return obj.custom_prices
 
 
 class CottageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    prices = serializers.SerializerMethodField()
     class Meta:
         model = Cottage
         fields = '__all__'
@@ -108,4 +120,12 @@ class CottageSerializer(serializers.ModelSerializer):
         normalized_prices = {key.replace(" ", "").upper(): value for key, value in custom_prices.items()}
         data["custom_prices"] = normalized_prices
         return data
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+    def get_prices(self, obj):
+        # Return custom_prices directly
+        return obj.custom_prices
 

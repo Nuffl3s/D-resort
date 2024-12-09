@@ -9,10 +9,8 @@ function AdminManagement() {
     const [previousEmployeeCount, setPreviousEmployeeCount] = useState(0); // Keep track of the previous employee count
     const [searchTerm, setSearchTerm] = useState(""); // Search term
     const [currentPage, setCurrentPage] = useState(1); // Current page
-    const employeesPerPage = 5; // Number of employees per page
-
+    const employeesPerPage = 7; // Number of employees per page'
     
-  
     useEffect(() => {
         fetchEmployeeList(); // Fetch employee list on mount
         const intervalId = setInterval(fetchEmployeeList, 5000); // Poll every 5 seconds
@@ -24,13 +22,21 @@ function AdminManagement() {
     const fetchEmployeeList = async () => {
         try {
             const response = await api.get('http://localhost:8000/api/employees/');
-            const newEmployeeList = response.data;
-            console.log("Fetched Employees: ", newEmployeeList);
-            
+
+            // Normalize the data to ensure every employee has an id
+            const newEmployeeList = response.data.map((emp, index) => ({
+                ...emp,
+                id: emp.id || emp.uid || index, // Fallback to index temporarily
+            }));
+
+            console.log("Normalized Employee List: ", newEmployeeList);
+
+            // Compare new and existing employee lists to detect changes
             if (JSON.stringify(newEmployeeList) !== JSON.stringify(employeeList)) {
                 setEmployeeList(newEmployeeList);
             }
-       
+
+            // Handle new employee count logic
             if (newEmployeeList.length > previousEmployeeCount) {
                 if (previousEmployeeCount !== 0) {
                     Swal.fire({
@@ -46,28 +52,82 @@ function AdminManagement() {
             console.error('Error fetching employees:', error);
         }
     };
-    
-   
+
     // Handle search input change
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value); // Update the search term
         setCurrentPage(1); // Reset to the first page on new search
     };
 
+  
     // Get filtered and paginated employees
     const filteredEmployees = employeeList.filter((employee) =>
         employee.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
     const indexOfLastEmployee = currentPage * employeesPerPage;
     const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
-    const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
 
     // Handle pagination
     const handlePageChange = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
             setCurrentPage(pageNumber);
         }
+    };
+
+    // Clear search and reset the employee list to the unfiltered list
+    const handleClear = () => {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You are about to clear the search results.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, clear it!',
+            cancelButtonText: 'No, keep it'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                setSearchTerm(""); // Clear search term
+                setCurrentPage(1); // Reset to first page
+            }
+        });
+    };
+    // Handle employee deletion
+    const handleDeleteEmployee = (employeeId) => {
+        if (!employeeId) {
+            console.error("Invalid employeeId passed to handleDeleteEmployee:", employeeId);
+            Swal.fire('Error!', 'Invalid employee selected for deletion.', 'error');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'No, keep it',
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const response = await api.delete(`http://localhost:8000/api/employees/${employeeId}/`, {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                        },
+                    });
+
+                    if (response.status === 204 || response.status === 200) {
+                        Swal.fire('Deleted!', 'The employee has been deleted.', 'success');
+                        setEmployeeList(prevList => prevList.filter(emp => emp.id !== employeeId));
+                    } else {
+                        Swal.fire('Error!', 'There was an issue deleting the employee.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting employee:', error.response ? error.response.data : error.message);
+                    Swal.fire('Error!', 'There was an issue deleting the employee.', 'error');
+                }
+            }
+        });
     };
 
     useEffect(() => {
@@ -79,13 +139,13 @@ function AdminManagement() {
             <AdminSidebar />
             <div id="add" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">EMPLOYEE MANAGEMENT</h1>
-                <div className="w-ful">
+                <div className="w-full">
                     <div className="flex">
                         <div className="bg-white rounded-md shadow-md p-6 w-full h-[850px] dark:bg-[#374151]">
                             <div className="justify-between border-b mb-4 pb-3">
                                 <h1 className="font-semibold text-[18px] dark:text-[#e7e6e6]">Employee List</h1>
                                 <div className="w-full flex justify-between">
-                                    <div className="flex space-x-2 mt-5 w-1/2"> 
+                                    <div className="flex mt-5 w-1/2">
                                         <div className="flex items-center space-x-2 text-xs xs:text-sm text-gray-900">
                                             <span className="text-[13px] font-semibold text-gray-600 uppercase dark:text-[#e7e6e6]">Show</span>
                                             <div className="relative inline-block">
@@ -100,7 +160,7 @@ function AdminManagement() {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center space-x-4">
+                                    <div className="flex items-center space-x-2">
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none ">
                                                 <svg
@@ -122,6 +182,13 @@ function AdminManagement() {
                                                 placeholder="Search by name"
                                             />
                                         </div>
+                                        {/* Clear button */}
+                                        <button 
+                                            onClick={handleClear} 
+                                            className="px-4 py-2 text-sm font-semibold border rounded-md bg-red-500 hover:bg-red-600 text-white"
+                                        >
+                                            Clear
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -129,38 +196,48 @@ function AdminManagement() {
                             <div className="w-full">
                                 <div className="-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto">
                                     <div className="inline-block min-w-full shadow rounded-lg overflow-hidden">
-                                    <table className="min-w-full leading-normal">
-                                        <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
-                                            <tr>
-                                                <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">ID</th>
-                                                <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Name</th>
-                                                <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Action</th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee).map((employee, index) => (
-                                                <tr key={employee.id}>
-                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
-                                                        <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{indexOfFirstEmployee + index + 1}</p>
-                                                    </td>
-                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
-                                                        <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.name}</p>
-                                                    </td>
-                                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
-                                                        <div className="flex space-x-1">
-                                                            <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
-                                                                <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
-                                                            </button>
-                                                            <button className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full">
-                                                                <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
-                                                            </button>
-                                                        </div>
-                                                    </td>
+                                        <table className="min-w-full leading-normal">
+                                            <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                                <tr>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">ID</th>
+                                                    <th className="px-5 py-3 border-b text-left text-xs font-semibold uppercase tracking-wider">Name</th>
+                                                    <th className="px-5 py-3 border-b text-center text-xs font-semibold uppercase tracking-wider">Action</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+
+                                            <tbody>
+                                                {filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee).map((employee, index) => (
+                                                    <tr key={employee.uid || employee.id}>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{indexOfFirstEmployee + index + 1}</p>
+                                                        </td>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                            <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.name}</p>
+                                                        </td>
+                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                            <div className="flex space-x-1 justify-center">
+                                                                <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
+                                                                    <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
+                                                                </button>
+                                                                <button
+                                                                    className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full"
+                                                                    onClick={() => {
+                                                                        if (employee.id) {
+                                                                            handleDeleteEmployee(employee.id);
+                                                                        } else {
+                                                                            console.error("Employee missing id:", employee);
+                                                                            Swal.fire('Error!', 'Employee cannot be deleted as no ID is available.', 'error');
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -173,14 +250,14 @@ function AdminManagement() {
                                     <button
                                         onClick={() => handlePageChange(currentPage - 1)}
                                         disabled={currentPage === 1}
-                                        className="px-4 py-2 text-sm font-semibold text-gray-900 border rounded-md dark:text-[#e7e6e6] dark:border-gray-600 dark:bg-[#374151] dark:hover:bg-[#1f2937]"
+                                        className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r"
                                     >
-                                        Previous
+                                        Prev
                                     </button>
                                     <button
                                         onClick={() => handlePageChange(currentPage + 1)}
                                         disabled={currentPage === totalPages}
-                                        className="px-4 py-2 text-sm font-semibold text-gray-900 border rounded-md dark:text-[#e7e6e6] dark:border-gray-600 dark:bg-[#374151] dark:hover:bg-[#1f2937]"
+                                        className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r"
                                     >
                                         Next
                                     </button>

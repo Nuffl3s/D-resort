@@ -6,6 +6,7 @@ from api.views import RegisterUserView, CustomLoginView, RegisterEmployeeView, E
 from api.views import EditEmployeeView, DeleteEmployeeView, CottageListView, LodgeListView, AddUnitView, DeleteCottageView, DeleteLodgeView, TotalUnitsView, FilterUnitsView, UpdateCottageView, UpdateLodgeView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import EmployeeCreateView
+from api.views import AttendanceView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -36,4 +37,5 @@ urlpatterns = [
     path('api/filter-units/', FilterUnitsView.as_view(), name='filter_units'),
     path("api-auth/", include("rest_framework.urls")),
     path('api/employees/', EmployeeCreateView.as_view(), name='api_employee'),
+    path('api/attendance/', AttendanceView.as_view(), name='attendance')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

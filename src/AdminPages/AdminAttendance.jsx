@@ -1,81 +1,196 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
-import { applyTheme } from '../components/themeHandlers';
 import { handleDownloadAttendanceExcel, handleDownloadAttendanceWord } from '../Utils/attendanceUtils';
-import DownloadModal from '../Modal/DownloadModal'; // Assuming you have this component in the same folder
+import DownloadModal from '../Modal/DownloadModal';
+import Swal from 'sweetalert2';
+import api from '../api';
 
 function AdminAttendance() {
-  // State hooks
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-  const [showModal, setShowModal] = useState(false); // Controls the visibility of the download modal
+  const [showModal, setShowModal] = useState(false);
+  const [tableRows, setTableRows] = useState([]);  // State to store attendance data
+  const [currentPage, setCurrentPage] = useState(1); // Current page
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  const [selectedDateRange, setSelectedDateRange] = useState("Last 30 days"); 
+  const [itemsPerPage] = useState(7); // Items per page
 
-  // Attendance data (this would usually come from an API or state)
-  const tableRows = [
-    {
-      id: 1,
-      name: "Angelo Y. Yasay",
-      employeeId: "293d1",
-      date: "07/06/2024",
-      timeIn: "10:30 am",
-      timeOut: "3:00 pm",
-    },
-    // More rows...
-  ];
-
-  // Refs for dropdown functionality
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Toggle dropdown visibility
+  const handleClear = async () => {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'This will clear all the attendance records. This action cannot be undone!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, clear it!',
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                await api.delete('http://localhost:8000/api/attendance/', {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                    },
+                });
+                setTableRows([]); // Clear local data
+                Swal.fire('Cleared!', 'All attendance records have been cleared.', 'success');
+            } catch (error) {
+                Swal.fire('Error!', 'Failed to clear attendance records.', 'error');
+            }
+        }
+    });
+  };
+
+  const handleChange = (label) => {
+    setSelectedDateRange(label);
+    setDateDropdownOpen(false);
+  };
+
   const toggleDropdown = () => {
     setIsDropdownVisible(!isDropdownVisible);
   };
 
-  // Handle print action
   const handlePrint = () => {
-    window.print(); // Trigger the print dialog
-    setIsDropdownVisible(false); // Close dropdown after print
+    window.print();
+    setIsDropdownVisible(false);
   };
 
-  // Handle download action (open the modal)
   const handleDownload = () => {
-    setShowModal(true); // Open the download modal
-    setIsDropdownVisible(false); // Close dropdown after download option is clicked
+    setShowModal(true);
+    setIsDropdownVisible(false);
   };
 
-  // Handle download choice (Excel/Word)
   const handleDownloadChoice = (type, context) => {
     if (context === 'attendance') {
-        if (type === 'excel') {
-            handleDownloadAttendanceExcel(tableRows)
-                .then(() => console.log('Excel download triggered successfully'))
-                .catch((error) => console.error('Error downloading Excel:', error));
-        } else if (type === 'word') {
-            handleDownloadAttendanceWord(tableRows)
-                .then(() => console.log('Word download triggered successfully'))
-                .catch((error) => console.error('Error downloading Word:', error));
-        }
+      if (type === 'excel') {
+        handleDownloadAttendanceExcel(tableRows)
+          .then(() => console.log('Excel download triggered successfully'))
+          .catch((error) => console.error('Error downloading Excel:', error));
+      } else if (type === 'word') {
+        handleDownloadAttendanceWord(tableRows)
+          .then(() => console.log('Word download triggered successfully'))
+          .catch((error) => console.error('Error downloading Word:', error));
+      }
     }
+    setShowModal(false);
+  };
 
-    setShowModal(false); // Close the modal after download choice
+  // Poll every 5 seconds to get the latest attendance
+  useEffect(() => {
+    const interval = setInterval(() => {
+        fetchAttendanceData(); // Function that fetches and updates the data
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchAttendanceData = async () => {
+    console.log('Fetching attendance data...');
+    try {
+        const response = await api.get('http://localhost:8000/api/attendance/', {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            },
+        });
+        console.log(response.data); // Log the data to debug
+        if (response.data && response.data.length > 0) {
+            setTableRows(response.data);
+        } else {
+            console.error("No attendance data returned from backend.");
+        }
+    } catch (error) {
+        console.error('Error fetching attendance data', error);
+    }
 };
 
-  useEffect(() => {
-    applyTheme(); // Apply dark or light theme
-  }, []);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = tableRows.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const totalPages = Math.ceil(tableRows.length / itemsPerPage);
+
+  const firstItemIndex = indexOfFirstItem + 1;
+  const lastItemIndex = Math.min(indexOfLastItem, tableRows.length);
+  const showingText = `Showing ${firstItemIndex}-${lastItemIndex} of ${tableRows.length} entries`;
 
   return (
     <div className="flex dark:bg-[#111827] bg-gray-100">
         <AdminSidebar />
         <div id="calendar" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
             <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">ATTENDANCE</h1>
-            <div className="bg-white p-8 rounded-lg w-full border mt-[50px] dark:bg-[#374151] dark:border-[#374151]">
-                <div className="flex justify-end relative">
+            <div className="bg-white p-7 rounded-lg w-full border mt-[45px] dark:bg-[#374151] dark:border-[#374151]">
+                <div className="flex justify-between relative">
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <button
+                                onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
+                                className="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none font-medium rounded-md text-sm px-3 py-1.5"
+                                type="button"
+                            >
+                                {selectedDateRange}
+                                <svg
+                                    className={`w-2.5 h-2.5 ms-2.5 transform transition-transform ${dateDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
+                                    aria-hidden="true"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 10 6"
+                                >
+                                    <path
+                                        stroke="currentColor"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="m1 1 4 4 4-4"
+                                    />
+                                </svg>
+                            </button>
+
+                            {dateDropdownOpen && (
+                                <div className="absolute z-20 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow">
+                                    <ul className="p-3 space-y-1 text-sm text-gray-700">
+                                        {['Today', 'Last day', 'Last 7 days', 'Last 30 days', 'Last month', 'Last year'].map((label, index) => (
+                                            <li key={index}>
+                                                <div className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer" onClick={() => handleChange(label)}>
+                                                    <input
+                                                        id={`filter-radio-example-${index + 1}`}
+                                                        type="radio"
+                                                        name="filter-radio"
+                                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
+                                                    />
+                                                    <label
+                                                        htmlFor={`filter-radio-example-${index + 1}`}
+                                                        className="w-full ms-2 text-sm font-medium text-gray-900"
+                                                    >
+                                                        {label}
+                                                    </label>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+
+                        <button 
+                            onClick={handleClear}
+                            className="px-4 py-2 text-sm font-semibold border rounded-md bg-red-500 hover:bg-red-600 text-white"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                    
                     <button
                         ref={buttonRef}
                         onClick={toggleDropdown}
                         className="flex items-center gap-2 rounded-md text-white font-semibold tracking-wide cursor-pointer"
-                        >
+                    >
                         <img src="src/assets/option.png" alt="Options" className="w-4 h-4 dark:invert" />
                     </button>
                     {isDropdownVisible && (
@@ -114,61 +229,64 @@ function AdminAttendance() {
                 {/* Table Section */}
                 <div className="-mx-4 sm:-mx-8 px-4 sm:px-8 py-4 overflow-x-auto">
                     <div className="inline-block min-w-full shadow rounded-lg overflow-hidden">
-                    <table className="min-w-full leading-normal ">
-                        <thead className="border-gray-200 bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
-                        <tr>
-                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">#</th>
-                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Name</th>
-                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Employee ID</th>
-                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Date</th>
-                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Time in</th>
-                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Time out</th>
-                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Action</th>
-                        </tr>
-                        </thead>
+                        <table className="min-w-full leading-normal">
+                            <thead className="border-gray-200 bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                <tr>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">#</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">ID</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Name</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Date</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Time in</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Time out</th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Action</th>
+                                </tr>
+                            </thead>
 
-                        <tbody className="text-gray-900 bg-white dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                        {tableRows.map((row, index) => (
-                            <tr key={row.id}>
-                                <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{index + 1}</td>
-                                <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.name}</td>
-                                <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.employeeId}</td>
-                                <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.date}</td>
-                                <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.timeIn}</td>
-                                <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.timeOut}</td>
-                                <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">
-                                    <div className="flex space-x-1">
-                                        <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
-                                            <img src="src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
-                                        </button>
-                                        <button className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full">
-                                            <img src="src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
+                            <tbody className="text-gray-900 bg-white dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                {currentItems.map((row, index) => (
+                                    <tr key={row.id}>
+                                        <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{index + 1}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.user}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.name}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.date}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.time_in}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">{row.time_out}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm dark:border-gray-400">
+                                            <button className="text-blue-600 hover:text-blue-800">Edit</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                    {/* Pagination */}
-                        <div className="px-5 py-5 bg-white flex flex-col xs:flex-row items-end xs:justify-between dark:bg-[#66696e]">
-                            <div className="inline-flex mt-2 xs:mt-0">
-                                <button className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-l">
-                                    Prev
-                                </button>
-                                &nbsp; &nbsp;
-                                <button className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r">
-                                    Next
-                                </button>
-                            </div>
+                {/* Pagination Section */}
+            <div className="px-5 py-5 bg-white flex justify-between xs:flex-row items-center xs:justify-between dark:bg-[#66696e]">
+                            {/* Showing entries text */}
+                        <div className="text-sm text-gray-600 dark:text-gray-300">{showingText}</div>
+
+                        <div className="flex mt-2 xs:mt-0 ">
+                            <button
+                                onClick={() => paginate(currentPage - 1)}
+                                className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-l"
+                                disabled={currentPage === 1}
+                            >
+                                Prev
+                            </button>
+                            &nbsp; &nbsp;
+                            <button
+                                onClick={() => paginate(currentPage + 1)}
+                                className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r"
+                                disabled={currentPage === totalPages}
+                            >
+                                Next
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {/* Modal for download options */}
         <DownloadModal
             showModal={showModal}
             handleDownloadChoice={handleDownloadChoice}

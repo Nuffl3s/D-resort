@@ -180,6 +180,7 @@ def fetch_attendance():
                     # Adjusted: Use user.user_id or another appropriate attribute instead of user.id
                     data = {
                         'name': attendance_data[uid]['name'],
+                        'user' : uid,
                         'date': date,
                         'time_in': time_in,
                         'time_out': time_out,
@@ -208,23 +209,18 @@ def fetch_attendance():
         if conn:
             conn.disconnect()
 
-<<<<<<< HEAD
-if __name__ == "__main__":
-    sync_biometric_data()
-=======
 # Run both functions concurrently using threading
 if __name__ == "__main__":
     print("Starting both attendance capture and biometric sync...")
 
     # Create threads for both tasks
     attendance_thread = threading.Thread(target=fetch_attendance)
-    # sync_thread = threading.Thread(target=sync_biometric_data)
+    sync_thread = threading.Thread(target=sync_biometric_data)
 
     # Start both threads
     attendance_thread.start()
-    # sync_thread.start()
+    sync_thread.start()
 
     # Join both threads (wait for them to finish)
     attendance_thread.join()
-    # sync_thread.join()
->>>>>>> 9201b5a4bc309298e7fac3e48554a53e2b2151f9
+    sync_thread.join()

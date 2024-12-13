@@ -19,14 +19,11 @@ function AdminDash () {
     const [date, setDate] = useState(); 
     const [totals, setTotals] = useState({ total_cottages: 0, total_lodges: 0 });
     const [salesSummaryModalOpen, setSalesSummaryModalOpen] = useState(false);
+    const [attendanceData, setAttendanceData] = useState([]);
+
 
     // New state for filtering attendance
     const [attendanceFilter, setAttendanceFilter] = useState('Day');
-
-    // Sample attendance data
-    const attendanceData = [
-        { id: 1, name: 'John Doe', date: '2024-09-10', timeIn: '08:00 AM', timeOut: '05:00 PM' },
-    ];
 
     const lightTheme = createTheme({
         palette: {
@@ -86,10 +83,32 @@ function AdminDash () {
     }, []);
 
 
-     // Filter attendance data based on the selected filter
-    const filteredAttendanceData = attendanceData.filter(record => {
-        return record.date === '2024-09-10'; 
-    });
+     // Fetch Attendance Data
+     useEffect(() => {
+        const fetchAttendanceData = async () => {
+          try {
+            const response = await api.get('http://localhost:8000/api/attendance/'); 
+            console.log("Fetched attendance data:", response.data);
+            setAttendanceData(response.data); // Save fetched data to state
+          } catch (error) {
+            console.error('Error fetching attendance data:', error);
+          }
+
+        };
+      
+        fetchAttendanceData();
+      }, []);
+      
+  useEffect(() => {
+    // Update the current time every second
+    const intervalId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    // Clear the interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
 
     useEffect(() => {
         applyTheme();
@@ -257,49 +276,39 @@ function AdminDash () {
                             </div>
 
                             {/* Attendance Table */}
-                            <table className="min-w-full bg-white rounded-lg">
-                                <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
-                                    <tr>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold  uppercase tracking-wider">
-                                            #
-                                        </th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold  uppercase tracking-wider">
-                                            Name
-                                        </th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold  uppercase tracking-wider">
-                                            Date
-                                        </th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold  uppercase tracking-wider">
-                                            Time In
-                                        </th>
-                                        <th className="px-5 py-3 text-left text-xs font-semibold  uppercase tracking-wider">
-                                            Time Out
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredAttendanceData.map((record, index) => (
-                                        <tr key={record.id} className="hover:bg-gray-50 dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                            <td className="px-5 py-5 border-gray-200  text-sm">
-                                                {index + 1}
-                                            </td>
-                                            <td className="px-5 py-5 border-gray-200  text-sm">
-                                                {record.name}
-                                            </td>
-                                            <td className="px-5 py-5 border-gray-200  text-sm">
-                                                {record.date}
-                                            </td>
-                                            <td className="px-5 py-5 border-gray-200  text-sm">
-                                                {record.timeIn}
-                                            </td>
-                                            <td className="px-5 py-5 border-gray-200  text-sm">
-                                                {record.timeOut}
-                                            </td>
+                            <div className="overflow-x-auto max-h-[250px]"> {/* Added outer wrapper for horizontal scrolling */}
+                                <table className="min-w-full bg-white rounded-lg">
+                                    <thead className="sticky top-0 border-gray-200 bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6] z-10"> {/* Fixes header position */}
+                                        <tr>
+                                            <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">ID</th>
+                                            <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">Name</th>
+                                            <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">Date</th>
+                                            <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">Time in</th>
+                                            <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">Time out</th>
                                         </tr>
-                                        
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+
+                                    <tbody className=""> {/* Scrollable body */}
+                                        {attendanceData.length > 0 ? (
+                                            attendanceData.map((record) => (
+                                                <tr key={record.id} className="hover:bg-gray-50 dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                                    <td className="px-5 py-5 border-b border-r text-sm">{record.user}</td>
+                                                    <td className="px-5 py-5 border-b border-r text-sm">{record.name}</td>
+                                                    <td className="px-5 py-5 border-b border-r text-sm">{record.date}</td>
+                                                    <td className="px-5 py-5 border-b border-r text-sm">{record.time_in}</td>
+                                                    <td className={`px-5 py-5 border-b border-r text-sm ${!record.time_out ? 'text-red-400' : ''}`}>
+                                                        {record.time_out || 'No time out yet'}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="5" className="px-5 py-5 text-center">No Attendance Data Available</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -83,88 +83,121 @@ function Login() {
   };
 
   return (
-    <div className="w-screen h-screen flex">
-      {/* Left Side with Image */}
-      <div className="w-9/12 h-full flex justify-center items-center">
-        <img src="./src/assets/login.png" alt="Logo" className="max-w-full max-h-full" />
-      </div>
+    <div className="w-screen h-screen flex bg-cover bg-center justify-center relative bg-gray-50">
+      <div className="w-2/3 h-full flex justify-center items-center relative z-10">
+        {/* Container holding login and signup */}
+        <div className="flex w-full max-w-4xl rounded-[10px] overflow-hidden shadow-lg bg-white">
+          {/* Left side: Login Form */}
+          <div className="w-1/2 p-8">
+            <h2 className="text-3xl font-bold text-center mb-6 text-[#1a1a1a]">
+              {isRegistering ? "REGISTER" : "LOGIN"}
+            </h2>
 
-      {/* Right Side with Form */}
-      <div className="w-1/2 h-full flex justify-center items-center">
-        <div className="w-[500px] bg-white p-8 rounded-[5px] shadow-lg">
-          <h2 className="text-2xl font-extrabold text-[#1089D3] text-center mb-6">
-            {isRegistering ? "REGISTER" : "LOGIN"}
-          </h2>
-          <form className="mt-6" onSubmit={isRegistering ? handleRegister : handleLogin}>
-            {/* Username */}
-            <div className="mb-4">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
-                <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
-                    placeholder="Username"
-                    required
-                />
-            </div>
-
-            {/* Password */}
-            <div className="mb-4">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                    Password
-                </label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
-                    placeholder="Password"
-                    required
-                />
-            </div>
-
-            {/* User Type (for registration only) */}
-            {isRegistering && (
+            {/* Login Form */}
+            <form onSubmit={isRegistering ? handleRegister : handleLogin}>
               <div className="mb-4">
-                <label htmlFor="user_type" className="block text-sm font-medium text-gray-700">
-                  User Type
-                </label>
-                <select
-                  id="user_type"
-                  name="user_type"
-                  value={formData.user_type}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#12B1D1] focus:outline-none"
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  <option value="Admin">Admin</option>
-                  <option value="Employee">Employee</option>
-                </select>
+                  Username
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#374151] focus:outline-none"
+                  placeholder="Username"
+                  required
+                />
               </div>
-            )}
 
-            {/* Submit Button */}
+              <div className="mb-4">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#374151] focus:outline-none"
+                  placeholder="Password"
+                  required
+                />
+              </div>
+
+              {/* Forgot Password link below password input */}
+              {!isRegistering && (
+                <div className="mb-4 text-right">
+                  <a
+                    href="/forgot-password" // Update with actual route for forgot password
+                    className="text-sm text-gray-800 hover:underline"
+                  >
+                    Forgot Password?
+                  </a>
+                </div>
+              )}
+
+              {/* User Type (for registration only) */}
+              {isRegistering && (
+                <div className="mb-4">
+                  <label
+                    htmlFor="user_type"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    User Type
+                  </label>
+                  <select
+                    id="user_type"
+                    name="user_type"
+                    value={formData.user_type}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full bg-white border-2 border-transparent p-3 rounded-[10px] shadow-md placeholder-gray-400 focus:border-[#374151] focus:outline-none"
+                  >
+                    <option value="Admin">Admin</option>
+                    <option value="Employee">Employee</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="w-full bg-[#374151] hover:bg-gray-600 text-white p-3 rounded-[10px] shadow-md font-medium"
+              >
+                {isRegistering ? "Register" : "Login"}
+              </button>
+            </form>
+
+            {/* Switch between Login and Register */}
             <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-[#1089D3] to-[#12B1D1] text-white p-3 rounded-[10px] shadow-md hover:to-[#0f8bb1]"
+              onClick={handleToggleRegister}
+              className="w-full mt-4 bg-gray-200 text-gray-800 p-3 rounded-[10px] shadow-md hover:bg-gray-300"
             >
-              {isRegistering ? "Register" : "Login"}
+              {isRegistering ? "Switch to Login" : "Switch to Register"}
             </button>
-          </form>
+          </div>
 
-          {/* Switch between Login and Register */}
-          <button
-            onClick={handleToggleRegister}
-            className="w-full mt-4 bg-gray-200 text-gray-800 p-3 rounded-[10px] shadow-md hover:bg-gray-300"
-          >
-            {isRegistering ? "Switch to Login" : "Switch to Register"}
-          </button>
+          {/* Right side: Signup prompt */}
+          <div className="w-1/2 bg-[#374151] text-white p-8 flex flex-col justify-center items-center">
+            <h2 className="text-3xl font-bold mb-4">Hello, Friend!</h2>
+            <p className="text-lg mb-6">
+              Enter your personal details and start your journey with us
+            </p>
+            <button
+              onClick={handleToggleRegister}
+              className="bg-white text-gray-800 text-lg px-6 py-3 rounded-full hover:bg-gray-100 transition-all font-medium"
+            >
+              Sign Up
+            </button>
+          </div>
         </div>
       </div>
     </div>

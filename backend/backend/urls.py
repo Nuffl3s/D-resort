@@ -39,5 +39,6 @@ urlpatterns = [
     path('api/filter-units/', FilterUnitsView.as_view(), name='filter_units'),
     path("api-auth/", include("rest_framework.urls")),
     path('api/employees/', EmployeeCreateView.as_view(), name='api_employee'),
-    path('api/attendance/', AttendanceView.as_view(), name='attendance')
+    path('api/attendance/', AttendanceView.as_view(), name='attendance'),
+    path('api/attendance/<int:pk>/', AttendanceView.as_view(), name='attendance-update'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -5,6 +5,7 @@ from zk import ZK, const
 from datetime import datetime
 import time
 import threading
+from datetime import datetime
 
 # Load .env variables
 load_dotenv()
@@ -36,6 +37,7 @@ def fetch_token():
     except Exception as e:
         print(f"Error during login: {e}")
         return None
+    
 
 # Sync user data from the biometric device to the backend
 def sync_biometric_data():
@@ -131,6 +133,7 @@ def sync_biometric_data():
             conn.enable_device()
             conn.disconnect()
 
+
 # Fetch attendance data and record the time-in and time-out
 def fetch_attendance():
     zk = ZK('192.168.1.201', port=4370, timeout=5)
@@ -140,67 +143,63 @@ def fetch_attendance():
         conn = zk.connect()
         conn.disable_device()
 
-        # Live capture
         print("Starting live capture...")
+
         attendance_data = {}
 
         for attendance in conn.live_capture():
-            if attendance is None:
-                # Timeout logic (if necessary)
-                pass
-            else:
+            if attendance:
                 uid = attendance.uid
                 timestamp = attendance.timestamp if isinstance(attendance.timestamp, datetime) else datetime.fromtimestamp(attendance.timestamp)
                 timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-                # Get the user name for the attendance record
-                users = conn.get_users()  # Get all users
-                user = next((u for u in users if u.uid == uid), None)  # Find the user by UID
+                users = conn.get_users()
+                user = next((u for u in users if u.uid == uid), None)
                 user_name = user.name if user else 'Unknown'
 
-                # Check the attributes of the 'user' object (for debugging)
-                # if user:
-                #     print(f"User attributes: {user.__dict__}") 
-
-                # Record the first and second punch (time in and time out)
                 if uid not in attendance_data:
-                    attendance_data[uid] = {'name': user_name, 'time_in': timestamp_str, 'time_out': None}
-                elif attendance_data[uid]['time_out'] is None:
-                    attendance_data[uid]['time_out'] = timestamp_str
+                    attendance_data[uid] = {'name': user_name, 'time_in': timestamp_str, 'time_out': 'No time out yet'}
+                    print(f"Time in for {user_name} at {timestamp_str}")
 
-                # Show the "Processing" message with the attendance details before payload
-                print(f"Processing attendance - UID: {uid}, Name: {user_name}, Date: {timestamp.date()}, Time In: {attendance_data[uid]['time_in']}, Time Out: {'Still processing' if attendance_data[uid]['time_out'] is None else attendance_data[uid]['time_out']}")
+                    time_in = timestamp_str.split(' ')[1]
+                    date = timestamp_str.split(' ')[0]
 
-                # If both time_in and time_out are captured, send data to backend
-                if attendance_data[uid]['time_in'] and attendance_data[uid]['time_out']:
-                    time_in = datetime.strptime(attendance_data[uid]['time_in'], '%Y-%m-%d %H:%M:%S').strftime('%H:%M:%S')
-                    time_out = datetime.strptime(attendance_data[uid]['time_out'], '%Y-%m-%d %H:%M:%S').strftime('%H:%M:%S')
-                    date = datetime.strptime(attendance_data[uid]['time_in'], '%Y-%m-%d %H:%M:%S').date().strftime('%Y-%m-%d')
-
-                    # Adjusted: Use user.user_id or another appropriate attribute instead of user.id
                     data = {
-                        'name': attendance_data[uid]['name'],
-                        'user' : uid,
+                        'name': user_name,
+                        'user': uid,
                         'date': date,
                         'time_in': time_in,
-                        'time_out': time_out,
                     }
 
-                    print(f"Payload: {data}")  # Debugging payload
-
-                    # Send the attendance data to the backend
                     token = fetch_token()
                     if token:
                         headers = {'Authorization': f'Bearer {token}'}
                         response = requests.post(f"{API_URL}/attendance/", json=data, headers=headers)
+
                         if response.status_code == 201:
-                            print(f"Attendance recorded for UID {uid} - Name: {attendance_data[uid]['name']} - Time In: {time_in} - Time Out: {time_out}")
+                            print(f"Attendance recorded for UID {uid} - Name: {user_name} - Time In: {time_in}")
+                            attendance_data[uid]['sent'] = True
                         else:
                             print(f"Failed to record attendance for UID {uid}: {response.status_code}, {response.text}")
-                    # Reset the attendance data after sending it to the backend
-                    attendance_data[uid] = {'name': user_name, 'time_in': None, 'time_out': None}
 
-        conn.enable_device()
+                elif attendance_data[uid]['time_out'] == 'No time out yet':
+                    print(f"Updating time-out for UID {uid} at {timestamp_str}")
+                    attendance_data[uid]['time_out'] = timestamp_str  # Set time_out in attendance_data
+                    time_out = timestamp.strftime('%H:%M:%S')
+                    data = {'time_out': time_out}
+                    print(f"Payload for time-out update: {data}")
+
+                    token = fetch_token()
+                    if token:
+                        headers = {'Authorization': f'Bearer {token}'}
+                        url = f"{API_URL}/attendance/{uid}/"  # Ensure UID is correct
+                        print(f"Sending PUT request to: {url} with data: {data}")  # Debug log for URL and payload
+                        response = requests.put(url, json=data, headers=headers)
+
+                        if response.status_code == 200:
+                            print(f"Time out updated for UID {uid} - Name: {user_name} - Time Out: {time_out}")
+                        else:
+                            print(f"Failed to update time out for UID {uid}: {response.status_code}, {response.text}")
 
     except Exception as e:
         print(f"Error: {e}")
@@ -209,18 +208,19 @@ def fetch_attendance():
         if conn:
             conn.disconnect()
 
+
 # Run both functions concurrently using threading
 if __name__ == "__main__":
     print("Starting both attendance capture and biometric sync...")
 
     # Create threads for both tasks
     attendance_thread = threading.Thread(target=fetch_attendance)
-    sync_thread = threading.Thread(target=sync_biometric_data)
+    # sync_thread = threading.Thread(target=sync_biometric_data)
 
     # Start both threads
     attendance_thread.start()
-    sync_thread.start()
+    # sync_thread.start()
 
     # Join both threads (wait for them to finish)
     attendance_thread.join()
-    sync_thread.join()
+    # sync_thread.join()

@@ -44,13 +44,33 @@ class WeeklyScheduleSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    date_added = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)  # Include this field
+    date_added = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
+    
     class Meta:
         model = Product
-        fields = ['name', 'quantity', 'avgPrice', 'amount', 'date_added']
+        fields = ['name', 'quantity', 'avgPrice', 'acquisitionCost', 'sellingPrice', 'amount', 'date_added']
         extra_kwargs = {
-            'amount':{'required': False}
+            'amount': {'required': False},
+            'acquisitionCost': {'required': False},
+            'sellingPrice': {'required': False},  # Add sellingPrice field
         }
+
+    def create(self, validated_data):
+        # Compute amount if not provided
+        quantity = validated_data.get('quantity', 0)
+        acquisitionCost = validated_data.get('acquisitionCost', 0)
+        validated_data['amount'] = quantity * acquisitionCost
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Update amount if fields change
+        instance.quantity = validated_data.get('quantity', instance.quantity)
+        instance.acquisitionCost = validated_data.get('acquisitionCost', instance.acquisitionCost)
+        instance.sellingPrice = validated_data.get('sellingPrice', instance.sellingPrice)  # Update sellingPrice
+        instance.amount = instance.quantity * instance.acquisitionCost  # Recalculate amount based on acquisition cost
+        instance.save()
+        return instance
+
 
 class PayrollSerializer(serializers.ModelSerializer):
     employee = serializers.CharField(source='employee.name')  # Display employee name instead of ID
@@ -130,10 +150,16 @@ class CottageSerializer(serializers.ModelSerializer):
         # Return custom_prices directly
         return obj.custom_prices
 
-
 class AttendanceSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='user.name', read_only=True)
+    time_out = serializers.SerializerMethodField()
 
+    def get_time_out(self, obj):
+        if obj.time_out:
+            print(f"Time out for {obj.user}: {obj.time_out}")  # Debugging
+            return obj.time_out.strftime('%H:%M:%S')
+        return None
+        
     class Meta:
         model = Attendance
         fields = ['user', 'name', 'date', 'time_in', 'time_out']
+        extra_kwargs = {'time_out': {'required': False}}

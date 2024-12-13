@@ -16,15 +16,18 @@ function AddProduct() {
     const [currentPage, setCurrentPage] = useState(1);
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [inventory, initialInventory] = useState(false);
+    const [inventory, setInventory] = useState([]);
+    const [initialInventory, setInitialInventory] = useState([]);
     const [salesHistory] = useState([]);
+    const [sellingPrice, setSellingPrice] = useState(0);
+    const [totalProfit, setTotalProfit] = useState(0);
+
 
     const productsPerPage = 7;
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
 
     useEffect(() => {
-        // Event handler to detect clicks outside the input or suggestions dropdown
         const handleClickOutside = (event) => {
             if (
                 inputRef.current &&
@@ -32,43 +35,37 @@ function AddProduct() {
                 dropdownRef.current && 
                 !dropdownRef.current.contains(event.target)
             ) {
-                setShowSuggestions(false); // Hide suggestions if click is outside
+                setShowSuggestions(false);
             }
         };
 
-        // Attach the event listener
         document.addEventListener('mousedown', handleClickOutside);
 
-        // Clean up the event listener on component unmount
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
 
-    // Calculate indices for slicing the product array
     const indexOfLastProduct = currentPage * productsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
 
-    // Filter products based on search query
     const filteredProducts = products.filter((product) =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Get the current set of filtered products for the current page
     const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
     const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
     const pageNumbers = [...Array(totalPages).keys()].map(num => num + 1);
 
-    // Handles the search input change
     const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value); // Update the search query state with user input
+        setSearchQuery(e.target.value);
     };
 
     const handleDeleteProduct = (id) => {
         const filteredProducts = products.filter(product => product.id !== id);
         setProducts(filteredProducts.map((product, index) => ({
             ...product,
-            id: index + 1 // Re-sequence IDs after deletion
+            id: index + 1
         })));
     };
 
@@ -97,55 +94,91 @@ function AddProduct() {
         setEditProductId(null);
     };
 
+    const addProduct = (newProduct) => {
+        setProducts((prevProducts) => [
+            ...prevProducts,
+            { ...newProduct, id: prevProducts.length + 1 }
+        ]);
+    };
+
     const handleQuantityChange = (e) => {
         const qty = e.target.value;
         setQuantity(qty);
         setTotalAmount(qty * avgPrice);
     };
-
+    
     const handleAvgPriceChange = (e) => {
         const price = e.target.value;
         setAvgPrice(price);
         setTotalAmount(quantity * price);
     };
-
-    // Define the missing addProduct function
-    const addProduct = (newProduct) => {
-        setProducts((prevProducts) => [
-            ...prevProducts,
-            { ...newProduct, id: prevProducts.length + 1 } // Assign sequential ID
-        ]);
+    
+    const handleSellingPriceChange = (e) => {
+        const price = e.target.value;
+        setSellingPrice(price);
+        setTotalProfit((price - avgPrice) * quantity); // This ensures that totalProfit is recalculated
     };
+    
+    
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
+    
+        // Ensure all fields are valid numbers
+        if (!productName || isNaN(quantity) || isNaN(avgPrice) || isNaN(sellingPrice) || quantity <= 0 || avgPrice <= 0 || sellingPrice <= 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Input',
+                text: 'Please ensure all fields are correctly filled with positive numeric values.',
+            });
+            return;  // Prevent submission if fields are invalid
+        }
+    
+        // Calculate total profit
+        const totalProfit = (sellingPrice - avgPrice) * quantity;
+    
+        // If total profit is negative, show an error
+        if (totalProfit < 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Profit',
+                text: 'The selling price must be higher than the acquisition cost for profit.',
+            });
+            return;  // Prevent submission if profit is negative
+        }
+    
+        // Create the new product object
         const newProduct = {
             name: productName,
             quantity: parseFloat(quantity),
             avgPrice: parseFloat(avgPrice),
-            amount: (quantity * avgPrice).toFixed(2),
+            sellingPrice: parseFloat(sellingPrice),
+            totalProfit: totalProfit.toFixed(2),  // Save profit with 2 decimal places
         };
-
-        // Add the new product to the shared state
+    
+        // Add the product to the list
         addProduct(newProduct);
-
-        // Reset form inputs
+    
+        // Reset input fields
         setProductName('');
         setQuantity(0);
         setAvgPrice(0);
+        setSellingPrice(0);
         setTotalAmount(0);
+        setTotalProfit(0);
     };
-
+    
+    
     const handleClearProducts = () => {
-        setProducts([]); 
+        setProducts([]);
     };
 
     const handleUpload = async () => {
         const productsToUpload = products.map(product => ({
             name: product.name,
             quantity: product.quantity,
-            avgPrice: product.avgPrice
+            avgPrice: product.avgPrice,
+            sellingPrice: product.sellingPrice
         }));
     
         try {
@@ -155,21 +188,17 @@ function AddProduct() {
     
             if (response.status === 200) {
                 console.log('Products uploaded successfully');
-                
-                // Show SweetAlert success message
                 Swal.fire({
                     icon: 'success',
                     title: 'Uploaded!',
                     text: 'Products have been uploaded successfully.',
                     confirmButtonText: 'OK'
                 }).then(() => {
-                    setProducts([]);  
+                    setProducts([]);
                 });
             }
         } catch (error) {
             console.error('Error uploading products', error);
-    
-            // Show SweetAlert error message
             Swal.fire({
                 icon: 'error',
                 title: 'Upload Failed!',
@@ -179,14 +208,13 @@ function AddProduct() {
         }
     };
     
-    // Handle product name change and trigger autocomplete
+
     const handleProductNameChange = async (e) => {
         const value = e.target.value;
         setProductName(value);
         if (value.length >= 2) {
             try {
                 const response = await api.get(`http://localhost:8000/api/product-autocomplete/?query=${value}`);
-                console.log(response.data); // Check the structure of the data received
                 setSuggestions(response.data);
                 setShowSuggestions(response.data.length > 0);
             } catch (error) {
@@ -196,10 +224,10 @@ function AddProduct() {
             setShowSuggestions(false);
         }
     };
-    
+
     const handleSuggestionClick = (suggestion) => {
-        setProductName(suggestion.name);  // Set the clicked suggestion as the product name
-        setShowSuggestions(false);  // Hide the suggestions dropdown
+        setProductName(suggestion.name);
+        setShowSuggestions(false);
     };
 
     return (
@@ -222,11 +250,11 @@ function AddProduct() {
                                             ref={inputRef}
                                             autoComplete="off"
                                         />
-
+                                        {/* Suggestions Dropdown */}
                                         {showSuggestions && (
                                             <div 
                                                 className="absolute top-[163px] left-[355px] z-20 w-[758px] border-gray-400 border bg-white divide-y divide-gray-100 rounded-lg shadow-md"
-                                                ref={dropdownRef} // Reference to the dropdown
+                                                ref={dropdownRef}
                                             >
                                                 <ul className="p-3 space-y-1 text-sm text-gray-700">
                                                     {suggestions.map((suggestion, index) => (
@@ -236,7 +264,7 @@ function AddProduct() {
                                                                 onClick={() => handleSuggestionClick(suggestion)}
                                                             >
                                                                 <span className="w-full ms-2 text-sm font-medium text-gray-900">
-                                                                    {suggestion.name}  {/* Ensure this matches the API response structure */}
+                                                                    {suggestion.name}
                                                                 </span>
                                                             </div>
                                                         </li>
@@ -263,7 +291,7 @@ function AddProduct() {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                placeholder="Average Price"
+                                                placeholder="Acquisition Cost"
                                                 className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                                                 value={avgPrice}
                                                 onChange={handleAvgPriceChange}
@@ -275,10 +303,10 @@ function AddProduct() {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                placeholder="Average Price"
+                                                placeholder="Selling Price"
                                                 className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
-                                                value={avgPrice}
-                                                onChange={handleAvgPriceChange}
+                                                value={sellingPrice}
+                                                onChange={handleSellingPriceChange}
                                             />
                                         </div>
                                     </div>
@@ -288,9 +316,9 @@ function AddProduct() {
                                         <input
                                             type="number"
                                             step="0.01"
-                                            placeholder="Total Amount"
+                                            placeholder="Total Profit"
                                             className="mt-1 p-2 w-full border border-black rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
-                                            value={totalAmount}
+                                            value={totalProfit}
                                             readOnly
                                         />
                                     </div>
@@ -339,8 +367,8 @@ function AddProduct() {
                                                 <td className="border px-4 py-2">{index + 1}</td>
                                                 <td className="border px-4 py-2">{sale.name}</td>
                                                 <td className="border px-4 py-2">{quantitySold}</td>
-                                                <td className="border px-4 py-2">${product?.cost.toFixed(2)}</td>
-                                                <td className="border px-4 py-2">${product?.price.toFixed(2)}</td>
+                                                <td className="border px-4 py-2">${product?.cost?.toFixed(2)}</td>
+                                                <td className="border px-4 py-2">${product?.price?.toFixed(2)}</td>
                                                 <td className="border px-4 py-2">
                                                     ${(quantitySold * (product?.price - product?.cost)).toFixed(2)}
                                                 </td>
@@ -401,123 +429,126 @@ function AddProduct() {
                                 <table className="min-w-full bg-white">
                                     <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                         <tr>
-                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">NO.</th>
-                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Product Name</th>
-                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Qty</th>
-                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Acq. Cost</th>
-                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Selling Price</th>
-                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Total Profit</th>
-                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider ">Action</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">NO.</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Product Name</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Qty</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Acq. Cost</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Selling Price</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Total Profit</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {currentProducts.map((product) => (
-                                            <tr key={product.id}>
-                                                <td className="px-5 py-5 border-b border-r  border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">{product.id}</td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                                    {editProductId === product.id ? (
-                                                        <input
-                                                            type="text"
-                                                            name="name"
-                                                            value={editedProduct.name}
-                                                            onChange={handleEditChange}
-                                                            className="w-full p-2 border border-gray-300 "
-                                                        />
-                                                    ) : (
-                                                        product.name
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                                    {editProductId === product.id ? (
-                                                        <input
-                                                            type="number"
-                                                            name="quantity"
-                                                            value={editedProduct.quantity}
-                                                            onChange={handleEditChange}
-                                                            className="w-full p-2 border border-gray-300 "
-                                                        />
-                                                    ) : (
-                                                        product.quantity
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                                    {editProductId === product.id ? (
-                                                        <input
-                                                            type="number"
-                                                            step="0.01"
-                                                            name="avgPrice"
-                                                            value={editedProduct.avgPrice}
-                                                            onChange={handleEditChange}
-                                                            className="w-full p-2 border border-gray-300 "
-                                                        />
-                                                    ) : (
-                                                        product.avgPrice
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                                    {editProductId === product.id ? (
-                                                        <input
-                                                            type="number"
-                                                            step="0.01"
-                                                            name="amount"
-                                                            value={editedProduct.amount}
-                                                            readOnly
-                                                            className="w-full p-2 border border-gray-300 rounded"
-                                                        />
-                                                    ) : (
-                                                        product.amount
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                                    {editProductId === product.id ? (
-                                                        <input
-                                                            type="number"
-                                                            name="quantity"
-                                                            value={editedProduct.quantity}
-                                                            onChange={handleEditChange}
-                                                            className="w-full p-2 border border-gray-300 "
-                                                        />
-                                                    ) : (
-                                                        product.quantity
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-5 border-b border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                                    <div className="space-x-2">
+                                        {currentProducts.map((product) => {
+                                            const totalProfit = (product.sellingPrice - product.avgPrice) * product.quantity; // Calculate Total Profit
+                                            return (
+                                                <tr key={product.id}>
+                                                    <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">{product.id}</td>
+                                                    <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
                                                         {editProductId === product.id ? (
-                                                            <button
-                                                                className="px-3 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#1089D3] hover:bg-[#3d9fdb]"
-                                                                onClick={handleSaveClick}
-                                                            >
-                                                                Save
-                                                            </button>
+                                                            <input
+                                                                type="text"
+                                                                name="name"
+                                                                value={editedProduct.name}
+                                                                onChange={handleEditChange}
+                                                                className="w-full p-2 border border-gray-300 "
+                                                            />
                                                         ) : (
+                                                            product.name
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                                        {editProductId === product.id ? (
+                                                            <input
+                                                                type="number"
+                                                                name="quantity"
+                                                                value={editedProduct.quantity}
+                                                                onChange={handleEditChange}
+                                                                className="w-full p-2 border border-gray-300 "
+                                                            />
+                                                        ) : (
+                                                            product.quantity
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                                        {editProductId === product.id ? (
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                name="avgPrice"
+                                                                value={editedProduct.avgPrice}
+                                                                onChange={handleEditChange}
+                                                                className="w-full p-2 border border-gray-300 "
+                                                            />
+                                                        ) : (
+                                                            product.avgPrice
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                                        {editProductId === product.id ? (
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                name="sellingPrice"
+                                                                value={editedProduct.sellingPrice}
+                                                                onChange={handleEditChange}
+                                                                className="w-full p-2 border border-gray-300 "
+                                                            />
+                                                        ) : (
+                                                            product.sellingPrice
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-5 border-b border-r border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                                        {editProductId === product.id ? (
+                                                            <input
+                                                                type="number"
+                                                                name="totalProfit"
+                                                                value={totalProfit.toFixed(2)} // Display total profit
+                                                                readOnly
+                                                                className="w-full p-2 border border-gray-300 rounded"
+                                                            />
+                                                        ) : (
+                                                            totalProfit.toFixed(2) // Display calculated profit
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-5 border-b border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
+                                                        <div className="space-x-2">
+                                                            {editProductId === product.id ? (
+                                                                <button
+                                                                    className="px-3 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#1089D3] hover:bg-[#3d9fdb]"
+                                                                    onClick={handleSaveClick}
+                                                                >
+                                                                    Save
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
+                                                                    onClick={() => handleEditClick(product)}
+                                                                >
+                                                                    <img
+                                                                        src="./src/assets/edit.png"
+                                                                        className="fill-current w-4 h-4"
+                                                                        style={{ filter: 'invert(100%)' }}
+                                                                        alt="Edit"
+                                                                    />
+                                                                </button>
+                                                            )}
                                                             <button
-                                                                className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
-                                                                onClick={() => handleEditClick(product)}
+                                                                className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"
+                                                                onClick={() => handleDeleteProduct(product.id)}
                                                             >
                                                                 <img
-                                                                    src="./src/assets/edit.png"
+                                                                    src="./src/assets/delete.png"
                                                                     className="fill-current w-4 h-4"
                                                                     style={{ filter: 'invert(100%)' }}
-                                                                    alt="Edit"
+                                                                    alt="Delete"
                                                                 />
                                                             </button>
-                                                        )}
-                                                        <button
-                                                            className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"
-                                                            onClick={() => handleDeleteProduct(product.id)}
-                                                        >
-                                                            <img
-                                                                src="./src/assets/delete.png"
-                                                                className="fill-current w-4 h-4"
-                                                                style={{ filter: 'invert(100%)' }}
-                                                                alt="Delete"
-                                                            />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                                 

@@ -65,13 +65,16 @@ class WeeklySchedule(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
-    quantity = models.PositiveIntegerField()
+    quantity = models.IntegerField()
     avgPrice = models.DecimalField(max_digits=10, decimal_places=2)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    acquisitionCost = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    sellingPrice = models.DecimalField(max_digits=10, decimal_places=2)  # Ensure this is a numeric field
     date_added = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
     
 class Payroll(models.Model):
     STATUS_CHOICES = [

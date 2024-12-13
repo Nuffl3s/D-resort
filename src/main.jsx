@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './Login.jsx';
 import AdminDash from './AdminPages/AdminDash.jsx';
-import AdminManagement from './AdminPages/AdminManagement.jsx';
+import AdminList from './AdminPages/AdminList.jsx';
 import AdminAttendance from './AdminPages/AdminAttendance.jsx';
 import AdminSchedule from './AdminPages/AdminSchedule.jsx';
 import AdminReport from './AdminPages/AdminReport.jsx';
@@ -42,7 +42,7 @@ root.render(
         {/* Admin-Only Routes */}
         <Route path="/AdminDash" element={<AdminDash />} />
         <Route path="/AdminPayroll" element={<AdminPayroll />} />
-        <Route path="/AdminManagement" element={<AdminManagement />} />
+        <Route path="/AdminList" element={<AdminList />} />
         <Route path="/AdminAttendance" element={<AdminAttendance />} />
         <Route path="/AdminSchedule" element={<AdminSchedule />} />
         <Route path="/AdminReport" element={<AdminReport />} />

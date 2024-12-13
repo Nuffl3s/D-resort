@@ -572,14 +572,40 @@ class AttendanceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        print(request.data)
+        print("POST request data:", request.data)
         serializer = AttendanceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            print("POST request successful")
             return Response({"message": "Attendance recorded successfully!"}, status=201)
+        print("POST request errors:", serializer.errors)
         return Response(serializer.errors, status=400)
 
     def get(self, request):
         attendances = Attendance.objects.all()
         serializer = AttendanceSerializer(attendances, many=True)
+        print("GET request serialized data:", serializer.data)  # Add this
         return Response(serializer.data, status=200)
+
+    def put(self, request, pk=None):
+        try:
+            print(f"Received PUT request for UID: {pk}")  # Debug log
+            attendance = Attendance.objects.get(pk=pk)
+            print(f"Found attendance record: {attendance}")  # Debug log
+            serializer = AttendanceSerializer(attendance, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_attendance = serializer.save()
+                print(f"Time out updated to: {updated_attendance.time_out}")  # Debug log
+                return Response(serializer.data, status=200)
+            else:
+                print(f"Serializer errors: {serializer.errors}")  # Debug log for validation errors
+                return Response(serializer.errors, status=400)
+        except Attendance.DoesNotExist:
+            print(f"Attendance record with UID {pk} not found.")  # Debug log
+            return Response({"error": "Attendance record not found."}, status=404)
+
+
+
+
+
+

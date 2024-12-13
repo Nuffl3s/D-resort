@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import Sidebar from '../components/EmployeeSidebar';
-// import axios from 'axios';
 import api from '../api';
 
 function ProductList() {
@@ -29,6 +28,13 @@ function ProductList() {
         }
     };
 
+    const calculateTotalProfit = (product) => {
+        // Assuming the product has a 'sellingPrice' and 'avgPrice' (acquisition cost) attributes.
+        if (product.sellingPrice && product.avgPrice) {
+            return (product.sellingPrice - product.avgPrice) * product.quantity;
+        }
+        return 0; // Return 0 if prices are missing
+    };
 
     return (
         <div className="flex bg-gray-100">
@@ -60,7 +66,7 @@ function ProductList() {
                         </div>
                     </div>
                 </div>
-              
+
                 {/* Table of Products */}
                 <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
                     <table className="w-full text-sm text-left rtl:text-right text-black bg-white">
@@ -85,10 +91,9 @@ function ProductList() {
                                         <td className="px-6 py-4">{product.date_added}</td>
                                         <td className="px-6 py-4">{product.quantity}</td>
                                         <td className="px-6 py-4">{product.avgPrice}</td>
-                                        <td className="px-6 py-4">{product.quantity}</td>
-                                        <td className="px-6 py-4">{product.avgPrice}</td>
+                                        <td className="px-6 py-4">{product.sellingPrice}</td>
+                                        <td className="px-6 py-4">{calculateTotalProfit(product)}</td>
                                         <td className="space-x-2">
-
                                             <button
                                                 className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
                                                 onClick={() => handleDeleteProduct(product.id)}
@@ -100,7 +105,6 @@ function ProductList() {
                                                     alt="Delete"
                                                 />
                                             </button>
-
                                             <button
                                                 className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"
                                                 onClick={() => handleDeleteProduct(product.id)}
@@ -117,7 +121,7 @@ function ProductList() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="px-6 py-4 text-center">No products available</td>
+                                    <td colSpan="8" className="px-6 py-4 text-center">No products available</td>
                                 </tr>
                             )}
                         </tbody>
@@ -134,9 +138,10 @@ ProductList.propTypes = {
         PropTypes.shape({
             id: PropTypes.number.isRequired,
             name: PropTypes.string.isRequired,
-            dateAdded: PropTypes.string.isRequired,
+            date_added: PropTypes.string.isRequired,
             quantity: PropTypes.number.isRequired,
             avgPrice: PropTypes.number.isRequired,
+            sellingPrice: PropTypes.number.isRequired,
         })
     ).isRequired,
 };

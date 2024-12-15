@@ -4,6 +4,7 @@ import ViewModal from '../Modal/ViewModal';
 import Sidebar from '../components/EmployeeSidebar';
 import CalendarEventModal from '../Modal/CalendarEventModal';
 import api from '../api';
+// import EditReservationModal from '../Modal/EditReservationModal';
 
 function EmployeeReservation () {
     const [modalBookingOpen, setModalBookingOpen] = useState(false);
@@ -18,6 +19,8 @@ function EmployeeReservation () {
     const [isViewModalOpen, setViewModalOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [reservations, setReservations] = useState([]);
+    const [isEditModalOpen, setEditModalOpen] = useState(false);
+    const [editReservation, setEditReservation] = useState(null);
 
      // sample
      const bookings = [
@@ -75,13 +78,21 @@ function EmployeeReservation () {
         const fetchReservations = async () => {
             try {
                 const response = await api.get("/reservations/");
-                console.log("Reservations with Unit Details:", response.data);
+                console.log("Updated Reservations:", response.data);
                 setReservations(response.data);
             } catch (error) {
                 console.error("Error fetching reservations:", error);
             }
         };
+    
         fetchReservations();
+    
+        // Add an event listener to refetch reservations
+        window.addEventListener("reservationUpdated", fetchReservations);
+    
+        return () => {
+            window.removeEventListener("reservationUpdated", fetchReservations);
+        };
     }, []);
     
     // Filter bookings based on selected type
@@ -112,6 +123,29 @@ function EmployeeReservation () {
         }
     };
 
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this reservation?")) return;
+    
+        try {
+            await api.delete(`/reservations/${id}/`);
+            const updatedReservations = reservations.filter((r) => r.id !== id);
+            setReservations(updatedReservations);
+            console.log("Reservation deleted successfully!");
+        } catch (error) {
+            console.error("Error deleting reservation:", error);
+        }
+    };
+
+    // const handleEditClick = (reservation) => {
+    //     setEditReservation(reservation);
+    //     setEditModalOpen(true);
+    // };
+    
+    // const handleUpdate = (updatedData) => {
+    //     setReservations((prev) =>
+    //         prev.map((reservation) => (reservation.id === updatedData.id ? updatedData : reservation))
+    //     );
+    // };
 
     const handleCloseModal = () => {
         setViewModalOpen(false);
@@ -319,7 +353,7 @@ function EmployeeReservation () {
                                         <th scope="col" className="px-6 py-3">Type</th>
                                         <th scope="col" className="px-6 py-3">Transaction date</th>
                                         <th scope="col" className="px-6 py-3">Date of Reservation</th>
-                                        <th scope="col" className="px-6 py-3">Date of use</th>
+                                        <th scope="col" className="px-6 py-3">Time of use</th>
                                         <th scope="col" className="px-6 py-3">Price</th>
                                         <th scope="col" className="px-6 py-3">Status</th>
                                         <th scope="col" className="px-6 py-3">Action</th>
@@ -344,7 +378,9 @@ function EmployeeReservation () {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 space-x-2">
-                                                <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full">
+                                                <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
+                                                // onClick={() => handleEditClick(reservation)}
+                                                >
                                                     <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
                                                 </button>
                                                 <button className="bg-[#FFC470] hover:bg-[#f8b961] p-2 rounded-full" 
@@ -352,10 +388,20 @@ function EmployeeReservation () {
                                                     >
                                                     <img src="./src/assets/view.png" className="w-4 h-4 filter brightness-0 invert" alt="View" />
                                                 </button>
-                                                <button className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full">
-                                                    <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
+                                                <button className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"
+                                                onClick={() => handleDelete(reservation.id)}
+                                                >
+                                                    <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete"  />
                                                 </button>
                                             </td>
+
+                                            {/* <EditReservationModal
+                                                isOpen={isEditModalOpen}
+                                                onClose={() => setEditModalOpen(false)}
+                                                reservation={editReservation}
+                                                onUpdate={handleUpdate}
+                                            /> */}
+
                                             <ViewModal 
                                                 isOpen={isViewModalOpen} 
                                                 onClose={handleCloseModal} 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
+
 import api from '../api';
 
 // Function to format dates
@@ -96,10 +97,12 @@ function AdminPayroll() {
             return;
         }
     
+        // Prepare updated payroll entries
         const updatedEntries = payrollEntries.map(entry => ({
             employee_name: entry.name,
-            net_pay: entry.net,
-            status: 'Calculated'
+            net_pay: entry.net.toFixed(2), // Ensure net pay is formatted
+            status: 'Calculated',         // Set status to Calculated
+            payroll_type: payrollType,    // Include payroll type
         }));
     
         try {
@@ -108,19 +111,15 @@ function AdminPayroll() {
             setPayrollEntries([]); // Clear entries after saving
     
             // Fetch updated payroll list
-            api.get('http://localhost:8000/api/payroll/')
-                .then((response) => {
-                    console.log('Updated Payroll Data:', response.data); // Log updated data
-                    setPayrollData(response.data);
-                    setFilteredData(response.data);
-                })
-                .catch((error) => console.error("Error refetching payroll data:", error));
+            const response = await api.get('http://localhost:8000/api/payroll/');
+            console.log('Updated Payroll Data:', response.data); // Log updated data
+            setPayrollData(response.data);
+            setFilteredData(response.data); // Refresh the filtered data
         } catch (error) {
             console.error("Error saving payroll data:", error);
             alert('Failed to save payroll data.');
         }
     };
-    
 
     // Handle sorting/filtering based on status
     const handleSort = (option) => {

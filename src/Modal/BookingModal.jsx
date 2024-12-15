@@ -73,8 +73,36 @@ const BookingModal = ({ isOpen, onClose }) => {
         } else {
             alert("Please select time and price before adding the unit.");
         }
-    };    
+    };
 
+    const handleConfirmReservation = async () => {
+        const reservationData = confirmedUnits.map((unit) => ({
+            customer_name: customerInfo.name,
+            customer_email: customerInfo.email,
+            customer_mobile: customerInfo.mobile,
+            unit_type: bookingType,
+            unit_name: unit.name,
+            transaction_date: new Date().toISOString().split("T")[0],
+            date_of_reservation: dateOfReservation.toISOString().split("T")[0],
+            time_of_use: unit.selectedTime,
+            total_price: unit.selectedPrice,
+        }));
+    
+        try {
+            await Promise.all(
+                reservationData.map((data) => api.post("/reservations/", data))
+            );
+            alert("Reservation confirmed successfully!");
+            window.dispatchEvent(new Event("reservationUpdated"));  // Trigger the update event
+            onClose();
+            setConfirmedUnits([]);
+        } catch (error) {
+            console.error("Error confirming reservation:", error.response?.data || error.message);
+            alert("Failed to confirm reservation.");
+        }
+    };
+    
+    
     // Calculate total price
     const totalPrice = confirmedUnits.reduce((sum, unit) => sum + unit.selectedPrice, 0);
 
@@ -82,7 +110,7 @@ const BookingModal = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-lg shadow-lg w-[95%] max-w-[1200px]">
+            <div className="bg-white p-8 rounded-lg shadow-lg  w-[90%]">
                 <h2 className="text-2xl font-bold mb-4">Book a Reservation</h2>
 
                 {/* Customer Info */}
@@ -130,47 +158,49 @@ const BookingModal = ({ isOpen, onClose }) => {
                             </select>
 
                             {/* Scrollable Units Table */}
-                            <div className="overflow-y-auto max-h-60 border rounded scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr>
-                                            <th>Image</th>
-                                            <th>Name</th>
-                                            <th>Capacity</th>
-                                            <th>Price</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {units.map((unit) => (
-                                            <tr key={unit.id}>
-                                                <td>
-                                                    <img src={unit.image_url} alt={unit.name} className="w-12 h-12" />
-                                                </td>
-                                                <td>{unit.name}</td>
-                                                <td>{unit.capacity}</td>
-                                                <td>
-                                                    {Object.entries(unit.custom_prices || {})
-                                                        .map(([time, price]) => `${time}: ₱${price}`)
-                                                        .join(", ")}
-                                                </td>
-                                                <td>
-                                                    <button
-                                                        onClick={() => handleSelectUnit(unit)}
-                                                        className="bg-green-500 text-white px-2 py-1 rounded"
-                                                    >
-                                                        Select
-                                                    </button>
-                                                </td>
+                            <div className="overflow-y-auto h-[250px] border rounded scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 ">
+                                <div className="flex">
+                                    <table className="w-full text-sm text-left text-gray-500">
+                                        <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 ">
+                                            <tr className="uppercase">
+                                                <th className="px-6 py-3">Image</th>
+                                                <th className="px-6 py-3">Name</th>
+                                                <th className="px-6 py-3">Capacity</th>
+                                                <th className="px-6 py-3">Price</th>
+                                                <th className="px-6 py-3">Action</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="w-full items-center">
+                                            {units.map((unit) => (
+                                                <tr key={unit.id} className="mb-5">
+                                                    <td className="px-6 py-4">
+                                                        <img src={unit.image_url} alt={unit.name} className="w-[100px] h-[100px] rounded" />
+                                                    </td>
+                                                    <td className="px-6 py-4">{unit.name}</td>
+                                                    <td className="px-6 py-4">{unit.capacity}</td>
+                                                    <td className="px-6 py-4">
+                                                        {Object.entries(unit.custom_prices || {})
+                                                            .map(([time, price]) => `${time}: ₱${price}`)
+                                                            .join(", ")}
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            onClick={() => handleSelectUnit(unit)}
+                                                            className="bg-green-500 text-white px-2 py-1 rounded"
+                                                        >
+                                                            Select
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div> 
                             </div>
                         </div>
 
                     {/* Selected Unit */}
-                    <div className="w-1/3 border rounded p-4">
+                    <div className="w-[500px] border rounded p-4">
                         <h3 className="font-bold mb-2">Selected Unit</h3>
                         {selectedUnit ? (
                             <>
@@ -195,7 +225,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                                 </select>
                                 <button
                                     onClick={handleAddUnit}
-                                    className="bg-blue-500 text-white mt-4 px-4 py-2 rounded w-full"
+                                    className=" bg-[#70b8d3] hover:bg-[#09B0EF] text-white mt-4 px-4 py-2 rounded w-full"
                                 >
                                     Add
                                 </button>
@@ -210,22 +240,34 @@ const BookingModal = ({ isOpen, onClose }) => {
                 <div className="mt-6">
                     <h3 className="text-lg font-bold mb-2">Confirmed Units</h3>
                     {/* Scrollable Confirmed Units */}
-                    <div className="border rounded p-4 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
-                        {confirmedUnits.map((unit, idx) => (
-                            <div
-                                key={idx}
-                                onClick={() => handleSelectConfirmedUnit(unit)}
-                                className="flex justify-between border-b py-2 cursor-pointer hover:bg-gray-100"
-                            >
-                                <span>{unit.name} - Time: {unit.selectedTime}</span>
-                                <span>₱{unit.selectedPrice}</span>
+                    <div className="border rounded p-4 shadow h-[220px]">
+                        <div className="overflow-x-auto">
+                            <div className="relative">
+                                <div className="max-h-[180px] overflow-y-auto table-scrollbar">
+                                    {confirmedUnits.map((unit, idx) => (
+                                        <div
+                                            key={idx}
+                                            onClick={() => handleSelectConfirmedUnit(unit)}
+                                            className="flex justify-between border-b py-2 cursor-pointer hover:bg-gray-100 p-2"
+                                        >
+                                            <span>{unit.name} - Time: {unit.selectedTime}</span>
+                                            <span>₱{unit.selectedPrice}</span>
+                                        </div>
+                                        ))}
+                                    </div>            
+                                </div>
                             </div>
-                        ))}
-                    </div>
+                        </div>
                     <p className="font-bold mt-2 text-right">Total Price: ₱{totalPrice}</p>
                 </div>
 
                 <div className="flex justify-end mt-4">
+                    <button
+                        onClick={handleConfirmReservation} // Call the confirmation handler
+                        className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                    >
+                        Confirm
+                    </button>
                     <button onClick={onClose} className="bg-red-500 text-white px-4 py-2 rounded">
                         Close
                     </button>

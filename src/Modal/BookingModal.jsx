@@ -1,240 +1,243 @@
-import { useState } from 'react';
-import PropTypes from 'prop-types';
-import ConfirmModal from './ConfirmModal';
-
+import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
+import api from "../api";
 
 const BookingModal = ({ isOpen, onClose }) => {
-    const [customerName, setCustomerName] = useState('');
-    const [mobileNumber, setMobileNumber] = useState('');
-    const [emailAddress, setEmailAddress] = useState('');
-    const [bookingType, setBookingType] = useState('');
-    const [checkInDate, setCheckInDate] = useState('');
-    const [checkOutDate, setCheckOutDate] = useState('');
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [customerInfo, setCustomerInfo] = useState({
+        name: "",
+        email: "",
+        mobile: "",
+    });
+    const [dateOfReservation, setDateOfReservation] = useState(new Date());
+    const [bookingType, setBookingType] = useState("cottage");
+    const [units, setUnits] = useState([]);
+    const [selectedUnit, setSelectedUnit] = useState(null);
+    const [confirmedUnits, setConfirmedUnits] = useState([]);
 
-    const handleBookingSubmit = (e) => {
-        e.preventDefault();
-        // Open the confirm modal on form submit
-        setIsConfirmModalOpen(true);
+    // Fetch units dynamically
+    useEffect(() => {
+        const fetchUnits = async () => {
+            const endpoint = bookingType === "cottage" ? "/cottages/" : "/lodges/";
+            try {
+                const response = await api.get(endpoint);
+                setUnits(response.data);
+            } catch (error) {
+                console.error("Error fetching units:", error);
+            }
+        };
+        fetchUnits();
+    }, [bookingType]);
+
+    // Handle input changes for customer info
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setCustomerInfo({ ...customerInfo, [name]: value });
     };
 
-    const handleConfirmClose = () => {
-        setIsConfirmModalOpen(false);
-        onClose();
+    // Select a unit to view in the right panel
+    const handleSelectUnit = (unit) => {
+        setSelectedUnit({ ...unit, selectedTime: "", selectedPrice: 0 });
     };
+
+    // Select a unit from the confirmed list
+    const handleSelectConfirmedUnit = (unit) => {
+        setSelectedUnit({ ...unit });
+    };
+
+    // Handle time and price change
+    const handleTimePriceChange = (time, price) => {
+        setSelectedUnit((prev) => ({
+            ...prev,
+            selectedTime: time,
+            selectedPrice: price,
+        }));
+    };
+
+    // Confirm selection and move to confirmed units list
+    const handleAddUnit = () => {
+        if (selectedUnit && selectedUnit.selectedTime && selectedUnit.selectedPrice) {
+            setConfirmedUnits((prev) => {
+                // Replace the unit if it already exists, otherwise add it
+                const updatedUnits = prev.map((unit) =>
+                    unit.id === selectedUnit.id ? selectedUnit : unit
+                );
+    
+                // If unit doesn't exist, add it
+                if (!updatedUnits.some((unit) => unit.id === selectedUnit.id)) {
+                    updatedUnits.push(selectedUnit);
+                }
+    
+                return updatedUnits;
+            });
+            setSelectedUnit(null); // Reset the selected unit
+        } else {
+            alert("Please select time and price before adding the unit.");
+        }
+    };    
+
+    // Calculate total price
+    const totalPrice = confirmedUnits.reduce((sum, unit) => sum + unit.selectedPrice, 0);
+
+    if (!isOpen) return null;
 
     return (
-        isOpen && (
-            <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
-                <div className="bg-white w-[95%] h-[90%] rounded-lg shadow-lg p-6 relative">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-                    >
-                        &#10005;
-                    </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-lg shadow-lg w-[95%] max-w-[1200px]">
+                <h2 className="text-2xl font-bold mb-4">Book a Reservation</h2>
 
-                    <div className="flex justify-around mt-5">
-                        <div className="w-[25%]">
-                            <div className="bg-gray-100 w-[400px] h-[500px] rounded-lg">
-                                <img src="" alt="" />
-                            </div>
+                {/* Customer Info */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    <input
+                        name="name"
+                        placeholder="Customer Name"
+                        value={customerInfo.name}
+                        onChange={handleInputChange}
+                        className="border rounded p-2"
+                    />
+                    <input
+                        name="email"
+                        placeholder="Email"
+                        value={customerInfo.email}
+                        onChange={handleInputChange}
+                        className="border rounded p-2"
+                    />
+                    <input
+                        name="mobile"
+                        placeholder="Contact Number"
+                        value={customerInfo.mobile}
+                        onChange={handleInputChange}
+                        className="border rounded p-2"
+                    />
+                    <input
+                        type="date"
+                        value={dateOfReservation.toISOString().split("T")[0]}
+                        onChange={(e) => setDateOfReservation(new Date(e.target.value))}
+                        className="border rounded p-2"
+                    />
+                </div>
 
-                            <div className="space-y-3">
-                                <h3 className="text-[20px] font-bold mt-3">Type of the Cottage</h3>
-                                <p><strong>Prices:</strong> 1,200 pesos</p>
-                                <p><strong>Capacity:</strong>Good for 10 persons</p>
-                                <p><strong>Description:</strong> A spacious, cozy cottage perfect for families and small groups.</p>
+                <div className="flex space-x-6">
+                    {/* Units Table */}
+                        <div className="flex-1">
+                            <label className="font-bold">Booking Type:</label>
+                            <select
+                                value={bookingType}
+                                onChange={(e) => setBookingType(e.target.value)}
+                                className="border rounded p-2 mb-4 w-full"
+                            >
+                                <option value="cottage">Cottage</option>
+                                <option value="lodge">Lodge</option>
+                            </select>
+
+                            {/* Scrollable Units Table */}
+                            <div className="overflow-y-auto max-h-60 border rounded scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th>Image</th>
+                                            <th>Name</th>
+                                            <th>Capacity</th>
+                                            <th>Price</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {units.map((unit) => (
+                                            <tr key={unit.id}>
+                                                <td>
+                                                    <img src={unit.image_url} alt={unit.name} className="w-12 h-12" />
+                                                </td>
+                                                <td>{unit.name}</td>
+                                                <td>{unit.capacity}</td>
+                                                <td>
+                                                    {Object.entries(unit.custom_prices || {})
+                                                        .map(([time, price]) => `${time}: ₱${price}`)
+                                                        .join(", ")}
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        onClick={() => handleSelectUnit(unit)}
+                                                        className="bg-green-500 text-white px-2 py-1 rounded"
+                                                    >
+                                                        Select
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
-                        <div className="w-[60%]">
-                            <form onSubmit={handleBookingSubmit}>
-                                <div className="flex w-full space-x-4">
-                                    <div className="w-full">
-                                        <div className="mb-4">
-                                            <label className="block text-gray-700 text-sm font-bold mb-2">Customer Name</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Enter customer name"
-                                                className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                value={customerName}
-                                                onChange={(e) => setCustomerName(e.target.value)}
-                                            />
-                                        </div>
-
-                                        <div className="mb-4">
-                                            <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                                            <input
-                                                type="email"
-                                                placeholder="Email address"
-                                                className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                value={emailAddress}
-                                                onChange={(e) => setEmailAddress(e.target.value)}
-                                            />
-                                        </div>
-
-                                        <div className="mb-4">
-                                            <label className="block text-gray-700 text-sm font-bold mb-2">Contact Number</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Enter mobile no."
-                                                className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                value={mobileNumber}
-                                                onChange={(e) => setMobileNumber(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                            
-                                    <div className="w-full">
-                                        <div className="mb-4">
-                                            <label className="block text-gray-700 text-sm font-bold mb-2">Check-In Date</label>
-                                            <input
-                                                type="date"
-                                                className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                value={checkInDate}
-                                                onChange={(e) => setCheckInDate(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="mb-4">
-                                            <label className="block text-gray-700 text-sm font-bold mb-2">Check-Out Date</label>
-                                            <input
-                                                type="date"
-                                                className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                value={checkOutDate}
-                                                onChange={(e) => setCheckOutDate(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="">
-                                    <div className="mb-4">
-                                        <label className="block text-gray-700 text-sm font-bold mb-2">Booking Type</label>
-                                        <select
-                                            className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            value={bookingType}
-                                            onChange={(e) => setBookingType(e.target.value)}
-                                        >
-                                            <option value="">Select type</option>
-                                            <option value="Cottage">Cottage</option>
-                                            <option value="Lodge">Lodge</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div className="relative shadow-md sm:rounded-lg max-h-[420px] overflow-y-auto">
-                                        <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-                                            <thead className="sticky top-0 text-xs bg-gray-100 uppercase z-10">
-                                                <tr>
-                                                    <th scope="col" className="px-16 py-3">
-                                                    <span className="sr-only">Image</span>
-                                                    </th>
-                                                    <th scope="col" className="px-6 py-3">Name type</th>
-                                                    <th scope="col" className="px-6 py-3">Capacity</th>
-                                                    <th scope="col" className="px-6 py-3">Price</th>
-                                                    <th scope="col" className="px-6 py-3">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr className="bg-white border-b hover:bg-gray-50">
-                                                    <td className="p-4">
-                                                        <img src="./src/assets/sample4.jpg" className="w-16 md:w-32 max-w-full max-h-full" />
-                                                    </td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Cottage A</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Good for 10 persons</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">$599</td>
-                                                    <td className="px-6 py-4">
-                                                        <a href="#" className="font-medium text-white bg-[#53db60] p-2 rounded-md">Select</a>
-                                                    </td>
-                                                </tr>
-
-                                                <tr className="bg-white border-b hover:bg-gray-50">
-                                                    <td className="p-4">
-                                                        <img src="./src/assets/sample4.jpg" className="w-16 md:w-32 max-w-full max-h-full" />
-                                                    </td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Cottage A</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Good for 10 persons</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">$599</td>
-                                                    <td className="px-6 py-4">
-                                                        <a href="#" className="font-medium text-white bg-[#53db60] p-2 rounded-md">Select</a>
-                                                    </td>
-                                                </tr>
-
-                                                <tr className="bg-white border-b hover:bg-gray-50">
-                                                    <td className="p-4">
-                                                        <img src="./src/assets/sample4.jpg" className="w-16 md:w-32 max-w-full max-h-full" />
-                                                    </td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Cottage A</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Good for 10 persons</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">$599</td>
-                                                    <td className="px-6 py-4">
-                                                        <a href="#" className="font-medium text-white bg-[#53db60] p-2 rounded-md">Select</a>
-                                                    </td>
-                                                </tr>
-
-                                                <tr className="bg-white border-b hover:bg-gray-50">
-                                                    <td className="p-4">
-                                                        <img src="./src/assets/sample4.jpg" className="w-16 md:w-32 max-w-full max-h-full" />
-                                                    </td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Cottage A</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Good for 10 persons</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">$599</td>
-                                                    <td className="px-6 py-4">
-                                                        <a href="#" className="font-medium text-white bg-[#53db60] p-2 rounded-md">Select</a>
-                                                    </td>
-                                                </tr>
-
-                                                <tr className="bg-white border-b hover:bg-gray-50">
-                                                    <td className="p-4">
-                                                        <img src="./src/assets/sample4.jpg" className="w-16 md:w-32 max-w-full max-h-full" />
-                                                    </td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Cottage A</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">Good for 10 persons</td>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900">$599</td>
-                                                    <td className="px-6 py-4">
-                                                        <a href="#" className="font-medium text-white bg-[#53db60] p-2 rounded-md">Select</a>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-end mt-5 space-x-2">
-                                    <button
-                                        type="submit"
-                                        className="bg-[#12B1D1] hover:bg-[#09B0EF] text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline"
-                                    >
-                                        Confirm
-                                    </button>
-
-                                    <ConfirmModal
-                                        isOpen={isConfirmModalOpen}
-                                        customerName={customerName}
-                                        checkInDate={checkInDate}
-                                        checkOutDate={checkOutDate}
-                                        onClose={handleConfirmClose}
-                                    />
-
-                                    <button
-                                        type="submit"
-                                        className="bg-[#FF6767] hover:bg-[#f35656] text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                    {/* Selected Unit */}
+                    <div className="w-1/3 border rounded p-4">
+                        <h3 className="font-bold mb-2">Selected Unit</h3>
+                        {selectedUnit ? (
+                            <>
+                                <p>Name: {selectedUnit.name}</p>
+                                <p>Capacity: {selectedUnit.capacity}</p>
+                                <label className="block mb-2">Time and Price:</label>
+                                <select
+                                    className="border rounded p-2 w-full"
+                                    onChange={(e) => {
+                                        const [time, price] = e.target.value.split(",");
+                                        handleTimePriceChange(time, parseFloat(price));
+                                    }}
+                                >
+                                    <option value="">Select Time and Price</option>
+                                    {Object.entries(selectedUnit.custom_prices || {}).map(
+                                        ([time, price]) => (
+                                            <option key={time} value={`${time},${price}`}>
+                                                {time}: ₱{price}
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+                                <button
+                                    onClick={handleAddUnit}
+                                    className="bg-blue-500 text-white mt-4 px-4 py-2 rounded w-full"
+                                >
+                                    Add
+                                </button>
+                            </>
+                        ) : (
+                            <p>No unit selected</p>
+                        )}
                     </div>
                 </div>
+
+                {/* Confirmed Units */}
+                <div className="mt-6">
+                    <h3 className="text-lg font-bold mb-2">Confirmed Units</h3>
+                    {/* Scrollable Confirmed Units */}
+                    <div className="border rounded p-4 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
+                        {confirmedUnits.map((unit, idx) => (
+                            <div
+                                key={idx}
+                                onClick={() => handleSelectConfirmedUnit(unit)}
+                                className="flex justify-between border-b py-2 cursor-pointer hover:bg-gray-100"
+                            >
+                                <span>{unit.name} - Time: {unit.selectedTime}</span>
+                                <span>₱{unit.selectedPrice}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <p className="font-bold mt-2 text-right">Total Price: ₱{totalPrice}</p>
+                </div>
+
+                <div className="flex justify-end mt-4">
+                    <button onClick={onClose} className="bg-red-500 text-white px-4 py-2 rounded">
+                        Close
+                    </button>
+                </div>
             </div>
-        )
+        </div>
     );
 };
 
 BookingModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired
+    onClose: PropTypes.func.isRequired,
 };
 
 export default BookingModal;

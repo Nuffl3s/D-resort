@@ -141,9 +141,9 @@ function AdminDash () {
                                     <p className="text-sm mb-4 text-white">
                                         Number of Cottages: {totals.total_cottages}
                                         <br />
-                                        Number Booked: 5
+                                        Number Booked: 
                                         <br />
-                                        Availability: 3
+                                        Availability: 
                                     </p>
                                     <button
                                         onClick={() => setCottageModalOpen(true)}
@@ -165,9 +165,9 @@ function AdminDash () {
                                     <p className="text-sm mb-4 text-white">
                                         Number of Lodges: {totals.total_lodges}
                                         <br />
-                                        Number Booked: 8
+                                        Number Booked: 
                                         <br />
-                                        Availability: 2
+                                        Availability: 
                                     </p>
                                     <button
                                         onClick={() => setLodgeModalOpen(true)}

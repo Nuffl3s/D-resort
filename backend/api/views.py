@@ -636,7 +636,7 @@ class DeleteLodgeView(DestroyAPIView):
     serializer_class = LodgeSerializer
     
 class TotalUnitsView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminOnly]
+    permission_classes = [IsAuthenticated, IsAdminOrEmployee]
     def get(self, request):
         total_cottages = Cottage.objects.count()
         total_lodges = Lodge.objects.count()
@@ -646,7 +646,7 @@ class TotalUnitsView(APIView):
         })
 
 class FilterUnitsView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminOnly]
+    permission_classes = [IsAuthenticated, IsAdminOrEmployee]
     
     def get(self, request):
         unit_type = request.query_params.get("type", "cottage").lower()  # Default to 'cottage'
@@ -755,15 +755,25 @@ class ReservationView(APIView):
 
         serializer = ReservationSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()  # Ensure data gets saved properly
+            reservation = serializer.save()  # Ensure data gets saved properly
+            Log.objects.create(
+                username=request.user.username if request.user.is_authenticated else "Guest",
+                action=f"Created reservation for {reservation.customer_name}",
+                category="Reservation"
+            )
             return Response(serializer.data, status=201)
         else:
             return Response(serializer.errors, status=400)
-        
+
     def delete(self, request, pk):
         try:
             reservation = Reservation.objects.get(pk=pk)
             reservation.delete()
+            Log.objects.create(
+                username=request.user.username if request.user.is_authenticated else "Guest",
+                action=f"Deleted reservation for {reservation.customer_name}",
+                category="Reservation"
+            )
             return Response({"message": "Reservation deleted successfully!"}, status=204)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
@@ -773,11 +783,17 @@ class ReservationView(APIView):
             reservation = Reservation.objects.get(pk=pk)
             serializer = ReservationSerializer(reservation, data=request.data, partial=True)
             if serializer.is_valid():
-                serializer.save()
+                updated_reservation = serializer.save()
+                Log.objects.create(
+                    username=request.user.username if request.user.is_authenticated else "Guest",
+                    action=f"Updated reservation for {updated_reservation.customer_name}",
+                    category="Reservation"
+                )
                 return Response(serializer.data, status=200)
             return Response(serializer.errors, status=400)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
+
         
 class ReservationDetailView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()

@@ -7,7 +7,6 @@ const AdminSidebar = () => {
 
     const menus = [
         { title: "Dashboard", src: "src/assets/dashboard.png", path: "/AdminDash" },
-        { title: "Create Admin", src: "src/assets/add.png", path: "/CreateAccount" },
         { title: "Employee List", src: "src/assets/add.png", path: "/AdminList" },
         { title: "Attendance", src: "src/assets/calendar.png", path: "/AdminAttendance" },
         { title: "Work Schedules", src: "src/assets/clock.png", path: "/AdminSchedule" },
@@ -15,12 +14,8 @@ const AdminSidebar = () => {
         { title: "Add Product", src: "src/assets/add-product.png", path: "/AddProduct" },
         { title: "Payroll", src: "src/assets/money.png", path: "/AdminPayroll" },
         { title: "Report", src: "src/assets/report.png", path: "/AdminReport" },
-        {
-            title: "Audit Log",
-            src: "src/assets/magnifying.png",
-            path: "/AuditLog",
-            isSeparated: true,
-        },
+        { title: "Create Admin", src: "src/assets/add.png", path: "/CreateAccount", isSeparated: true},
+        { title: "Audit Log", src: "src/assets/magnifying.png", path: "/AuditLog",},
         { title: "Settings", src: "src/assets/settings.png", path: "/Settings" },
         { title: "Logout", src: "src/assets/logout.png", path: "/" },
     ];

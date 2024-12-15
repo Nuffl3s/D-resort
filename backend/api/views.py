@@ -36,8 +36,6 @@ from .serializers import AttendanceSerializer, Account
 from .serializers import CreateAccountSerializer
 from datetime import date
 from django.contrib.auth import get_user_model
-import logging
-
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -72,36 +70,14 @@ class CustomLoginView(APIView):
         if user is not None:
             refresh = RefreshToken.for_user(user)
             update_last_login(None, user)
-            
+
+            # Ensure 'user_type' is included in the response
             return Response({
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "username": user.username,
-                "password": password,  # Avoid sending plaintext passwords in production
-                "user_type": user.user_type,
+                "user_type": user.user_type  # Make sure this is correct
             }, status=status.HTTP_200_OK)
-            
-            Log.objects.create(
-                username=user.username,
-                action=f"{user.username} logged in.",
-                category="System"
-            )
-
-            # Check user type and provide restricted access if employee
-            if user.user_type == 'Employee':
-                return Response({
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                    "user_type": user.user_type,
-                    "employee_page_url": f"/employee/{user.id}/"  # Redirect to employee page
-                }, status=status.HTTP_200_OK)
-            elif user.user_type == 'Admin':
-                return Response({
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                    "user_type": user.user_type,
-                }, status=status.HTTP_200_OK)
-
         return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -205,12 +181,14 @@ class CreateAdminView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class UserDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        users = CustomUser.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
-    
-from rest_framework.response import Response
+        # Retrieve the currently authenticated user
+        user = request.user
+        serializer = UserSerializer(user)  # Serialize only the logged-in user's data
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class RegisterEmployeeView(generics.CreateAPIView):
     queryset = Employee.objects.all()
@@ -318,8 +296,8 @@ class WeeklyScheduleView(APIView):
             WeeklySchedule.objects.all().delete()
             return Response({'detail': 'All schedules deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
+            logger.error(f"Error clearing all schedules: {str(e)}")
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
 
 class UploadProductView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrEmployee]
@@ -356,6 +334,8 @@ class UploadProductView(APIView):
             except Product.DoesNotExist:
                 # Create a new product
                 product_data['name'] = product_name
+                # Ensure acquisitionCost is provided or set it to 0
+                product_data['acquisitionCost'] = product_data.get('acquisitionCost', 0)  # Default to 0 if missing
                 serializer = ProductSerializer(data=product_data)
                 if serializer.is_valid():
                     new_product = serializer.save()
@@ -485,7 +465,7 @@ class LogView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CottageListView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated, IsAdminOnly]
+    permission_classes = [IsAuthenticated, IsAdminOrEmployee]
     # permission_classes = [AllowAny]
     # authentication_classes = []
     serializer_class = CottageSerializer
@@ -528,7 +508,7 @@ class CottageListView(generics.ListCreateAPIView):
 
 
 class LodgeListView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated, IsAdminOnly]
+    permission_classes = [IsAuthenticated, IsAdminOrEmployee]
     serializer_class = LodgeSerializer
 
     def get_queryset(self):
@@ -868,7 +848,3 @@ class AttendanceView(APIView):
         else:
             # If no attendance record found for today, create a new one
             return Response({'detail': 'Attendance record not found for today or already clocked out.'}, status=status.HTTP_404_NOT_FOUND)
-
-
-
-        

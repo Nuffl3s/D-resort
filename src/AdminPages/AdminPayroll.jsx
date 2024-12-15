@@ -18,7 +18,7 @@ function AdminPayroll() {
     const [payrollType, setPayrollType] = useState('weekly');
     const [payrollRange, setPayrollRange] = useState({ from: '', to: '' });
     const [payrollEntries, setPayrollEntries] = useState([]);
-    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+    // const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     const [payrollData, setPayrollData] = useState([]);
     const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
     const [filteredData, setFilteredData] = useState([]); // Filtered data
@@ -190,21 +190,21 @@ function AdminPayroll() {
         }));
     };
 
-    const toggleDropdown = () => {
-        setIsDropdownVisible(!isDropdownVisible);
-    };
+    // const toggleDropdown = () => {
+    //     setIsDropdownVisible(!isDropdownVisible);
+    // };
 
-    // Function to handle print action
-    const handlePrint = () => {
-        window.print(); // Simple print functionality
-        setIsDropdownVisible(false); // Hide dropdown after action
-    };
+    // // Function to handle print action
+    // const handlePrint = () => {
+    //     window.print(); // Simple print functionality
+    //     setIsDropdownVisible(false); // Hide dropdown after action
+    // };
 
-    // Function to handle download action
-    const handleDownload = () => {
-        alert('Download functionality not implemented yet.'); // Placeholder
-        setIsDropdownVisible(false); // Hide dropdown after action
-    };
+    // // Function to handle download action
+    // const handleDownload = () => {
+    //     alert('Download functionality not implemented yet.'); // Placeholder
+    //     setIsDropdownVisible(false); // Hide dropdown after action
+    // };
 
     useEffect(() => {
         applyTheme();
@@ -321,7 +321,7 @@ function AdminPayroll() {
                                             </td>
                                             <td className="px-6 py-3">{index + 1}</td>
                                             <td className="px-6 py-3">{payroll.employee}</td> {/* Employee name */}
-                                            <td className="px-6 py-3">${parseFloat(payroll.net_pay).toFixed(2) || 'N/A'}</td>
+                                            <td className="px-6 py-3">{parseFloat(payroll.net_pay).toFixed(2) || 'N/A'}</td>
                                             <td className="px-6 py-3">
                                                 <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 'text-[#FF6767]'} py-2 rounded`}>
                                                     {payroll.status}
@@ -428,7 +428,7 @@ function AdminPayroll() {
                         </div>
 
                         <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 p-6 h-[430px] dark:bg-[#1f2937]">
-                            <div className="flex justify-end pb-3">
+                            {/* <div className="flex justify-end pb-3">
                                 <button onClick={toggleDropdown}>
                                     <img src="./src/assets/option.png" alt="Options" className="w-4 h-4 dark:invert" />
                                 </button>
@@ -440,7 +440,7 @@ function AdminPayroll() {
                                         </ul>
                                     </div>
                                 )}
-                            </div>
+                            </div> */}
 
                             <div className="shadow p-4 h-[280px] dark:bg-[#374151] rounded-md">
                                 <table className="w-full text-sm text-left text-gray-500">
@@ -466,8 +466,8 @@ function AdminPayroll() {
                                             <tr key={index} className="border-b dark:text-[#e7e6e6]">
                                                 <td className="px-6 py-4">{entry.name}</td>
                                                 <td className="px-6 py-4">{entry.hours || 0}</td>
-                                                <td className="px-6 py-4">${entry.rate ? entry.rate.toFixed(2) : '0.00'}</td>
-                                                <td className="px-6 py-4">${entry.net ? entry.net.toFixed(2) : '0.00'}</td>
+                                                <td className="px-6 py-4">{entry.rate ? entry.rate.toFixed(2) : '0.00'}</td>
+                                                <td className="px-6 py-4">{entry.net ? entry.net.toFixed(2) : '0.00'}</td>
                                             </tr>
                                         ))}
                                     </tbody>

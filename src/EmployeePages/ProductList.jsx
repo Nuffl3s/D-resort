@@ -80,7 +80,7 @@ function ProductList() {
                                         <td className="px-6 py-4 font-medium text-black whitespace-nowrap">{product.name}</td>
                                         <td className="px-6 py-4">{product.date_added}</td>
                                         <td className="px-6 py-4">{product.quantity}</td>
-                                        <td className="px-6 py-4">{product.acquisitionCost}</td> {/* Updated to 'acquisitionCost' */}
+                                        <td className="px-6 py-4">{product.avgPrice}</td> {/* Updated to 'acquisitionCost' */}
                                         <td className="px-6 py-4">{product.sellingPrice}</td>
                                         <td className="px-6 py-4">{calculateTotalProfit(product)}</td>
                                     </tr>

@@ -163,14 +163,13 @@ function AccountCreation() {
                     onChange={handleInputChange}
                     className="mt-1 block w-full p-3 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 >
-                    <option value="Employee">Employee</option>
                     <option value="Admin">Admin</option>
                 </select>
                 </div>
 
                 <button
                 type="submit"
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-md"
+                className="w-full hover:bg-[#09B0EF] bg-[#70b8d3] text-white font-bold py-3 rounded-md"
                 >
                 Create Account
                 </button>
@@ -198,7 +197,7 @@ function AccountCreation() {
                         setFormData((prev) => ({ ...prev, userType: "Admin" }));
                     }}
                     className={`px-4 py-2 font-medium text-white rounded ${
-                        displayType === "Admin" ? "bg-blue-500" : "bg-gray-400"
+                        displayType === "Admin" ? "hover:bg-[#09B0EF] bg-[#70b8d3]" : "bg-gray-400"
                     }`}
                 >
                     Admins

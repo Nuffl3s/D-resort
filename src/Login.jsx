@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "./api"; // Import the API instance
-import axios from "axios";
 import { FaArrowLeft } from "react-icons/fa"; // Import arrow icon from react-icons
 
 function Login() {
@@ -29,7 +28,7 @@ function Login() {
     event.preventDefault();
     try {
       // Send login request
-      const response = await axios.post("http://localhost:8000/api/logtoken/", {
+      const response = await api.post("http://localhost:8000/api/logtoken/", {
         username: formData.username,
         password: formData.password,
       });

@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation
 from .models import Attendance
+from .models import Account 
 
 
 class CustomUserSerializer(serializers.ModelSerializer):

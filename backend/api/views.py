@@ -36,6 +36,8 @@ from .serializers import AttendanceSerializer, Account
 from .serializers import CreateAccountSerializer
 from datetime import date
 from django.contrib.auth import get_user_model
+import logging
+
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -252,11 +254,13 @@ class DeleteEmployeeView(DestroyAPIView):
 class WeeklyScheduleView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
 
+    # GET: List all schedules
     def get(self, request):
         schedules = WeeklySchedule.objects.select_related('employee').all()
         serializer = WeeklyScheduleSerializer(schedules, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    # POST: Create or update schedule
     def post(self, request):
         data = request.data
         employee = Employee.objects.get(name=data['employee'])
@@ -282,6 +286,26 @@ class WeeklyScheduleView(APIView):
             serializer.save(employee=employee)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # DELETE: Delete a specific schedule
+    def delete(self, request, pk=None):
+        if pk:
+            try:
+                schedule = WeeklySchedule.objects.get(id=pk)
+                schedule.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except WeeklySchedule.DoesNotExist:
+                return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'detail': 'Schedule ID required for deletion.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # DELETE: Clear all schedules
+    def delete(self, request, *args, **kwargs):
+        try:
+            WeeklySchedule.objects.all().delete()
+            return Response({'detail': 'All schedules deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
 
 class UploadProductView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrEmployee]

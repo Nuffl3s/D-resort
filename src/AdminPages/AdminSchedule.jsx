@@ -6,6 +6,7 @@ import { handleDownloadExcel, handleDownloadWord } from '../Utils/scheduleUtils'
 import DownloadModal from '../Modal/DownloadModal';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
+import Swal from 'sweetalert2';
 
 const AdminSchedule = () => {
     const [schedules, setSchedules] = useState([]);
@@ -84,12 +85,64 @@ const AdminSchedule = () => {
         setIsDropdownVisible(false); // Close dropdown after download option is clicked
     };
 
-    const handleClearTable = () => {
-        setTableRows([]); // Clear all rows
-        setCurrentPage(1); // Reset pagination to the first page
-    };
 
-    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const handleDeleteSchedule = (scheduleId) => {
+        console.log("Schedule ID:", scheduleId);  // Debug the ID
+        api.delete(`/weekly-schedules/${scheduleId}/`)
+            .then((response) => {
+                console.log('Schedule deleted successfully:', response.data);
+                // Update the state to remove the deleted schedule from the table
+                setSchedules((prevSchedules) =>
+                    prevSchedules.filter(schedule => schedule.id !== scheduleId)
+                );
+                // SweetAlert for successful deletion
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Schedule Deleted',
+                    text: 'The schedule has been permanently deleted.',
+                    confirmButtonText: 'OK',
+                });
+            })
+            .catch((error) => {
+                console.error('Error deleting schedule:', error.response || error.message || error);
+                // SweetAlert for error in deletion
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Failed to Delete',
+                    text: 'There was an issue deleting the schedule. Please try again.',
+                    confirmButtonText: 'OK',
+                });
+            });
+    };
+    
+    const handleClearTable = () => {
+        console.log('Clearing all schedules...');
+        api.delete('/weekly-schedules/clear/')  // This URL should point to your clear_all endpoint
+            .then((response) => {
+                console.log('All schedules deleted successfully:', response.data);
+                setSchedules([]);  // Clear the state in the frontend
+                // SweetAlert for successful clearing
+                Swal.fire({
+                    icon: 'success',
+                    title: 'All Schedules Deleted',
+                    text: 'All schedules have been permanently deleted.',
+                    confirmButtonText: 'OK',
+                });
+            })
+            .catch((error) => {
+                console.error('Error deleting schedules:', error.response || error.message || error);
+                // SweetAlert for error in clearing all schedules
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Failed to Clear All',
+                    text: 'There was an issue clearing all schedules. Please try again.',
+                    confirmButtonText: 'OK',
+                });
+            });
+    };
+    
+    
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', ];
 
     return (
         <div className="flex dark:bg-[#111827] bg-gray-100">
@@ -176,10 +229,14 @@ const AdminSchedule = () => {
                                                 {day}
                                             </th>
                                         ))}
+
+                                        <th className="px-5 py-3  text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:text-[#e7e6e6]">
+                                            Action
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {schedules.map((schedule, index) => (
+                                    { schedules.map((schedule, index) => (
                                         <tr key={schedule.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                                             <td className="px-4 py-3 text-sm border border-gray-300">{index + 1}</td>
                                             <td className="px-4 py-3 text-sm border border-gray-300">{schedule.employee}</td>
@@ -188,10 +245,18 @@ const AdminSchedule = () => {
                                                     {schedule.schedule[day]?.day_off
                                                         ? 'Day Off'
                                                         : `${schedule.schedule[day]?.start_time || 'N/A'} - ${
-                                                              schedule.schedule[day]?.end_time || 'N/A'
-                                                          } (${schedule.schedule[day]?.duty || 'N/A'})`}
+                                                            schedule.schedule[day]?.end_time || 'N/A'
+                                                        } (${schedule.schedule[day]?.duty || 'N/A'})`}
                                                 </td>
                                             ))}
+                                            <td className="px-4 py-3 text-sm border border-gray-300">
+                                                <button
+                                                    onClick={() => handleDeleteSchedule(schedule.id)}
+                                                    className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full"
+                                                >
+                                                    <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

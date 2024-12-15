@@ -4,15 +4,16 @@ import { handleDownloadExcel, handleDownloadWord } from './scheduleUtils'; // Im
 export const handleDownloadChoice = async (type, context, tableRows) => {
     if (context === 'attendance') {
         if (type === 'excel') {
-            handleDownloadAttendanceExcel(tableRows); // For attendance Excel download
+            await handleDownloadAttendanceExcel(tableRows); // Await the download function
         } else if (type === 'word') {
-            handleDownloadAttendanceWord(tableRows); // For attendance Word download
+            await handleDownloadAttendanceWord(tableRows); // Await the download function
         }
     } else if (context === 'schedule') {
         if (type === 'excel') {
-            handleDownloadExcel(tableRows); // For schedule Excel download
+            await handleDownloadExcel(tableRows);
         } else if (type === 'word') {
-            handleDownloadWord(tableRows); // For schedule Word download
+            await handleDownloadWord(tableRows);
         }
     }
 };
+

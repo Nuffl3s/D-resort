@@ -99,7 +99,7 @@ function EmployeeDash() {
                         <div className="flex space-x-10 h-[200px]">
                             <div 
                                 className="relative rounded-lg shadow-xl w-[470px] cursor-pointer"
-                                style={{ backgroundImage: "url('./src/assets/cottagebg.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+                                style={{ backgroundImage: "url('./src/assets/sample1.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#000] to-[#12B1D1] opacity-50 rounded-lg"></div>
                                 <div className="relative flex h-full items-center gap-2 p-4">

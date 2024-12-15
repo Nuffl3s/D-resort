@@ -184,15 +184,10 @@ class CreateAdminView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class UserDetailsView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
-        print(f"User: {request.user}, User Type: {getattr(request.user, 'user_type', None)}")
-        user = request.user
-        return Response({
-            "username": user.username,
-            "user_type": user.user_type,
-        })
+        users = CustomUser.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
     
 from rest_framework.response import Response
 

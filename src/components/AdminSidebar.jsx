@@ -7,6 +7,7 @@ const AdminSidebar = () => {
 
     const menus = [
         { title: "Dashboard", src: "src/assets/dashboard.png", path: "/AdminDash" },
+        { title: "Create Admin", src: "src/assets/add.png", path: "/CreateAccount" },
         { title: "Employee List", src: "src/assets/add.png", path: "/AdminList" },
         { title: "Attendance", src: "src/assets/calendar.png", path: "/AdminAttendance" },
         { title: "Work Schedules", src: "src/assets/clock.png", path: "/AdminSchedule" },

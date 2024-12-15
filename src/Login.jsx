@@ -29,7 +29,7 @@ function Login() {
     event.preventDefault();
     try {
       // Send login request
-      const response = await axios.post("http://localhost:8000/api/logtoken/", {
+      const response = await api.post("http://localhost:8000/api/logtoken/", {
         username: formData.username,
         password: formData.password,
       });

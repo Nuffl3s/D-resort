@@ -28,6 +28,7 @@ import Payment from './OnlineBookingPages/PaymentPage.jsx';
 import About from './OnlineBookingPages/AboutUsPage.jsx';
 import Terms from './OnlineBookingPages/TermsAndConditionPage.jsx';
 import CalendarView from './EmployeePages/CalendarView.jsx';
+import AccountCreation from './AdminPages/AccountCreation.jsx';
 import './index.css';
 
 const App = () => {
@@ -44,6 +45,7 @@ const App = () => {
         <Route path="/AdminDash" element={<AdminDash />} />
         <Route path="/AdminPayroll" element={<AdminPayroll />} />
         <Route path="/AdminList" element={<AdminList />} />
+        <Route path="/CreateAccount" element={<AccountCreation />} />
         <Route path="/AdminAttendance" element={<AdminAttendance />} />
         <Route path="/AdminSchedule" element={<AdminSchedule />} />
         <Route path="/AdminReport" element={<AdminReport />} />

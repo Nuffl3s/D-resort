@@ -126,6 +126,14 @@ class CreateAccountView(APIView):
         except Exception as e:
             return Response({'error': f'Error saving account: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class AdminAccountsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+
+    def get(self, request):
+        admins = CustomUser.objects.filter(user_type="Admin")  # Fetch all Admin accounts
+        serializer = UserSerializer(admins, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 class AdminCredentialView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -312,6 +320,8 @@ class UploadProductView(APIView):
             except Product.DoesNotExist:
                 # Create a new product
                 product_data['name'] = product_name
+                # Ensure acquisitionCost is provided or set it to 0
+                product_data['acquisitionCost'] = product_data.get('acquisitionCost', 0)  # Default to 0 if missing
                 serializer = ProductSerializer(data=product_data)
                 if serializer.is_valid():
                     new_product = serializer.save()
@@ -327,7 +337,6 @@ class UploadProductView(APIView):
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'message': 'Products uploaded successfully', 'log_entries': log_entries}, status=status.HTTP_200_OK)
-
 
 class ProductListView(generics.ListAPIView):
     queryset = Product.objects.all()

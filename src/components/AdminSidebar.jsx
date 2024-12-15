@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { HiMenuAlt3 } from "react-icons/hi";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../api"; // Ensure you use the custom API setup
 
 const AdminSidebar = () => {
     const navigate = useNavigate();
 
     const menus = [
         { title: "Dashboard", src: "src/assets/dashboard.png", path: "/AdminDash" },
-        { title: "Create Admin", src: "src/assets/add.png", path: "/CreateAccount" },
+        { title: "Create Account", src: "src/assets/add.png", path: "/CreateAccount" },
         { title: "Employee List", src: "src/assets/add.png", path: "/AdminList" },
         { title: "Attendance", src: "src/assets/calendar.png", path: "/AdminAttendance" },
         { title: "Work Schedules", src: "src/assets/clock.png", path: "/AdminSchedule" },
@@ -32,13 +33,28 @@ const AdminSidebar = () => {
     });
 
     const profileImage = null; // Profile image (null for now)
-    const displayName = "John Doe"; // Display name
+    const [displayName, setDisplayName] = useState("Loading...");
     const [isFirstRender, setIsFirstRender] = useState(true); // Check if it's the first render
 
     useEffect(() => {
         setIsFirstRender(false); // Mark first render as complete
     }, []);
 
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const response = await api.get("/user-details/");
+                setDisplayName(response.data.username);
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+                setDisplayName("Unknown User");
+            }
+        };
+
+        fetchUserDetails();
+        setIsFirstRender(false);
+    }, []);
+    
     const toggleSidebar = () => {
         setOpen((prev) => {
             const newState = !prev;

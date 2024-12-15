@@ -105,7 +105,7 @@ function EmployeeReservation () {
 
     const handleViewClick = (reservationId) => {
         const selected = reservations.find((reservation) => reservation.id === reservationId);
-        console.log("Selected Booking:", selected); // Debug the data
+        console.log("Selected Booking:", selected);
         if (selected) {
             setSelectedBooking(selected);
             setViewModalOpen(true);

@@ -154,7 +154,7 @@ class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
         fields = [
-            'id', 'customer_name', 'customer_email', 'customer_mobile',
+            'id', 'customer_name', 'customer_email', 'customer_mobile', 'unit_type', 'unit_name',
             'date_of_reservation', 'time_of_use', 'total_price',
             'transaction_date', 'content_type', 'object_id', 'unit_details'
         ]

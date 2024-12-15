@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation
 from .models import Attendance
@@ -138,11 +139,37 @@ class AttendanceSerializer(serializers.ModelSerializer):
         model = Attendance
         fields = ['user', 'name', 'date', 'time_in', 'time_out']
 
+class UnitDetailsSerializer(serializers.Serializer):
+    image = serializers.CharField()
+    capacity = serializers.IntegerField()
+    custom_prices = serializers.JSONField()
+
 class ReservationSerializer(serializers.ModelSerializer):
     transaction_date = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
     date_of_reservation = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
-
+    content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all(), required=False)
+    object_id = serializers.IntegerField(required=False)
+    unit_details = serializers.SerializerMethodField()  # Add this field
+    
     class Meta:
         model = Reservation
-        fields = "__all__"
+        fields = [
+            'id', 'customer_name', 'customer_email', 'customer_mobile',
+            'date_of_reservation', 'time_of_use', 'total_price',
+            'transaction_date', 'content_type', 'object_id', 'unit_details'
+        ]
+
+    def get_unit_details(self, obj):
+        if not obj.content_type or not obj.object_id:
+            return None
+        try:
+            unit_model = obj.content_type.get_object_for_this_type(id=obj.object_id)
+            return {
+                "image": unit_model.image.url if hasattr(unit_model, "image") and unit_model.image else "/static/default-image.jpg",
+                "capacity": getattr(unit_model, "capacity", "N/A"),
+                "custom_prices": getattr(unit_model, "custom_prices", {}),
+            }
+        except Exception as e:
+            print(f"Error fetching unit details: {e}")
+            return None
 

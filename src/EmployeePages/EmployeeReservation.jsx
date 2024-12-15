@@ -75,7 +75,7 @@ function EmployeeReservation () {
         const fetchReservations = async () => {
             try {
                 const response = await api.get("/reservations/");
-                console.log("Reservations:", response.data); // Log data to verify
+                console.log("Reservations with Unit Details:", response.data);
                 setReservations(response.data);
             } catch (error) {
                 console.error("Error fetching reservations:", error);
@@ -103,9 +103,13 @@ function EmployeeReservation () {
         },
     };
 
-    const handleViewClick = () => {
-        setSelectedBooking(bookingData); // Set the selected booking data
-        setViewModalOpen(true);
+    const handleViewClick = (reservationId) => {
+        const selected = reservations.find((reservation) => reservation.id === reservationId);
+        console.log("Selected Booking:", selected); // Debug the data
+        if (selected) {
+            setSelectedBooking(selected);
+            setViewModalOpen(true);
+        }
     };
 
 

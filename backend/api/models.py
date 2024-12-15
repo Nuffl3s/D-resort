@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.core.files.storage import FileSystemStorage
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import JSONField
 from django.db import models
 
@@ -133,8 +135,13 @@ class Reservation(models.Model):
     unit_name = models.CharField(max_length=255)
     transaction_date = models.DateField(auto_now_add=True)
     date_of_reservation = models.DateField()
-    time_of_use = models.CharField(max_length=50)  # Add this field
+    time_of_use = models.CharField(max_length=50, null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Add ContentType and ObjectID fields for GenericForeignKey
+    content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    unit = GenericForeignKey('content_type', 'object_id')
 
     def __str__(self):
         return f"Reservation by {self.customer_name} for {self.unit_name} at {self.time_of_use}"

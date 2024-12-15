@@ -17,6 +17,7 @@ from django.conf import settings
 from .permissions import IsAdminOrEmployee, IsAdminOnly
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.generics import RetrieveAPIView
+from django.contrib.contenttypes.models import ContentType
 import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -538,6 +539,7 @@ class TotalUnitsView(APIView):
 
 class FilterUnitsView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
+    
     def get(self, request):
         unit_type = request.query_params.get("type", "cottage").lower()  # Default to 'cottage'
         people = int(request.query_params.get("people", 1))
@@ -582,17 +584,78 @@ class CottageDetailView(RetrieveAPIView):
 class LodgeDetailView(RetrieveAPIView):
     queryset = Lodge.objects.all()
     serializer_class = LodgeSerializer
-    
+
+def get_reservations_with_unit_details():
+    reservations = Reservation.objects.all()
+    serialized_reservations = []
+
+    for reservation in reservations:
+        unit_details = None
+        if reservation.content_type and reservation.object_id:
+            # Fetch the related unit (Cottage or Lodge)
+            try:
+                unit_model = reservation.content_type.get_object_for_this_type(id=reservation.object_id)
+                unit_details = {
+                    "image": unit_model.image.url if hasattr(unit_model, "image") and unit_model.image else "/static/default-image.jpg",
+                    "capacity": getattr(unit_model, "capacity", "N/A"),
+                    "custom_prices": getattr(unit_model, "custom_prices", {}),
+                }
+            except Exception as e:
+                print(f"Error fetching unit details: {e}")
+
+        serialized_reservations.append({
+            "id": reservation.id,
+            "customer_name": reservation.customer_name,
+            "customer_email": reservation.customer_email,
+            "customer_mobile": reservation.customer_mobile,
+            "date_of_reservation": reservation.date_of_reservation,
+            "time_of_use": reservation.time_of_use,
+            "total_price": reservation.total_price,
+            "transaction_date": reservation.transaction_date,
+            "unit_name": getattr(unit_model, "name", "N/A") if unit_model else "N/A",
+            "unit_type": reservation.content_type.name if reservation.content_type else "N/A",
+            "unit_details": unit_details
+        })
+
+    return serialized_reservations 
+
 class ReservationView(APIView):
+    # permission_classes = [IsAuthenticated]
     permission_classes = [AllowAny]
-
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+    
     def get(self, request):
-        reservations = Reservation.objects.all()
-        serializer = ReservationSerializer(reservations, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        reservations = Reservation.objects.select_related("content_type")
+        serializer = ReservationSerializer(reservations, many=True, context={"request": request})
+        return Response(serializer.data, status=200)
 
+    def post(self, request):
+        data = request.data.copy()
+        unit_type = data.get("content_type")
+        unit_name = data.get("unit_name")
 
-        
+        if unit_type and unit_name:
+            try:
+                if unit_type.lower() == "cottage":
+                    unit = Cottage.objects.get(name=unit_name)
+                    data["content_type"] = ContentType.objects.get_for_model(Cottage).id
+                    data["object_id"] = unit.id
+                elif unit_type.lower() == "lodge":
+                    unit = Lodge.objects.get(name=unit_name)
+                    data["content_type"] = ContentType.objects.get_for_model(Lodge).id
+                    data["object_id"] = unit.id
+            except Cottage.DoesNotExist:
+                return Response({"error": f"Cottage '{unit_name}' not found."}, status=400)
+            except Lodge.DoesNotExist:
+                return Response({"error": f"Lodge '{unit_name}' not found."}, status=400)
+
+        serializer = ReservationSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    
 class ReservationDetailView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer

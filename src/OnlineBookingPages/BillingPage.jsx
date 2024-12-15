@@ -65,17 +65,17 @@ function BillingPage() {
             unit_name: unit.name,
             transaction_date: new Date().toISOString().split('T')[0],
             date_of_reservation: new Date(selectedDate).toISOString().split('T')[0],
-            time_of_use: unit.timeAndPrice.map(({ time }) => time).join(', '), // Correctly map times
-            total_price: unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0), // Calculate total price
+            time_of_use: unit.timeAndPrice.map(({ time }) => time).join(', '),
+            total_price: unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0),
+            content_type: unit.type.toLowerCase() === "cottage" ? "cottage" : "lodge",
+            object_id: unit.id, // Pass the ID of the unit
         }));
     
         console.log("Sending reservation data:", reservationData);
     
         try {
             const response = await Promise.all(
-                reservationData.map((data) =>
-                    api.post("/reservations/", data)
-                )
+                reservationData.map((data) => api.post("/reservations/", data))
             );
             console.log("Reservation saved successfully:", response);
             Swal.fire({
@@ -84,7 +84,7 @@ function BillingPage() {
                 icon: "success",
                 confirmButtonText: "OK",
             }).then(() => {
-                navigate("/booking");
+                navigate("/book");
             });
         } catch (error) {
             console.error("Error saving reservation:", error.response?.data || error.message);

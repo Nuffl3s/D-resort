@@ -4,7 +4,7 @@ import ViewModal from '../Modal/ViewModal';
 import Sidebar from '../components/EmployeeSidebar';
 import CalendarEventModal from '../Modal/CalendarEventModal';
 import api from '../api';
-// import EditReservationModal from '../Modal/EditReservationModal';
+import EditReservationModal from '../Modal/EditReservationModal';
 
 function EmployeeReservation () {
     const [modalBookingOpen, setModalBookingOpen] = useState(false);
@@ -116,12 +116,14 @@ function EmployeeReservation () {
 
     const handleViewClick = (reservationId) => {
         const selected = reservations.find((reservation) => reservation.id === reservationId);
-        console.log("Selected Booking:", selected);
+        console.log("Selected Booking:", selected); // Debugging line
         if (selected) {
             setSelectedBooking(selected);
             setViewModalOpen(true);
+        } else {
+            console.error("No reservation found with ID:", reservationId);
         }
-    };
+    };;
 
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this reservation?")) return;
@@ -136,16 +138,16 @@ function EmployeeReservation () {
         }
     };
 
-    // const handleEditClick = (reservation) => {
-    //     setEditReservation(reservation);
-    //     setEditModalOpen(true);
-    // };
+    const handleEditClick = (reservation) => {
+        setEditReservation(reservation);
+        setEditModalOpen(true);
+    };
     
-    // const handleUpdate = (updatedData) => {
-    //     setReservations((prev) =>
-    //         prev.map((reservation) => (reservation.id === updatedData.id ? updatedData : reservation))
-    //     );
-    // };
+    const handleUpdate = (updatedData) => {
+        setReservations((prev) =>
+            prev.map((reservation) => (reservation.id === updatedData.id ? updatedData : reservation))
+        );
+    };
 
     const handleCloseModal = () => {
         setViewModalOpen(false);
@@ -379,7 +381,7 @@ function EmployeeReservation () {
                                             </td>
                                             <td className="px-6 py-4 space-x-2">
                                                 <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
-                                                // onClick={() => handleEditClick(reservation)}
+                                                onClick={() => handleEditClick(reservation)}
                                                 >
                                                     <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
                                                 </button>
@@ -395,12 +397,14 @@ function EmployeeReservation () {
                                                 </button>
                                             </td>
 
-                                            {/* <EditReservationModal
-                                                isOpen={isEditModalOpen}
-                                                onClose={() => setEditModalOpen(false)}
-                                                reservation={editReservation}
-                                                onUpdate={handleUpdate}
-                                            /> */}
+                                            {editReservation && (
+                                                <EditReservationModal
+                                                    isOpen={isEditModalOpen}
+                                                    onClose={() => setEditModalOpen(false)}
+                                                    reservation={editReservation}
+                                                    onUpdate={handleUpdate}
+                                                />
+                                            )}
 
                                             <ViewModal 
                                                 isOpen={isViewModalOpen} 

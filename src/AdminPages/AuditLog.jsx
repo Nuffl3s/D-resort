@@ -21,7 +21,7 @@ const AuditLog = () => {
         'Payroll',
         'Report',
         'Inventory',
-        'Booking',
+        'Reservation',
         'System',
     ];
 

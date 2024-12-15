@@ -7,8 +7,8 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer
-from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge
+from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer, ReservationSerializer
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -16,6 +16,8 @@ from itertools import combinations
 from django.conf import settings
 from .permissions import IsAdminOrEmployee, IsAdminOnly
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.generics import RetrieveAPIView
+from django.contrib.contenttypes.models import ContentType
 import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -458,34 +460,57 @@ class LogView(APIView):
     
 class CottageListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
-    queryset = Cottage.objects.all()
+    # permission_classes = [AllowAny]
+    # authentication_classes = []
     serializer_class = CottageSerializer
 
     def get_queryset(self):
-        # Get the queryset properly
-        cottages = super().get_queryset()
-        
-        # Normalize custom_prices for each cottage
-        for cottage in cottages:
+        # Get the base queryset
+        queryset = Cottage.objects.all()
+
+        # Normalize custom_prices
+        for cottage in queryset:
             if isinstance(cottage.custom_prices, list):
-                # Convert list to dictionary using timeRange as keys
                 normalized_prices = {
-                    price['timeRange'].upper(): price['price'] 
-                    for price in cottage.custom_prices 
+                    price['timeRange'].upper(): price['price']
+                    for price in cottage.custom_prices
                     if 'timeRange' in price and 'price' in price
                 }
                 cottage.custom_prices = normalized_prices
                 cottage.save()
-        return cottages
+
+        # Filter by capacity
+        capacity = self.request.query_params.get('capacity')
+        if capacity:
+            try:
+                capacity = int(capacity)
+                queryset = queryset.filter(capacity__gte=capacity)
+            except ValueError:
+                
+                pass  # Ignore invalid capacity values
+        cottage_id = self.request.query_params.get('id')
+        if cottage_id:
+            queryset = queryset.filter(id=cottage_id)
+        
+        # Filter by name
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__iexact=name.strip())
+            print("Filtered Queryset by name:", queryset)
+            
+        return queryset
 
 
 class LodgeListView(generics.ListCreateAPIView):
-    queryset = Lodge.objects.all()
+    permission_classes = [IsAuthenticated, IsAdminOnly]
     serializer_class = LodgeSerializer
-    
+
     def get_queryset(self):
-        lodges = super().get_queryset()
-        for lodge in lodges:
+        # Get the base queryset
+        queryset = Lodge.objects.all()
+
+        # Normalize custom_prices
+        for lodge in queryset:
             if isinstance(lodge.custom_prices, list):
                 normalized_prices = {
                     price['timeRange']: price['price']
@@ -494,18 +519,26 @@ class LodgeListView(generics.ListCreateAPIView):
                 }
                 lodge.custom_prices = normalized_prices
                 lodge.save()
-        return lodges
 
-class TotalUnitsView(APIView):
-    def get(self, request):
-        total_cottages = Cottage.objects.count()
-        total_lodges = Lodge.objects.count()
-        return Response({
-            "total_cottages": total_cottages,
-            "total_lodges": total_lodges
-        })
+        # Filter by capacity
+        capacity = self.request.query_params.get('capacity')
+        if capacity:
+            try:
+                capacity = int(capacity)
+                queryset = queryset.filter(capacity__gte=capacity)
+            except ValueError:
+                pass  # Ignore invalid capacity values
 
+        # Filter by name
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__iexact=name.strip())
+            print("Filtered Queryset by name:", queryset)
+            
+        return queryset
+    
 class AddUnitView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOnly]
     def post(self, request):
         try:
             # Parse custom_prices
@@ -595,69 +628,139 @@ class DeleteCottageView(DestroyAPIView):
 class DeleteLodgeView(DestroyAPIView):
     queryset = Lodge.objects.all()  # Ensure this matches the Lodge model
     serializer_class = LodgeSerializer
+    
+class TotalUnitsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+    def get(self, request):
+        total_cottages = Cottage.objects.count()
+        total_lodges = Lodge.objects.count()
+        return Response({
+            "total_cottages": total_cottages,
+            "total_lodges": total_lodges
+        })
 
 class FilterUnitsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOnly]
+    
     def get(self, request):
+        unit_type = request.query_params.get("type", "cottage").lower()  # Default to 'cottage'
         people = int(request.query_params.get("people", 1))
         num_combinations = int(request.query_params.get("num_combinations", 1))
-        unit_type = request.query_params.get("type", "all").lower()
         price_range = request.query_params.get("price_range", "all").lower()
 
-        # Filter by type
-        if unit_type == "cottage":
-            units = Cottage.objects.all()
-            serializer_class = CottageSerializer
-        elif unit_type == "lodge":
-            units = Lodge.objects.all()
-            serializer_class = LodgeSerializer
+        # Determine the queryset based on path
+        if request.path == '/api/cottages/':
+            queryset = Cottage.objects.all()
         else:
-            cottages = list(Cottage.objects.all())
-            lodges = list(Lodge.objects.all())
-            units = cottages + lodges
-            serializer_class = None  # Handle mixed serialization
+            queryset = Lodge.objects.all()
 
-        # Filter by price range
-        if price_range == "under_100":
-            units = [u for u in units if getattr(u, "time_24hrs_price", 0) < 100]
-        elif price_range == "100_200":
-            units = [u for u in units if 100 <= getattr(u, "time_24hrs_price", 0) <= 200]
-        elif price_range == "200_and_above":
-            units = [u for u in units if getattr(u, "time_24hrs_price", 0) > 200]
+        # Normalize custom_prices and filter by capacity
+        for unit in queryset:
+            if isinstance(unit.custom_prices, list):
+                normalized_prices = {
+                    price['timeRange']: price['price']
+                    for price in unit.custom_prices
+                    if 'timeRange' in price and 'price' in price
+                }
+                unit.custom_prices = normalized_prices
+                unit.save()
 
-        # Process combinations
-        units = sorted(units, key=lambda x: x.capacity, reverse=True)
-        valid_combinations = []
-        for combo in combinations(units, num_combinations):
-            combo_capacity = sum(c.capacity for c in combo)
-            if combo_capacity >= people:
-                valid_combinations.append((combo_capacity, list(combo)))
+        # Filter by capacity
+        capacity = request.query_params.get('capacity')
+        if capacity:
+            try:
+                capacity = int(capacity)
+                queryset = queryset.filter(capacity__gte=capacity)
+            except ValueError:
+                pass  # Ignore invalid capacity values
 
-        if valid_combinations:
-            best_combination = min(valid_combinations, key=lambda x: x[0])
-            recommended_units = best_combination[1]
-        else:
-            return Response({"error": "No results found for the given filters."}, status=400)
+        # Serialize and return the response
+        serializer_class = CottageSerializer if request.path == '/api/cottages/' else LodgeSerializer
+        serializer = serializer_class(queryset, many=True, context={"request": request})
+        return Response(serializer.data)
 
-        # **Add the image_url here**:
-        for unit in recommended_units:
-            if hasattr(unit, "image") and unit.image:
-                unit.image_url = request.build_absolute_uri(unit.image.url)
-                print(f"Unit: {unit.name}, Image URL: {unit.image_url}")
-            else:
-                print(f"Unit: {unit.name} has no image")
+class CottageDetailView(RetrieveAPIView):
+    queryset = Cottage.objects.all()
+    serializer_class = CottageSerializer
 
-        # Serialize recommendations
-        if serializer_class:
-            recommended_serializer = serializer_class(recommended_units, many=True, context={"request": request})
-        else:
-            # Mixed serialization for "all"
-            recommended_serializer = [
-                CottageSerializer(unit, context={"request": request}).data if isinstance(unit, Cottage)
-                else LodgeSerializer(unit, context={"request": request}).data
-                for unit in recommended_units
-            ]
+class LodgeDetailView(RetrieveAPIView):
+    queryset = Lodge.objects.all()
+    serializer_class = LodgeSerializer
 
-        return Response({"recommended": recommended_serializer})
+def get_reservations_with_unit_details():
+    reservations = Reservation.objects.all()
+    serialized_reservations = []
+
+    for reservation in reservations:
+        unit_details = None
+        if reservation.content_type and reservation.object_id:
+            # Fetch the related unit (Cottage or Lodge)
+            try:
+                unit_model = reservation.content_type.get_object_for_this_type(id=reservation.object_id)
+                unit_details = {
+                    "image": unit_model.image.url if hasattr(unit_model, "image") and unit_model.image else "/static/default-image.jpg",
+                    "capacity": getattr(unit_model, "capacity", "N/A"),
+                    "custom_prices": getattr(unit_model, "custom_prices", {}),
+                }
+            except Exception as e:
+                print(f"Error fetching unit details: {e}")
+
+        serialized_reservations.append({
+            "id": reservation.id,
+            "customer_name": reservation.customer_name,
+            "customer_email": reservation.customer_email,
+            "customer_mobile": reservation.customer_mobile,
+            "date_of_reservation": reservation.date_of_reservation,
+            "time_of_use": reservation.time_of_use,
+            "total_price": reservation.total_price,
+            "transaction_date": reservation.transaction_date,
+            "unit_name": getattr(unit_model, "name", "N/A") if unit_model else "N/A",
+            "unit_type": reservation.content_type.name if reservation.content_type else "N/A",
+            "unit_details": unit_details
+        })
+
+    return serialized_reservations 
+
+class ReservationView(APIView):
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
+    
+    def get(self, request):
+        reservations = Reservation.objects.select_related("content_type")
+        serializer = ReservationSerializer(reservations, many=True, context={"request": request})
+        return Response(serializer.data, status=200)
+
+    def post(self, request):
+        data = request.data.copy()
+        unit_type = data.get("content_type")
+        unit_name = data.get("unit_name")
+
+        if unit_type and unit_name:
+            try:
+                if unit_type.lower() == "cottage":
+                    unit = Cottage.objects.get(name=unit_name)
+                    data["content_type"] = ContentType.objects.get_for_model(Cottage).id
+                    data["object_id"] = unit.id
+                elif unit_type.lower() == "lodge":
+                    unit = Lodge.objects.get(name=unit_name)
+                    data["content_type"] = ContentType.objects.get_for_model(Lodge).id
+                    data["object_id"] = unit.id
+            except Cottage.DoesNotExist:
+                return Response({"error": f"Cottage '{unit_name}' not found."}, status=400)
+            except Lodge.DoesNotExist:
+                return Response({"error": f"Lodge '{unit_name}' not found."}, status=400)
+
+        serializer = ReservationSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    
+class ReservationDetailView(generics.RetrieveAPIView):
+    queryset = Reservation.objects.all()
+    serializer_class = ReservationSerializer
 
 class EmployeeCreateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]

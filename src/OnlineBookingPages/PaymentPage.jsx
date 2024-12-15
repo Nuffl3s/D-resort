@@ -1,33 +1,31 @@
-import PropTypes from 'prop-types'; // Import PropTypes
-import { useState, useEffect } from "react";
+import PropTypes from 'prop-types';
+import { useState, useEffect } from 'react';
 import Loader from '../components/Loader';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import Modal from '../Modal/Modal';
+import 'react-datepicker/dist/react-datepicker.css';
 
-
-function Payment({ startDate: propStartDate, endDate: propEndDate }) { // Rename props here
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        mobile: '',
+function Payment({ bookingDetails }) {
+const navigate = useNavigate();
+const location = useLocation();
+const [loading, setLoading] = useState(true);
+const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    mobile: '',
     });
-    const unit = location.state?.unit;
-    if (!unit) {
-        return <div>No unit selected. Please go back and select a unit to book.</div>;
-    }
-    const { image_url: imgSrc, name: title, capacity: persons, custom_prices, description } = unit;
-    const [selectedPrices, setSelectedPrices] = useState([]);
-    const totalPrice = selectedPrices.reduce((total, price) => total + parseFloat(price), 0);
-    const [selectedUnits, setSelectedUnits] = useState([location.state?.unit]); // Holds all selected units
-    const [isModalOpen, setModalOpen] = useState(false);
-    const [currentUnitIndex, setCurrentUnitIndex] = useState(0);
-    const currentUnit = selectedUnits[currentUnitIndex];
+const { unit, selectedDate } = location.state || {}; // Extract selectedDate
+const { image_url: imgSrc, name: title, capacity: persons, custom_prices, description } = unit;
+const [selectedPrices, setSelectedPrices] = useState([]);
+const totalPrice = selectedPrices.reduce((total, price) => total + parseFloat(price), 0);
+const [selectedUnits, setSelectedUnits] = useState([location.state?.unit]);
+const [isModalOpen, setModalOpen] = useState(false);
+const [currentUnitIndex, setCurrentUnitIndex] = useState(0);
+const currentUnit = selectedUnits[currentUnitIndex];
+
 
     const handleRemoveUnit = (index) => {
         setSelectedUnits((prevUnits) => {
@@ -123,6 +121,7 @@ function Payment({ startDate: propStartDate, endDate: propEndDate }) { // Rename
                     price: unit.custom_prices[time], // Get the price for the selected time
                 })),
             })),
+            selectedDate, 
         };
     
         console.log("Billing Data to Pass:", billingData); // Debugging
@@ -357,9 +356,15 @@ function Payment({ startDate: propStartDate, endDate: propEndDate }) { // Rename
                                 >
                                     Book More
                                 </button>
-                                {/* Price Breakdown Section */}
+                                {/* Breakdown Section */}
                                 <div className="border mt-4 p-4 rounded-md shadow-sm">
-                                    <h3 className="text-lg font-bold mb-2">Price Breakdown</h3>
+                                    <h3 className="text-lg font-bold mb-2">Breakdown</h3>
+                                    <p>
+                                        Date Selected:{' '}
+                                        {bookingDetails?.date
+                                        ? new Date(bookingDetails.date).toLocaleDateString()
+                                        : 'Not selected'}
+                                    </p>
                                     <div className="flex justify-between text-sm">
                                         <span>Selected Prices:</span>
                                         <span>

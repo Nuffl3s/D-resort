@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './Login.jsx';
@@ -30,10 +30,11 @@ import Terms from './OnlineBookingPages/TermsAndConditionPage.jsx';
 import CalendarView from './EmployeePages/CalendarView.jsx';
 import './index.css';
 
-const root = createRoot(document.getElementById('root'));
+const App = () => {
+  // Move the shared state here
+  const [bookingDetails, setBookingDetails] = useState({});
 
-root.render(
-  <React.StrictMode>
+  return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
@@ -50,7 +51,6 @@ root.render(
         <Route path="/AuditLog" element={<AuditLog />} />
         <Route path="/AddProduct" element={<AddProduct />} />
 
-
         {/* Shared Routes (Admin and Employee) */}
         <Route path="/Settings" element={<Settings />} />
         <Route path="/employeeSidebar" element={<EmployeeSidebar />} />
@@ -63,15 +63,22 @@ root.render(
 
         {/* Public Pages */}
         <Route path="/booking" element={<BookingMainPage />} />
-        <Route path="/book" element={<CottageAndLodge />} />
+        <Route path="/book" element={<CottageAndLodge setBookingDetails={setBookingDetails} />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment" element={<Payment bookingDetails={bookingDetails} />} />
         <Route path="/billing" element={<BillingPage />} />
         <Route path="/about-us" element={<About />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/calendar/:title" element={<CalendarView />} />
       </Routes>
     </BrowserRouter>
+  );
+};
+
+const root = createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
   </React.StrictMode>
 );

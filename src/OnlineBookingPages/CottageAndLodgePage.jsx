@@ -6,8 +6,10 @@ import Loader from '../components/Loader';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import api from '../api';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
-function BookingPage() {
+function BookingPage({ setBookingDetails }) {
     const navigate = useNavigate();
     const location = useLocation();
     const { startDate: initialStartDate = null, endDate: initialEndDate = null, persons: initialPersons = 1 } = location.state || {};
@@ -30,13 +32,12 @@ function BookingPage() {
     const [zoomedImage, setZoomedImage] = useState(null); 
     const [showScrollButton, setShowScrollButton] = useState(false); 
     const [scrollProgress, setScrollProgress] = useState(0);
-    const [people, setPeople] = useState(1); // Number of people
-    const [recommendedUnits, setRecommendedUnits] = useState([]);
-    const [filteredCottages, setFilteredCottages] = useState([]);
-    const [filteredLodges, setFilteredLodges] = useState([]);
-    const [numCombinations, setNumCombinations] = useState('');
-    const [recommendations, setRecommendations] = useState([]);
-    const [showRecommendations, setShowRecommendations] = useState(false);
+    const [filter, setFilter] = useState('cottage'); // Default to 'cottage'
+    const [units, setUnits] = useState([]);
+    const [capacityFilter, setCapacityFilter] = useState(null);
+    const [capacity, setCapacity] = useState(''); // Capacity filter
+    const [filters, setFilters] = useState({ capacity: null, date: null });
+    const [selectedDate, setSelectedDate] = useState(new Date()); // Default to today's date
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -71,53 +72,61 @@ function BookingPage() {
         };
     }, []);
 
-    const handleSearchRecommendations = async () => {
-        if (!people || !numCombinations) {
-            alert("Please provide both Number of People and Number of Combinations!");
-            return;
-        }
+    // useEffect(() => {
+    //     // Fetch cottages
+    //     api
+    //         .get("/cottages/") // Update the URL based on your Django REST API endpoint
+    //         .then((response) => {
+    //         setCottages(response.data);
+    //     })
+    //         .catch((error) => console.error("Error fetching cottages:", error));
     
-        setLoading(true);
-        try {
-            const response = await api.get("/filter-units/", {
-                params: {
-                people: parseInt(people), // Use input value for number of people
-                num_combinations: parseInt(numCombinations), // Use input value for combinations
-                },
-            });
-            setRecommendations(response.data.recommended || []);
-            setShowRecommendations(true); // Set to true when recommendations are fetched
-        } catch (error) {
-            console.error("Error fetching recommendations:", error.response?.data || error.message);
-            setRecommendations([]);
-          setShowRecommendations(false); // Reset on error
-        } finally {
-            setLoading(false);
-        }
-    };
+    //     // Fetch lodges
+    //     api
+    //         .get("/lodges/") // Update the URL based on your Django REST API endpoint
+    //         .then((response) => {
+    //         setLodges(response.data);
+    //     })
+    //         .catch((error) => console.error("Error fetching lodges:", error));
+    // }, []);
 
     useEffect(() => {
-        // Fetch cottages
-        api
-            .get("/cottages/") // Update the URL based on your Django REST API endpoint
-            .then((response) => {
-            setCottages(response.data);
-        })
-            .catch((error) => console.error("Error fetching cottages:", error));
+        fetchUnits();
+        }, [filter, filters]);
+        
+        const fetchUnits = async () => {
+            try {
+            const endpoint = filter === 'cottage' ? '/cottages/' : '/lodges/';
+            const response = await api.get(endpoint, {
+                params: {
+                capacity: filters.capacity || null,
+                date: filters.date ? filters.date.toISOString().split('T')[0] : null, // Format date to YYYY-MM-DD
+                },
+            });
+            setUnits(response.data);
+            } catch (error) {
+            console.error('Error fetching units:', error);
+            }
+    };
     
-        // Fetch lodges
-        api
-            .get("/lodges/") // Update the URL based on your Django REST API endpoint
-            .then((response) => {
-            setLodges(response.data);
-        })
-            .catch((error) => console.error("Error fetching lodges:", error));
-    }, []);
+    const handleDateChange = (date) => {
+        setSelectedDate(date);
+        setBookingDetails((prevDetails) => ({
+            ...prevDetails,
+            date,
+        }));
+    };
+    
+    const handleFilterChange = (e) => {
+    setFilter(e.target.value);
+    };
 
-    const fetchRecommendations = async () => {
-        const response = await fetch(`/api/filter-units/?people=${people}&num_combinations=${combinations}&type=${type}&price_range=${priceRange}`);
-        const data = await response.json();
-        setRecommendations(data.recommended);
+    const handleCapacityChange = (e) => {
+    setCapacity(e.target.value);
+    };
+
+    const handleFilterClick = () => {
+    fetchUnits();
     };
 
     useEffect(() => {
@@ -169,7 +178,7 @@ function BookingPage() {
     };
     
     const handleBookClick = (unit) => {
-        navigate("/payment", { state: { unit } });
+        navigate("/payment", { state: { unit, selectedDate } });
     };
 
     const handleCheckAvailability = (title) => {
@@ -216,19 +225,21 @@ function BookingPage() {
     return (
         <div className="min-h-screen flex flex-col bg-white parent">
             <Header />
-            <Input
-                startDate={startDate}
-                endDate={endDate}
-                setStartDate={setStartDate}
-                setEndDate={setEndDate}
-                persons={persons}
-                setPersons={setPersons}
-                showGuestDropdown={showGuestDropdown}
-                setShowGuestDropdown={setShowGuestDropdown}
-                handleSearch={handleSearch}
-            />
             <div className="flex-grow">
                 <div className="w-full max-w-[1200px] mx-auto mt-10 flex justify-end sort-con">
+                <div className="date-picker-container">
+                    <label htmlFor="date-picker" className="date-label">
+                        Select Date:
+                    </label>
+                    <DatePicker
+                        id="date-picker"
+                        selected={selectedDate}
+                        onChange={handleDateChange}
+                        dateFormat="yyyy/MM/dd"
+                        minDate={new Date()} // Restrict selection to today and future dates
+                        placeholderText="Select a date"
+                    />
+                </div>
                     <div className="w-1/3 relative sort">
                         <select 
                             id="sort-by" 
@@ -258,65 +269,22 @@ function BookingPage() {
                             <h3 className="text-lg font-semibold mb-4">Filter by</h3>
                             <div className="sub-filter flex flex-col gap-4">
                                 <div className="mb-4">
-                                    {/* <h4 className="font-semibold mb-2">Number of People</h4>
-                                    <div className="space-y-2">
-                                        <label className="block mb-4">
-                                                <input
-                                                    type="number"
-                                                    value={people}
-                                                    onChange={(e) => setPeople(e.target.value)}
-                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                                />
-                                        </label>
-                                        <label className="block mb-4">
-                                            <h4 className="font-semibold mb-2">How many cottage you want:</h4>
-                                                <input
-                                                    type="number"
-                                                    value={numCombinations}
-                                                    onChange={(e) => setNumCombinations(e.target.value)}
-                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                                />
-                                        </label>
-                                            <button
-                                                onClick={handleSearchRecommendations}
-                                                className="w-full px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 focus:outline-none"
-                                                >
-                                                Show Recommendations
-                                            </button>
-                                    </div> */}
                                     <h4 lassName="font-semibold mb-2">Type</h4>
-                                    <div className="space-y-2">
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="type"
-                                                value=""
-                                                checked={filterType === ""}
-                                                onChange={() => setFilterType("")}
-                                            />
-                                                All
-                                            </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="type"
-                                                value="Cottage"
-                                                checked={filterType === "Cottage"}
-                                                onChange={() => setFilterType("Cottage")}
-                                            />
-                                                Cottage
-                                        </label>
-                                        <label className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="type"
-                                                value="Lodge"
-                                                checked={filterType === "Lodge"}
-                                                onChange={() => setFilterType("Lodge")}
-                                            />
-                                                Lodge
-                                            </label>
-                                    </div>
+                                    <div className="filter-container">
+                                    <select value={filter} onChange={handleFilterChange}>
+                                    <option value="cottage">Cottage</option>
+                                    <option value="lodge">Lodge</option>
+                                    </select>
+
+                                    <input
+                                    type="number"
+                                    value={capacity}
+                                    onChange={handleCapacityChange}
+                                    placeholder="Enter minimum capacity"
+                                    />
+
+                                    <button onClick={handleFilterClick}>Filter</button>
+                                </div>
                                 </div>
                                 
                                 <div className="mb-4">
@@ -368,74 +336,44 @@ function BookingPage() {
 
                         {/* Main Content Section */}
                         <div style={{ flex: 1 }}>
-                        {/* {recommendations.map((unit) => (
-                            <div key={unit.id} className="unit-card">
-                                {unit.image_url ? (
-                                    <img src={unit.image_url} alt={unit.name} className="unit-image" />
-                                ) : (
-                                    <div>No Image Available</div>
-                                )}
-                                <h3>{unit.name}</h3>
-                                <p>Capacity: {unit.capacity}</p>
-                                <div>
-                                    <h4>Prices:</h4>
-                                    {unit.prices && Object.entries(unit.prices).length > 0 ? (
-                                        Object.entries(unit.prices).map(([key, value]) => (
-                                            <p key={key}>{key}: ${value}</p>
-                                        ))
-                                    ) : (
-                                        <p>No prices available</p>
-                                    )}
-                                </div>
-                                <button onClick={() => handleBookClick(unit)} >Book</button>
-                                <button>Check Availability</button>
-                            </div>
-                        ))} */}
                         <div className="w-3/4 flex flex-col space-y-4 cards">
-                            {filteredData.length > 0 ? (
-                                filteredData.map((item) => (
-                                <div key={item.id || index} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto sub-card">
-                                    <div className="w-1/3">
-                                        
-                                        <img
-                                            src={item.image_url}
-                                            alt={item.name}
-                                            className={`md:w-[230px]  img rounded-lg transition-transform duration-300 ${zoomedImage === item.id ? 'scale-150' : ''} cursor-zoom-in`}
-                                            onMouseDown={() => handleZoomStart(cottageAndlodge.id)}
-                                            onMouseUp={handleZoomEnd}
-                                            onMouseLeave={handleZoomEnd} 
-                                        />
-                                    </div>
-                                    <div className="w-2/3 ml-10">
-                                        <h4 className="text-2xl font-bold mb-2">{item.name}</h4>
-                                        <p className="text-gray-600 mb-4">Capacity: {item.capacity}</p>
-                                        <p className="text-lg font-semibold mb-2">
-                                        <h4>Prices:</h4>
-                                            {item.custom_prices && Object.entries(item.custom_prices).length > 0 ? (
-                                                Object.entries(item.custom_prices).map(([key, value]) => (
-                                                    <p key={`${item.id}-${key}`}>{key}: ${value}</p>
+                            {units.map((unit) => (
+                                    <div key={unit.id} className="bg-white rounded-[20px] shadow-md p-4 flex items-center mx-auto sub-card">
+                                        <div className="w-1/3">
+                                        <img src={unit.image_url} alt={unit.name} 
+                                        className={`md:w-[230px]  img rounded-lg transition-transform duration-300 ${zoomedImage === unit.id ? 'scale-150' : ''} cursor-zoom-in`}
+                                        onMouseDown={() => handleZoomStart(unit.id)}
+                                        onMouseUp={handleZoomEnd}
+                                        onMouseLeave={handleZoomEnd} />
+                                        </div>
+                                        <div className="w-2/3 ml-10">
+                                            <h3 className="text-2xl font-bold mb-2">{unit.name}</h3>
+                                            <p>Type: {unit.type}</p>
+                                            <p className="text-gray-600 mb-4">Capacity: {unit.capacity}</p>
+                                            <p className="text-lg font-semibold mb-2">
+                                            Prices:
+                                            {unit.custom_prices && Object.entries(unit.custom_prices).length > 0 ? (
+                                                Object.entries(unit.custom_prices).map(([key, value]) => (
+                                                <p key={`${unit.id}-${key}`}>{key}: ${value}</p>
                                                 ))
                                             ) : (
                                                 <p>No prices available</p>
                                             )}
-                                        </p>
-                                        <div className="flex space-x-2">
-                                            <button onClick={() => handleBookClick(item)} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
-                                                Book
-                                            </button>
-                                            <button
-                                                className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md"
-                                                onClick={() => handleCheckAvailability(cottageAndlodge.title)}
-                                            >
-                                                Check Availability
-                                            </button>
-                                        </div>
+                                            </p>
+                                                <div className="flex space-x-2">
+                                                <button onClick={() => handleBookClick(unit)} className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md transition-colors font-semibold">
+                                                    Book
+                                                </button>
+                                                <button
+                                                    className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-4 py-2 rounded-md"
+                                                    onClick={() => handleCheckAvailability(unit.title)}
+                                                >
+                                                    Check Availability
+                                                </button>
+                                            </div>
+                                        </div> 
                                     </div>
-                                </div>
-                                ))
-                            ) : (
-                                <p>No results found.</p>
-                            )}
+                                    ))}
                             </div>
                         </div>
 

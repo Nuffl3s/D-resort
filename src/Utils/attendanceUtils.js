@@ -11,17 +11,17 @@ export const handleDownloadAttendanceExcel = async (tableRows) => {
     const worksheet = workbook.addWorksheet('Attendance');
 
     // Add header row
-    worksheet.addRow(["#", "Name", "Employee ID", "Date", "Time In", "Time Out"]);
+    worksheet.addRow(["#", "ID", "Name", "Date", "Time In", "Time Out"]);
 
     // Add data rows
     tableRows.forEach((row, index) => {
         worksheet.addRow([
             index + 1,
+            row.user, 
             row.name,
-            row.employeeId,       // Assuming 'employeeId' is part of the data
             row.date,             // Assuming 'date' is part of the data
-            row.timeIn,           // Assuming 'timeIn' is part of the data
-            row.timeOut           // Assuming 'timeOut' is part of the data
+            row.time_in,           // Assuming 'timeIn' is part of the data
+            row.time_out           // Assuming 'timeOut' is part of the data
         ]);
     });
 
@@ -49,8 +49,8 @@ export const handleDownloadAttendanceWord = async (tableRows) => {
                                 new TableRow({
                                     children: [
                                         new TableCell({ children: [new Paragraph("#")] }),
-                                        new TableCell({ children: [new Paragraph("Name")] }),
                                         new TableCell({ children: [new Paragraph("Employee ID")] }),
+                                        new TableCell({ children: [new Paragraph("Name")] }),
                                         new TableCell({ children: [new Paragraph("Date")] }),
                                         new TableCell({ children: [new Paragraph("Time In")] }),
                                         new TableCell({ children: [new Paragraph("Time Out")] }),
@@ -60,11 +60,11 @@ export const handleDownloadAttendanceWord = async (tableRows) => {
                                     new TableRow({
                                         children: [
                                             new TableCell({ children: [new Paragraph((index + 1).toString())] }),
+                                            new TableCell({ children: [new Paragraph(row.user)] }),
                                             new TableCell({ children: [new Paragraph(row.name)] }),
-                                            new TableCell({ children: [new Paragraph(row.employeeId)] }),
                                             new TableCell({ children: [new Paragraph(row.date)] }),
-                                            new TableCell({ children: [new Paragraph(row.timeIn)] }),
-                                            new TableCell({ children: [new Paragraph(row.timeOut)] }),
+                                            new TableCell({ children: [new Paragraph(row.time_in)] }),
+                                            new TableCell({ children: [new Paragraph(row.time_out)] }),
                                         ]
                                     })
                                 ))

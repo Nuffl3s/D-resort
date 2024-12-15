@@ -16,12 +16,8 @@ const AdminSidebar = () => {
         { title: "Add Product", src: "src/assets/add-product.png", path: "/AddProduct" },
         { title: "Payroll", src: "src/assets/money.png", path: "/AdminPayroll" },
         { title: "Report", src: "src/assets/report.png", path: "/AdminReport" },
-        {
-            title: "Audit Log",
-            src: "src/assets/magnifying.png",
-            path: "/AuditLog",
-            isSeparated: true,
-        },
+        { title: "Create Admin", src: "src/assets/add.png", path: "/CreateAccount", isSeparated: true},
+        { title: "Audit Log", src: "src/assets/magnifying.png", path: "/AuditLog",},
         { title: "Settings", src: "src/assets/settings.png", path: "/Settings" },
         { title: "Logout", src: "src/assets/logout.png", path: "/" },
     ];
@@ -54,7 +50,7 @@ const AdminSidebar = () => {
         fetchUserDetails();
         setIsFirstRender(false);
     }, []);
-    
+
     const toggleSidebar = () => {
         setOpen((prev) => {
             const newState = !prev;

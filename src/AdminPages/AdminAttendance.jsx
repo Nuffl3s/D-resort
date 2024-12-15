@@ -39,19 +39,17 @@ function AdminAttendance() {
   };
 
   const handleDownloadChoice = (type, context) => {
+    console.log(`Download choice: ${type} for ${context}`);
     if (context === 'attendance') {
-      if (type === 'excel') {
-        handleDownloadAttendanceExcel(tableRows)
-          .then(() => console.log('Excel download triggered successfully'))
-          .catch((error) => console.error('Error downloading Excel:', error));
-      } else if (type === 'word') {
-        handleDownloadAttendanceWord(tableRows)
-          .then(() => console.log('Word download triggered successfully'))
-          .catch((error) => console.error('Error downloading Word:', error));
-      }
+        if (type === 'excel') {
+            handleDownloadAttendanceExcel(tableRows); // Pass tableRows here
+        } else if (type === 'word') {
+            handleDownloadAttendanceWord(tableRows); // Pass tableRows here
+        }
     }
-    setShowModal(false);
-  };
+    setShowModal(false); // Close the modal after selection
+};
+
 
   // Poll every 5 seconds to get the latest attendance data
   const fetchAttendanceData = async () => {
@@ -282,9 +280,9 @@ function AdminAttendance() {
 
         <DownloadModal
             showModal={showModal}
-            handleDownloadChoice={handleDownloadChoice}
+            handleDownloadChoice={(type, context) => handleDownloadChoice(type, context, tableRows)} // Pass tableRows
             setShowModal={setShowModal}
-            page="attendance"
+            pageContext="attendance"
         />
     </div>
   );

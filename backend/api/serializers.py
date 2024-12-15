@@ -5,6 +5,7 @@ from .models import Account
 from rest_framework import serializers
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation
 from .models import Attendance
+from .models import Account 
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -95,6 +96,8 @@ class ProductSerializer(serializers.ModelSerializer):
         instance.amount = instance.quantity * instance.acquisitionCost  # Recalculate amount based on acquisition cost
         instance.save()
         return instance
+
+
 
 class PayrollSerializer(serializers.ModelSerializer):
     employee = serializers.CharField(source='employee.name')  # Display employee name instead of ID

@@ -120,18 +120,18 @@ class Payroll(models.Model):
             self.status = "Not yet"
             self.save()
 
-# class Payroll(models.Model):
-#     STATUS_CHOICES = [
-#         ('Calculated', 'Calculated'),
-#         ('Not yet', 'Not yet'),
-#     ]
+class Payroll(models.Model):
+    STATUS_CHOICES = [
+        ('Calculated', 'Calculated'),
+        ('Not yet', 'Not yet'),
+    ]
 
-#     employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)  # Changed to OneToOneField
-#     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-#     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)  # Changed to OneToOneField
+    net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
 
-#     def __str__(self):
-#         return f"{self.employee.name} - {self.status} - ${self.net_pay:.2f}"
+    def __str__(self):
+        return f"{self.employee.name} - {self.status} - ${self.net_pay:.2f}"
 
 class Log(models.Model):
     CATEGORY_CHOICES = [

@@ -111,7 +111,7 @@ function BillingPage() {
     return (
         <div className="min-h-screen flex flex-col bg-white">
             <div className="w-[90%] mx-auto mt-10">
-                <h1 className="text-[30px] font-bold uppercase mb-6">Billing Details</h1>
+                <h1 className="text-[30px] font-bold uppercase mb-6">Details</h1>
                 <div className="mb-4 space-y-2">
                     <h2 className="font-bold text-[20px]">Customer Information</h2>
                     <p className="text-md text-gray-700">Name: {customerInfo?.firstName}{customerInfo?.lastName}</p>

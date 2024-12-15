@@ -59,10 +59,10 @@ function ReceiptModal({
                             <p className="font-bold">To:</p>
                             <p>{customerInfo.firstName} {customerInfo.lastName}</p>
                         </div>
-                        <div>
+                        {/* <div>
                             <p>Confirmation ID: ZXC7HWC3</p>
                             <p>Date of Use: {selectedDate ? new Date(selectedDate).toLocaleDateString() : "N/A"}</p>
-                        </div>
+                        </div> */}
                     </div>
 
                     <table className="w-full mt-6 text-sm text-left text-gray-500">

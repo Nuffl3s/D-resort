@@ -17,16 +17,21 @@ const ViewModal = ({ isOpen, onClose, booking }) => {
 
                 {/* Property Image */}
                 <div className="mt-4">
-                    <img src={booking.image} alt="Property" className="w-full h-[400px] object-cover rounded-lg" />
+                    <img
+                        src={booking.image}
+                        alt={booking.propertyName}
+                        className="w-full h-[400px] object-cover rounded-lg"
+                    />
                 </div>
 
                 {/* Property Information */}
                 <div className="mt-4">
                     <h3 className="text-lg font-semibold">{booking.propertyName}</h3>
-                    <p className="text-gray-600">Capacity: {booking.capacity}</p>
-                    <p className="text-gray-600">Price: {booking.price}</p>
+                    <p className="text-gray-600">{booking.capacity}</p>
+                    <p className="text-gray-600">{booking.price}</p>
                 </div>
 
+                {/* Customer Information */}
                 <div className="mt-6 rounded-lg">
                     <h4 className="text-lg font-semibold mb-2">Customer Information</h4>
                     <table className="min-w-full bg-white border">
@@ -44,11 +49,11 @@ const ViewModal = ({ isOpen, onClose, booking }) => {
                                 <td className="px-4 py-2 text-gray-600">{booking.customer.phone}</td>
                             </tr>
                             <tr className="border-b">
-                                <th className="bg-blue-500 text-blue-50 text-left px-4 py-2 font-semibold">Check-in</th>
+                                <th className="bg-blue-500 text-blue-50 text-left px-4 py-2 font-semibold">Date of Reservation</th>
                                 <td className="px-4 py-2 text-gray-600">{booking.customer.checkIn}</td>
                             </tr>
                             <tr className="border-b">
-                                <th className="bg-blue-500 text-blue-50 text-left px-4 py-2 font-semibold">Check-out</th>
+                                <th className="bg-blue-500 text-blue-50 text-left px-4 py-2 font-semibold">Time of Use</th>
                                 <td className="px-4 py-2 text-gray-600">{booking.customer.checkOut}</td>
                             </tr>
                         </tbody>

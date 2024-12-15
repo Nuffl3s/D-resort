@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation
 from .models import Attendance
 
 
@@ -137,3 +137,12 @@ class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
         fields = ['user', 'name', 'date', 'time_in', 'time_out']
+
+class ReservationSerializer(serializers.ModelSerializer):
+    transaction_date = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
+    date_of_reservation = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
+
+    class Meta:
+        model = Reservation
+        fields = "__all__"
+

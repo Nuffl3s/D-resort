@@ -124,3 +124,17 @@ class Lodge(models.Model):
 
     def __str__(self):
         return f"{self.type} - {self.name}"
+    
+class Reservation(models.Model):
+    customer_name = models.CharField(max_length=255)
+    customer_email = models.EmailField()
+    customer_mobile = models.CharField(max_length=15)
+    unit_type = models.CharField(max_length=50)
+    unit_name = models.CharField(max_length=255)
+    transaction_date = models.DateField(auto_now_add=True)
+    date_of_reservation = models.DateField()
+    time_of_use = models.CharField(max_length=50)  # Add this field
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"Reservation by {self.customer_name} for {self.unit_name} at {self.time_of_use}"

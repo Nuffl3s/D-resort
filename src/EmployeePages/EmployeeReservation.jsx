@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BookingModal from '../Modal/BookingModal';
 import ViewModal from '../Modal/ViewModal';
 import Sidebar from '../components/EmployeeSidebar';
 import CalendarEventModal from '../Modal/CalendarEventModal';
+import api from '../api';
 
 function EmployeeReservation () {
     const [modalBookingOpen, setModalBookingOpen] = useState(false);
@@ -16,6 +17,7 @@ function EmployeeReservation () {
     const [sortOrder] = useState("asc"); 
     const [isViewModalOpen, setViewModalOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
+    const [reservations, setReservations] = useState([]);
 
      // sample
      const bookings = [
@@ -69,6 +71,18 @@ function EmployeeReservation () {
         return sortedBookings;
     };
 
+    useEffect(() => {
+        const fetchReservations = async () => {
+            try {
+                const response = await api.get("/reservations/");
+                console.log("Reservations:", response.data); // Log data to verify
+                setReservations(response.data);
+            } catch (error) {
+                console.error("Error fetching reservations:", error);
+            }
+        };
+        fetchReservations();
+    }, []);
     
     // Filter bookings based on selected type
     const filteredBookings = selectedType
@@ -89,11 +103,11 @@ function EmployeeReservation () {
         },
     };
 
-    // Sa view ni na button
     const handleViewClick = () => {
         setSelectedBooking(bookingData); // Set the selected booking data
         setViewModalOpen(true);
     };
+
 
     const handleCloseModal = () => {
         setViewModalOpen(false);
@@ -300,36 +314,38 @@ function EmployeeReservation () {
                                         <th scope="col" className="px-6 py-3">Name</th>
                                         <th scope="col" className="px-6 py-3">Type</th>
                                         <th scope="col" className="px-6 py-3">Transaction date</th>
-                                        <th scope="col" className="px-6 py-3">Check In</th>
-                                        <th scope="col" className="px-6 py-3">Check Out</th>
+                                        <th scope="col" className="px-6 py-3">Date of Reservation</th>
+                                        <th scope="col" className="px-6 py-3">Date of use</th>
                                         <th scope="col" className="px-6 py-3">Price</th>
                                         <th scope="col" className="px-6 py-3">Status</th>
                                         <th scope="col" className="px-6 py-3">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {sortBookings(filteredBookings).map((booking) => (
-                                        <tr key={booking.id} className="border-b hover:bg-gray-50">
-                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{booking.id}</th>
-                                            <td className="px-6 py-4">{booking.name}</td>
-                                            <td className="px-6 py-4">{booking.type}</td>
-                                            <td className="px-6 py-4">{booking.transaction}</td>
-                                            <td className="px-6 py-4">{booking.checkIn}</td>
-                                            <td className="px-6 py-4">{booking.checkOut}</td>
-                                            <td className="px-6 py-4">{booking.price}</td>
+                                    {reservations.map((reservation) => (
+                                        <tr key={reservation.id} className="border-b hover:bg-gray-50">
+                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{reservation.id}</th>
+                                            <td className="px-6 py-4">{reservation.customer_name}</td>
+                                            <td className="px-6 py-4">{reservation.unit_type} {reservation.unit_name}</td>
+                                            <td className="px-6 py-4">{reservation.transaction_date}</td>
+                                            <td className="px-6 py-4">{reservation.date_of_reservation}</td>
+                                            <td className="px-6 py-4">{reservation.time_of_use}</td>
+                                            <td className="px-6 py-4">{reservation.total_price}</td>
                                             <td className="px-6 py-4">
-                                                <span className={`${booking.status === 'Checked in' ? 'bg-[#51e633]' : 
-                                                                booking.status === 'Checked out' ? 'bg-[#FF6767]' :
-                                                                booking.status === 'Pending' ? 'bg-[#fdbc60]' :
+                                                <span className={`${reservation.status === 'Checked in' ? 'bg-[#51e633]' : 
+                                                                reservation.status === 'Checked out' ? 'bg-[#FF6767]' :
+                                                                reservation.status === 'Pending' ? 'bg-[#fdbc60]' :
                                                                 'bg-transparent'} px-2 py-2 rounded text-white`}>
-                                                    {booking.status}
+                                                    {reservation.status}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 space-x-2">
                                                 <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full">
                                                     <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
                                                 </button>
-                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] p-2 rounded-full" onClick={handleViewClick}>
+                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] p-2 rounded-full" 
+                                                    onClick={() => handleViewClick(reservation.id)}
+                                                    >
                                                     <img src="./src/assets/view.png" className="w-4 h-4 filter brightness-0 invert" alt="View" />
                                                 </button>
                                                 <button className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full">

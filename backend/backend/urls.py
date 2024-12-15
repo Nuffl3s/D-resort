@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from django.urls import path, include
 from api.views import RegisterUserView, CustomLoginView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView, PayrollListCreate, PayrollDetail, UserDetailsView, LogView, WeeklyScheduleView
 from api.views import EditEmployeeView, DeleteEmployeeView, CottageListView, LodgeListView, AddUnitView, DeleteCottageView, DeleteLodgeView, TotalUnitsView, FilterUnitsView, UpdateCottageView, UpdateLodgeView
-from api.views import UpdatePayrollView
+from api.views import UpdatePayrollView, TotalUnitsView, ReservationView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import EmployeeCreateView
 from api.views import AttendanceView
@@ -35,8 +35,9 @@ urlpatterns = [
     path("api/lodges/<int:pk>/delete/", DeleteLodgeView.as_view(), name="delete_lodge"),
     path('api/cottage/<int:pk>/', UpdateCottageView.as_view(), name='updatecottage'),
     path('api/lodge/<int:pk>/', UpdateLodgeView.as_view(), name='update-lodge'),
-    path('api/total-units/', TotalUnitsView.as_view(), name='get_total_units'),
+    path('api/total-units/', TotalUnitsView.as_view(), name='total-units'),
     path('api/filter-units/', FilterUnitsView.as_view(), name='filter_units'),
+    path("api/reservations/", ReservationView.as_view(), name="reservation"),
     path("api-auth/", include("rest_framework.urls")),
     path('api/employees/', EmployeeCreateView.as_view(), name='api_employee'),
     path('api/attendance/', AttendanceView.as_view(), name='attendance')

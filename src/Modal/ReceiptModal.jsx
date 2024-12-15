@@ -9,8 +9,9 @@ function ReceiptModal({
     customerName, 
     transactionDate, 
     totalPrice, 
-    customerInfo,
-    units // Include units for the table
+    customerInfo, 
+    units, 
+    selectedDate // Include the selected date
 }) {
     
     // Function to print receipt
@@ -60,7 +61,7 @@ function ReceiptModal({
                         </div>
                         <div>
                             <p>Confirmation ID: ZXC7HWC3</p>
-                            <p>Date of use: 2024-10-5</p>
+                            <p>Date of Use: {selectedDate ? new Date(selectedDate).toLocaleDateString() : "N/A"}</p>
                         </div>
                     </div>
 
@@ -68,7 +69,7 @@ function ReceiptModal({
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3">Name Type</th>
-                                <th className="px-6 py-3">Date of Use</th>
+                                <th className="px-6 py-3">Time of use</th>
                                 <th className="px-6 py-3 text-right">Price</th>
                             </tr>
                         </thead>

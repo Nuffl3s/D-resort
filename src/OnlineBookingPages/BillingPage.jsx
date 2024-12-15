@@ -3,6 +3,7 @@ import ReceiptModal from "../Modal/ReceiptModal";
 import Loader from "../components/Loader";
 import Swal from "sweetalert2"; // Import SweetAlert2
 import { useNavigate, useLocation } from "react-router-dom"; // For navigation
+import api from '../api';
 
 
 function BillingPage() {
@@ -13,8 +14,8 @@ function BillingPage() {
     const location = useLocation();
     const billingData = location.state || {};
 
-    const { customerInfo, units } = billingData;
-    console.log("BillingPage Units:", units);
+    const { customerInfo, units, selectedDate } = location.state || {};
+
 
     // Temporary data for testing
     const customerName = "John Doe";
@@ -35,31 +36,67 @@ function BillingPage() {
         return total + unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0);
     }, 0);
 
-    const handleContinue = () => {
-        Swal.fire({
-            title: "IMPORTANT!",
-            text: "Screenshot or download the receipt first before you continue.",
-            icon: "warning",
-            showCancelButton: true,
-            cancelButtonText: "Close",
-            confirmButtonText: "Continue",
-            customClass: {
-                confirmButton:
-                    "bg-[#12B1D1] text-white font-semibold px-4 py-2 rounded-md hover:bg-[#3ebae7] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#12B1D1]",
-                cancelButton:
-                    "bg-red-500 text-white font-semibold px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
-                actions: "flex justify-center gap-4", // Adds space between the buttons
-            },
-            buttonsStyling: false, // Disable SweetAlert2's default button styles
-        }).then((result) => {
-            if (result.isConfirmed) {
-                navigate("/booking"); // Navigate to booking main page
-            }
-        });
+    const handleContinue = async () => {
+        // Swal.fire({
+        //     title: "IMPORTANT!",
+        //     text: "Screenshot or download the receipt first before you continue.",
+        //     icon: "warning",
+        //     showCancelButton: true,
+        //     cancelButtonText: "Close",
+        //     confirmButtonText: "Continue",
+        //     customClass: {
+        //         confirmButton:
+        //             "bg-[#12B1D1] text-white font-semibold px-4 py-2 rounded-md hover:bg-[#3ebae7] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#12B1D1]",
+        //         cancelButton:
+        //             "bg-red-500 text-white font-semibold px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+        //         actions: "flex justify-center gap-4", // Adds space between the buttons
+        //     },
+        //     buttonsStyling: false, // Disable SweetAlert2's default button styles
+        // }).then((result) => {
+        //     if (result.isConfirmed) {
+        //         navigate("/booking"); // Navigate to booking main page
+        //     }
+        // });
+        const reservationData = billingData.units.map((unit) => ({
+            customer_name: `${billingData.customerInfo.firstName} ${billingData.customerInfo.lastName}`,
+            customer_email: billingData.customerInfo.email,
+            customer_mobile: billingData.customerInfo.mobile,
+            unit_type: unit.type,
+            unit_name: unit.name,
+            transaction_date: new Date().toISOString().split('T')[0],
+            date_of_reservation: new Date(selectedDate).toISOString().split('T')[0],
+            time_of_use: unit.timeAndPrice.map(({ time }) => time).join(', '), // Correctly map times
+            total_price: unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0), // Calculate total price
+        }));
+    
+        console.log("Sending reservation data:", reservationData);
+    
+        try {
+            const response = await Promise.all(
+                reservationData.map((data) =>
+                    api.post("/reservations/", data)
+                )
+            );
+            console.log("Reservation saved successfully:", response);
+            Swal.fire({
+                title: "Success!",
+                text: "Your reservation has been saved successfully.",
+                icon: "success",
+                confirmButtonText: "OK",
+            }).then(() => {
+                navigate("/booking");
+            });
+        } catch (error) {
+            console.error("Error saving reservation:", error.response?.data || error.message);
+            Swal.fire({
+                title: "Error",
+                text: error.response?.data || "There was a problem saving your reservation. Please try again.",
+                icon: "error",
+                confirmButtonText: "Close",
+            });
+        }
     };
-    
-    
-    
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setLoading(false);
@@ -80,7 +117,8 @@ function BillingPage() {
                     <p className="text-md text-gray-700">Name: {customerInfo?.firstName}{customerInfo?.lastName}</p>
                     <p className="text-md text-gray-700">Email Address: {customerInfo?.email}</p>
                     <p className="text-md text-gray-700">Phone: {customerInfo?.mobile}</p>
-                    <p className="text-md text-gray-700">Transaction Date: {transactionDate}</p>
+                    <p>Transaction Date: {new Date().toLocaleDateString()}</p>
+                    <p>Selected Date: {selectedDate ? new Date(selectedDate).toLocaleDateString() : "Not selected"}</p>
                 </div>
 
                 <div className="relative overflow-x-auto shadow p-6 rounded-md">
@@ -88,7 +126,8 @@ function BillingPage() {
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
                                 <th scope="col" className="px-6 py-3">Name Type</th>
-                                <th scope="col" className="px-6 py-3">Date of Use</th>
+                                <th scope="col" className="px-6 py-3">Date of Reservation</th>
+                                <th scope="col" className="px-6 py-3">Time of Use</th>
                                 <th scope="col" className="px-6 py-3">Price</th>
                             </tr>
                         </thead>
@@ -100,6 +139,9 @@ function BillingPage() {
                                             <tr key={`${index}-${idx}`} className="bg-white border-b">
                                                 <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                                     {unit.name} ({unit.type})
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                <td>{selectedDate ? new Date(selectedDate).toLocaleDateString() : "N/A"}</td>
                                                 </td>
                                                 <td className="px-6 py-4">{time}</td> {/* Display time */}
                                                 <td className="px-6 py-4">₱{price}</td> {/* Display price */}
@@ -122,6 +164,7 @@ function BillingPage() {
                         <tfoot>
                             <tr className="font-semibold text-gray-700 uppercase">
                                 <th scope="row" className="px-6 py-3 text-base">Total</th>
+                                <td className="px-6 py-3"></td>
                                 <td className="px-6 py-3"></td>
                                 <td className="px-6 py-3">₱{totalPrice.toFixed(2)}</td>
                             </tr>
@@ -162,8 +205,9 @@ function BillingPage() {
                 customerName={customerName}
                 transactionDate={transactionDate}
                 totalPrice={totalPrice}
-                customerInfo={customerInfo} // Ensure this is passed
-                units={units} // Pass units for table rendering
+                customerInfo={customerInfo} // Pass customer info
+                units={units} // Pass selected units
+                selectedDate={selectedDate} // Pass the selected date
             />
         </div>
     );

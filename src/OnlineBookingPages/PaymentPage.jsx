@@ -314,48 +314,46 @@ const currentUnit = selectedUnits[currentUnitIndex];
                                     </div>
 
                                     {/* Navigation Buttons */}
-                                    <div className="flex justify-between mt-4">
-                                        <button
-                                            onClick={prevUnit}
-                                            className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md"
-                                        >
-                                            &lt;
-                                        </button>
-                                        <button
-                                            onClick={nextUnit}
-                                            className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md"
-                                        >
-                                            &gt;
-                                        </button>
+                                    <div className="flex justify-between items-center mt-4">
+                                        <div>
+                                            <button
+                                                onClick={prevUnit}
+                                                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md mr-2"
+                                            >
+                                                &lt;
+                                            </button>
+                                            <button
+                                                onClick={nextUnit}
+                                                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md"
+                                            >
+                                                &gt;
+                                            </button>
+                                        </div>
+                                        
+
+                                        <div className="flex">
+                                            <button
+                                                onClick={() => {
+                                                    const updatedUnits = selectedUnits.filter(
+                                                        (_, index) => index !== currentUnitIndex
+                                                    );
+                                                    setSelectedUnits(updatedUnits);
+                                                    setCurrentUnitIndex((prevIndex) =>
+                                                        prevIndex > 0 ? prevIndex - 1 : 0
+                                                    );
+                                                }}
+                                                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition"
+                                            >
+                                            Delete
+                                    </button>
+                                </div>
                                     </div>
                                 </>
                             ) : (
                                 <p>No units selected. Please add one using the "Book More" button.</p>
                             )}
-                        </div>
-                                <div className="mt-4">
-                                    <button
-                                        onClick={() => {
-                                            const updatedUnits = selectedUnits.filter(
-                                                (_, index) => index !== currentUnitIndex
-                                            );
-                                            setSelectedUnits(updatedUnits);
-                                            setCurrentUnitIndex((prevIndex) =>
-                                                prevIndex > 0 ? prevIndex - 1 : 0
-                                            );
-                                        }}
-                                        className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                                {/* Book More Button */}
-                                <button
-                                    className="bg-blue-500 text-white px-4 py-2 mt-4 rounded"
-                                    onClick={() => setModalOpen(true)}
-                                >
-                                    Book More
-                                </button>
+                            </div>
+                                
                                 {/* Breakdown Section */}
                                 <div className="border mt-4 p-4 rounded-md shadow-sm">
                                     <h3 className="text-lg font-bold mb-2">Breakdown</h3>
@@ -394,6 +392,14 @@ const currentUnit = selectedUnits[currentUnitIndex];
                                         </span>
                                     </div>
                                 </div>
+
+                                {/* Book More Button */}
+                                <button
+                                    className="bg-[#12B1D1] text-white font-medium px-4 py-2 mt-4 rounded"
+                                    onClick={() => setModalOpen(true)}
+                                >
+                                    Book More
+                                </button>
                             </div>
                             {isModalOpen && (
                                 <Modal

@@ -44,6 +44,7 @@ urlpatterns = [
     path('api/total-units/', TotalUnitsView.as_view(), name='total-units'),
     path('api/filter-units/', FilterUnitsView.as_view(), name='filter_units'),
     path("api/reservations/", ReservationView.as_view(), name="reservation"),
+    path('api/reservations/<int:pk>/', ReservationView.as_view(), name="reservation-detail"),
     path("api-auth/", include("rest_framework.urls")),
     path('api/employees/', EmployeeCreateView.as_view(), name='api_employee'),
     path('api/attendance/', AttendanceView.as_view(), name='attendance'),

@@ -4,6 +4,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import JSONField
 from django.db import models
+from datetime import timedelta
 from django.conf import settings
 
 image_storage = FileSystemStorage(
@@ -91,14 +92,47 @@ class Payroll(models.Model):
         ('Calculated', 'Calculated'),
         ('Not yet', 'Not yet'),
     ]
+    PAYROLL_TYPE_CHOICES = [
+        ('Weekly', 'Weekly'),
+        ('Monthly', 'Monthly'),
+    ]
 
-    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)  # Changed to OneToOneField
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)
     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
+    payroll_type = models.CharField(max_length=50, choices=PAYROLL_TYPE_CHOICES, default="Weekly")
+    last_updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.employee.name} - {self.status} - ${self.net_pay:.2f}"
-    
+    def should_reset(self):
+        """Determine if the payroll status should be reset to 'Not yet'."""
+        now = timezone.now()
+        if self.payroll_type == "Weekly":
+            return (now - self.last_updated).days >= 6
+        elif self.payroll_type == "Monthly":
+            next_month = self.last_updated + timedelta(days=30)
+            reset_day = next_month - timedelta(days=1)
+            return now >= reset_day
+        return False
+
+    def reset_status(self):
+        """Reset status to 'Not yet' if conditions are met."""
+        if self.should_reset():
+            self.status = "Not yet"
+            self.save()
+
+# class Payroll(models.Model):
+#     STATUS_CHOICES = [
+#         ('Calculated', 'Calculated'),
+#         ('Not yet', 'Not yet'),
+#     ]
+
+#     employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)  # Changed to OneToOneField
+#     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+#     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
+
+#     def __str__(self):
+#         return f"{self.employee.name} - {self.status} - ${self.net_pay:.2f}"
+
 class Log(models.Model):
     CATEGORY_CHOICES = [
         ("Employee Registration", "Employee Registration"),

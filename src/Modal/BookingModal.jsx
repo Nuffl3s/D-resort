@@ -73,8 +73,36 @@ const BookingModal = ({ isOpen, onClose }) => {
         } else {
             alert("Please select time and price before adding the unit.");
         }
-    };    
+    };
 
+    const handleConfirmReservation = async () => {
+        const reservationData = confirmedUnits.map((unit) => ({
+            customer_name: customerInfo.name,
+            customer_email: customerInfo.email,
+            customer_mobile: customerInfo.mobile,
+            unit_type: bookingType,
+            unit_name: unit.name,
+            transaction_date: new Date().toISOString().split("T")[0],
+            date_of_reservation: dateOfReservation.toISOString().split("T")[0],
+            time_of_use: unit.selectedTime,
+            total_price: unit.selectedPrice,
+        }));
+    
+        try {
+            await Promise.all(
+                reservationData.map((data) => api.post("/reservations/", data))
+            );
+            alert("Reservation confirmed successfully!");
+            window.dispatchEvent(new Event("reservationUpdated"));  // Trigger the update event
+            onClose();
+            setConfirmedUnits([]);
+        } catch (error) {
+            console.error("Error confirming reservation:", error.response?.data || error.message);
+            alert("Failed to confirm reservation.");
+        }
+    };
+    
+    
     // Calculate total price
     const totalPrice = confirmedUnits.reduce((sum, unit) => sum + unit.selectedPrice, 0);
 
@@ -234,6 +262,12 @@ const BookingModal = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="flex justify-end mt-4">
+                    <button
+                        onClick={handleConfirmReservation} // Call the confirmation handler
+                        className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                    >
+                        Confirm
+                    </button>
                     <button onClick={onClose} className="bg-red-500 text-white px-4 py-2 rounded">
                         Close
                     </button>

@@ -72,7 +72,15 @@ class CustomLoginView(APIView):
         if user is not None:
             refresh = RefreshToken.for_user(user)
             update_last_login(None, user)
-
+            
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "username": user.username,
+                "password": password,  # Avoid sending plaintext passwords in production
+                "user_type": user.user_type,
+            }, status=status.HTTP_200_OK)
+            
             Log.objects.create(
                 username=user.username,
                 action=f"{user.username} logged in.",
@@ -142,6 +150,17 @@ class CreateAccountView(APIView):
         except Exception as e:
             return Response({'error': f'Error saving account: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class AdminCredentialView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.user_type == 'Admin':
+            return Response({
+                "username": request.user.username,
+                "password": "hidden_for_security",  # Replace with securely fetched password
+            })
+        return Response({"error": "Unauthorized access"}, status=status.HTTP_403_FORBIDDEN)
+
 class CheckUsernameView(APIView):
     def get(self, request, username, *args, **kwargs):
         # Check if the username already exists in the database
@@ -186,15 +205,10 @@ class CreateAdminView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class UserDetailsView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
-        print(f"User: {request.user}, User Type: {getattr(request.user, 'user_type', None)}")
-        user = request.user
-        return Response({
-            "username": user.username,
-            "user_type": user.user_type,
-        })
+        users = CustomUser.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
     
 from rest_framework.response import Response
 
@@ -389,11 +403,7 @@ class PayrollListCreate(APIView):
         # Ensure all employees have a payroll entry
         employees = Employee.objects.all()
         for employee in employees:
-            # Remove duplicate payroll records for the same employee
-            Payroll.objects.filter(employee=employee).exclude(status="Not yet").delete()
-            # Ensure a single payroll entry per employee
             Payroll.objects.get_or_create(employee=employee, defaults={'status': 'Not yet'})
-
         payrolls = Payroll.objects.select_related('employee').all()
         serializer = PayrollSerializer(payrolls, many=True)
         return Response(serializer.data, status=200)
@@ -406,20 +416,12 @@ class PayrollListCreate(APIView):
         for entry in data:
             try:
                 employee = Employee.objects.get(name=entry['employee_name'])
-                # Use update_or_create to avoid creating duplicates
-                payroll, created = Payroll.objects.update_or_create(
+                Payroll.objects.update_or_create(
                     employee=employee,
                     defaults={
                         'net_pay': entry['net_pay'],
-                        'status': entry['status']
+                        'status': entry['status']  # Ensure status is updated to "Calculated"
                     }
-                )
-                # Log the payroll creation or update
-                action = "created" if created else "updated"
-                Log.objects.create(
-                    username=request.user.username,
-                    action=f"Payroll {action} for {employee.name}, Net Pay: {payroll.net_pay}.",
-                    category="Payroll"
                 )
             except Employee.DoesNotExist:
                 return Response({"error": f"Employee '{entry['employee_name']}' not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -746,42 +748,57 @@ def get_reservations_with_unit_details():
     return serialized_reservations 
 
 class ReservationView(APIView):
-    # permission_classes = [IsAuthenticated]
     permission_classes = [AllowAny]
-    queryset = Reservation.objects.all()
-    serializer_class = ReservationSerializer
-    
+
     def get(self, request):
-        reservations = Reservation.objects.select_related("content_type")
+        reservations = Reservation.objects.all()
         serializer = ReservationSerializer(reservations, many=True, context={"request": request})
         return Response(serializer.data, status=200)
 
     def post(self, request):
         data = request.data.copy()
-        unit_type = data.get("content_type")
+        unit_type = data.get("unit_type", "").lower()
         unit_name = data.get("unit_name")
 
         if unit_type and unit_name:
             try:
-                if unit_type.lower() == "cottage":
+                if unit_type == "cottage":
                     unit = Cottage.objects.get(name=unit_name)
                     data["content_type"] = ContentType.objects.get_for_model(Cottage).id
                     data["object_id"] = unit.id
-                elif unit_type.lower() == "lodge":
+                elif unit_type == "lodge":
                     unit = Lodge.objects.get(name=unit_name)
                     data["content_type"] = ContentType.objects.get_for_model(Lodge).id
                     data["object_id"] = unit.id
-            except Cottage.DoesNotExist:
-                return Response({"error": f"Cottage '{unit_name}' not found."}, status=400)
-            except Lodge.DoesNotExist:
-                return Response({"error": f"Lodge '{unit_name}' not found."}, status=400)
+            except (Cottage.DoesNotExist, Lodge.DoesNotExist):
+                return Response({"error": f"Unit '{unit_name}' not found."}, status=400)
 
         serializer = ReservationSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save()  # Ensure data gets saved properly
             return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-    
+        else:
+            return Response(serializer.errors, status=400)
+        
+    def delete(self, request, pk):
+        try:
+            reservation = Reservation.objects.get(pk=pk)
+            reservation.delete()
+            return Response({"message": "Reservation deleted successfully!"}, status=204)
+        except Reservation.DoesNotExist:
+            return Response({"error": "Reservation not found."}, status=404)
+
+    def put(self, request, pk):
+        try:
+            reservation = Reservation.objects.get(pk=pk)
+            serializer = ReservationSerializer(reservation, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=200)
+            return Response(serializer.errors, status=400)
+        except Reservation.DoesNotExist:
+            return Response({"error": "Reservation not found."}, status=404)
+        
 class ReservationDetailView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer

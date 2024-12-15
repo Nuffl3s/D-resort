@@ -27,39 +27,52 @@ function Login() {
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
-      // Send login request
-      const response = await api.post("http://localhost:8000/api/logtoken/", {
-        username: formData.username,
-        password: formData.password,
-      });
+        // Send login request
+        const response = await api.post("http://localhost:8000/api/logtoken/", {
+            username: formData.username,
+            password: formData.password,
+        });
 
-      // Save JWT tokens to localStorage
-      localStorage.setItem("access", response.data.access);
-      localStorage.setItem("refresh", response.data.refresh);
+        // Save JWT tokens to localStorage
+        localStorage.setItem("access", response.data.access);
+        localStorage.setItem("refresh", response.data.refresh);
 
-      // Set authorization header for all API calls
-      api.defaults.headers['Authorization'] = `Bearer ${response.data.access}`;
+        // Set authorization header for all API calls
+        api.defaults.headers["Authorization"] = `Bearer ${response.data.access}`;
 
-      // Retrieve user details
-      const userDetails = await api.get("/user-details/");
-      const userType = userDetails.data.user_type;
+        // Retrieve user details
+        const userDetails = await api.get("/user-details/");
+        const userType = userDetails.data.user_type;
 
-      // Save user role to localStorage
-      localStorage.setItem("user_role", userType);
+        // Dynamically set runtime variables
+        updateEnvFile(formData.username, formData.password);
 
-      // Navigate based on user role
-      if (userType === "Admin") {
-        navigate("/AdminDash");
-      } else if (userType === "Employee") {
-        navigate("/EmployeeDash");
-      } else {
-        alert("Unknown user type!");
-      }
+        // Save user role to localStorage
+        localStorage.setItem("user_role", userType);
+
+        // Navigate based on user role
+        if (userType === "Admin") {
+            navigate("/AdminDash");
+        } else if (userType === "Employee") {
+            navigate("/EmployeeDash");
+        } else {
+            alert("Unknown user type!");
+        }
     } catch (error) {
-      console.error("Login failed:", error.response?.data || error.message);
-      alert("Invalid username or password.");
+        console.error("Login failed:", error.response?.data || error.message);
+        alert("Invalid username or password.");
     }
-  };
+};
+
+const updateEnvFile = (username, password) => {
+    process.env.API_USERNAME = username;
+    process.env.API_PASSWORD = password;
+
+    console.log("Updated ENV Variables:", {
+        API_USERNAME: process.env.API_USERNAME,
+        API_PASSWORD: process.env.API_PASSWORD,
+    });
+};
 
   // Handle "Create Another Admin" button click
   const handleCreateAdmin = async () => {

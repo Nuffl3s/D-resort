@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.contenttypes.models import ContentType
+from .models import Account
 from rest_framework import serializers
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation
 from .models import Attendance

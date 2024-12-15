@@ -70,36 +70,14 @@ class CustomLoginView(APIView):
         if user is not None:
             refresh = RefreshToken.for_user(user)
             update_last_login(None, user)
-            
+
+            # Ensure 'user_type' is included in the response
             return Response({
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "username": user.username,
-                "password": password,  # Avoid sending plaintext passwords in production
-                "user_type": user.user_type,
+                "user_type": user.user_type  # Make sure this is correct
             }, status=status.HTTP_200_OK)
-            
-            Log.objects.create(
-                username=user.username,
-                action=f"{user.username} logged in.",
-                category="System"
-            )
-
-            # Check user type and provide restricted access if employee
-            if user.user_type == 'Employee':
-                return Response({
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                    "user_type": user.user_type,
-                    "employee_page_url": f"/employee/{user.id}/"  # Redirect to employee page
-                }, status=status.HTTP_200_OK)
-            elif user.user_type == 'Admin':
-                return Response({
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token),
-                    "user_type": user.user_type,
-                }, status=status.HTTP_200_OK)
-
         return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -203,12 +181,14 @@ class CreateAdminView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class UserDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        users = CustomUser.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
-    
-from rest_framework.response import Response
+        # Retrieve the currently authenticated user
+        user = request.user
+        serializer = UserSerializer(user)  # Serialize only the logged-in user's data
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class RegisterEmployeeView(generics.CreateAPIView):
     queryset = Employee.objects.all()

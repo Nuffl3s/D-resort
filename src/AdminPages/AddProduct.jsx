@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/AdminSidebar';
-// import axios from 'axios';
 import api from '../api';
 import Swal from 'sweetalert2';
 
@@ -86,6 +85,7 @@ function AddProduct() {
             return updatedProduct;
         });
     };
+    
 
     const handleSaveClick = () => {
         setProducts(products.map(product =>
@@ -178,12 +178,13 @@ function AddProduct() {
             name: product.name,
             quantity: product.quantity,
             avgPrice: product.avgPrice,
-            sellingPrice: product.sellingPrice
+            sellingPrice: product.sellingPrice,
         }));
     
+        console.log("Products to upload:", productsToUpload);  // Log this to check the format
         try {
             const response = await api.post('http://localhost:8000/api/uploadproducts/', {
-                products: productsToUpload
+                products: productsToUpload, inventory,
             });
     
             if (response.status === 200) {
@@ -192,22 +193,21 @@ function AddProduct() {
                     icon: 'success',
                     title: 'Uploaded!',
                     text: 'Products have been uploaded successfully.',
-                    confirmButtonText: 'OK'
+                    confirmButtonText: 'OK',
                 }).then(() => {
-                    setProducts([]);
+                    setProducts([]);  // Reset product list after successful upload
                 });
             }
         } catch (error) {
-            console.error('Error uploading products', error);
+            console.error('Error uploading products', error.response?.data || error);
             Swal.fire({
                 icon: 'error',
                 title: 'Upload Failed!',
-                text: 'There was an error uploading the products. Please try again.',
-                confirmButtonText: 'OK'
+                text: error.response?.data?.error || 'There was an error uploading the products.',
+                confirmButtonText: 'OK',
             });
         }
     };
-    
 
     const handleProductNameChange = async (e) => {
         const value = e.target.value;
@@ -429,7 +429,7 @@ function AddProduct() {
                                 <table className="min-w-full bg-white">
                                     <thead className="bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                         <tr>
-                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">NO.</th>
+                                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">#</th>
                                             <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Product Name</th>
                                             <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Qty</th>
                                             <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Acq. Cost</th>

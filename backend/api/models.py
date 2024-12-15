@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.core.files.storage import FileSystemStorage
 from django.db.models import JSONField
 from django.db import models
+from django.conf import settings
 
 image_storage = FileSystemStorage(
     # Define where to save the images
@@ -43,6 +44,12 @@ class Employee(models.Model):
     def __str__(self):
         return self.name
 
+class Account(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE)  # Changed to OneToOneField
+
+    def __str__(self):
+        return f"Account for {self.employee.name}"
 class Attendance(models.Model):
     date = models.DateField()
     user = models.ForeignKey('Employee', on_delete=models.CASCADE)  # Link to Employee model
@@ -50,11 +57,12 @@ class Attendance(models.Model):
     time_out = models.TimeField(null=True, blank=True)  # Allow null for time_out
 
     def __str__(self):
-        return f"{self.user.name} - {self.date}"
+        return f"{self.user.name} - {self.date} - {self.time_in} - {self.time_out}"
 
     @property
     def name(self):
         return self.user.name  # Fetches the name from the related Employee model
+
 
 class WeeklySchedule(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
@@ -127,3 +135,7 @@ class Lodge(models.Model):
 
     def __str__(self):
         return f"{self.type} - {self.name}"
+    
+
+
+

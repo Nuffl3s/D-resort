@@ -1,30 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/EmployeeSidebar';
+import api from '../api';
 
 function ManageProduct() {
-    const initialInventory = [
-        { id: 1, name: 'Product A', quantity: 100, price: 50, cost: 30 },
-        { id: 2, name: 'Product B', quantity: 200, price: 30, cost: 20 },
-        { id: 3, name: 'Product C', quantity: 150, price: 20, cost: 10 },
-    ];
-
-    const [inventory, setInventory] = useState(initialInventory);
+    const [inventory, setInventory] = useState([]);
     const [salesInput, setSalesInput] = useState({});
     const [totalProfit, setTotalProfit] = useState(0);
-    const [restockInput, setRestockInput] = useState({});
-    const [salesHistory, setSalesHistory] = useState([]); // Tracks all sales
-    const [recentProducts, setRecentProducts] = useState(initialInventory.slice(0, 3)); // Recently added products
+    const [salesHistory, setSalesHistory] = useState([]);
+    const [recentProducts, setRecentProducts] = useState([]);
 
-    // Handle input change for sale quantity
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await api.get('http://localhost:8000/api/products/');
+                const products = response.data;
+                setInventory(products);
+                setRecentProducts(products.slice(-3)); // Update recent products
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        };
+
+        fetchProducts();
+    }, []);
+
     const handleInputChange = (id, value) => {
+        // Ensure we update the input for only the specific product ID
         setSalesInput(prevState => ({
             ...prevState,
             [id]: value,
         }));
     };
 
-    // Function to process sales
-    const handleSale = (id) => {
+    const handleSale = async (id) => {
         const quantitySold = parseInt(salesInput[id] || 0, 10);
 
         if (!quantitySold || quantitySold <= 0) {
@@ -39,63 +47,43 @@ function ManageProduct() {
             return;
         }
 
-        setInventory(prevInventory =>
-            prevInventory.map(item =>
-                item.id === id
-                    ? { ...item, quantity: item.quantity - quantitySold }
-                    : item
-            )
-        );
+        try {
+            const updatedProduct = { ...soldItem, quantity: soldItem.quantity - quantitySold };
+            await api.put(`http://localhost:8000/api/products/${id}/`, updatedProduct);
 
-        const profit = (soldItem.price - soldItem.cost) * quantitySold;
-        setTotalProfit(prevProfit => prevProfit + profit);
+            // Update inventory locally after successful backend update
+            setInventory(prevInventory =>
+                prevInventory.map(item =>
+                    item.id === id
+                        ? { ...item, quantity: item.quantity - quantitySold }
+                        : item
+                )
+            );
 
-        setSalesInput(prevState => ({
-            ...prevState,
-            [id]: '',
-        }));
+            // Calculate profit and update total profit
+            const profit = (soldItem.sellingPrice - soldItem.avgPrice) * quantitySold;
+            setTotalProfit(prevProfit => prevProfit + profit);
 
-        // Add to sales history
-        setSalesHistory(prevSales => [
-            ...prevSales,
-            {
-                id: prevSales.length + 1,
-                name: soldItem.name,
-                date: new Date().toLocaleString(),
-                totalSale: soldItem.price * quantitySold,
-            },
-        ]);
-    };
+            // Clear the sales input for that product
+            setSalesInput(prevState => ({
+                ...prevState,
+                [id]: '',
+            }));
 
-    // Handle restocking
-    const handleRestock = (id) => {
-        const restockQuantity = parseInt(restockInput[id] || 0, 10);
-
-        if (!restockQuantity || restockQuantity <= 0) {
-            alert('Please enter a valid restock quantity.');
-            return;
+            // Add to sales history
+            setSalesHistory(prevSales => [
+                ...prevSales,
+                {
+                    id: prevSales.length + 1,
+                    name: soldItem.name,
+                    date: new Date().toLocaleString(),
+                    totalSale: soldItem.sellingPrice * quantitySold,
+                },
+            ]);
+        } catch (error) {
+            console.error('Error updating inventory in backend:', error);
+            alert('Failed to update inventory.');
         }
-
-        setInventory(prevInventory =>
-            prevInventory.map(item =>
-                item.id === id
-                    ? { ...item, quantity: item.quantity + restockQuantity }
-                    : item
-            )
-        );
-
-        setRestockInput(prevState => ({
-            ...prevState,
-            [id]: '',
-        }));
-    };
-
-    // Reset inventory to initial state
-    const handleResetInventory = () => {
-        setInventory(initialInventory);
-        setTotalProfit(0);
-        setSalesInput({});
-        setSalesHistory([]);
     };
 
     return (
@@ -126,11 +114,11 @@ function ManageProduct() {
                     </div>
 
                     {/* Inventory Table */}
-                    <div className="rounded-lg">
-                        <table className="table-auto border-collapse border border-gray-300 w-full text-left mt-2">
+                    <div className="rounded-lg mt-2">
+                        <table className="table-auto border-collapse border border-gray-300 w-full text-left">
                             <thead>
                                 <tr>
-                                    <th className="thDesign ">Product Name</th>
+                                    <th className="thDesign">Product Name</th>
                                     <th className="thDesign">Beginning Inventory</th>
                                     <th className="thDesign">Selling Price</th>
                                     <th className="thDesign">Acquisition Cost</th>
@@ -142,55 +130,31 @@ function ManageProduct() {
                             </thead>
                             <tbody className="bg-white">
                                 {inventory.map(item => (
-                                    <tr
-                                        key={item.id}
-                                        className={item.quantity === 0 ? 'bg-white' : item.quantity < 10 ? 'bg-red-100' : ''}
-                                    >
-                                        <td className="border border-gray-300 px-4 py-2">{item.name}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{initialInventory.find(i => i.id === item.id).quantity}</td>
-                                        <td className="border border-gray-300 px-4 py-2">${item.price}</td>
-                                        <td className="border border-gray-300 px-4 py-2">${item.cost}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{item.quantity}</td>
-                                        <td className="border border-gray-300 px-4 py-2">
-                                            {item.quantity === 0 ? (
-                                                <span className="text-gray-500 italic">Out of Stock</span>
-                                            ) : (
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    className="border border-gray-400 p-1 w-20"
-                                                    value={salesInput[item.id] || ''}
-                                                    onChange={(e) => handleInputChange(item.id, e.target.value)}
-                                                />
-                                            )}
+                                    <tr key={item.id} className={item.quantity === 0 ? 'bg-white' : item.quantity < 10 ? 'bg-red-100' : ''}>
+                                        <td className="border px-4 py-2">{item.name}</td>
+                                        <td className="border px-4 py-2">{item.quantity}</td>
+                                        <td className="border px-4 py-2">${item.sellingPrice}</td>
+                                        <td className="border px-4 py-2">${item.avgPrice}</td>
+                                        <td className="border px-4 py-2">{item.quantity}</td>
+                                        <td className="border px-4 py-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                className="border border-gray-400 p-1 w-20"
+                                                value={salesInput[item.name] || ''}  
+                                                onChange={(e) => handleInputChange(item.name, e.target.value)} 
+                                            />
                                         </td>
-                                        <td className="border border-gray-300 px-4 py-2">
-                                            ${(item.price - item.cost) * (parseInt(salesInput[item.id] || 0, 10) || 0)}
+                                        <td className="border px-4 py-2">
+                                            ${(item.sellingPrice - item.avgPrice) * (parseInt(salesInput[item.name] || 0, 10) || 0)}
                                         </td>
-                                        <td className="border border-gray-300 px-4 py-2 flex space-x-2">
-                                            {item.quantity === 0 ? (
-                                                <button
-                                                    onClick={() => handleRestock(item.id)}
-                                                    className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-700"
-                                                >
-                                                    Restock
-                                                </button>
-                                            ) : (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleSale(item.id)}
-                                                        className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-700"
-                                                    >
-                                                        Sell
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleRestock(item.id)}
-                                                        className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-700"
-                                                    >
-                                                        Restock
-                                                    </button>
-                                                </>
-                                            )}
+                                        <td className="border px-4 py-2 flex space-x-2">
+                                            <button
+                                                onClick={() => handleSale(item.name)}
+                                                className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-700"
+                                            >
+                                                Sell
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -200,12 +164,6 @@ function ManageProduct() {
                         {/* Reset and Total Profit */}
                         <div className="mt-4 flex items-center">
                             <h2 className="text-2xl font-semibold mr-4">Total Profit: ${totalProfit.toFixed(2)}</h2>
-                            <button
-                                onClick={handleResetInventory}
-                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
-                            >
-                                Tempo Reset Inventory
-                            </button>
                         </div>
                     </div>
 
@@ -230,7 +188,6 @@ function ManageProduct() {
                                         <tr key={item.id}>
                                             <td className="border px-4 py-2">{item.name}</td>
                                             <td className="border px-4 py-2">
-                                                {initialInventory.find(i => i.id === item.id).quantity - item.quantity}
                                             </td>
                                             <td className="border px-4 py-2">{item.quantity}</td>
                                         </tr>
@@ -286,9 +243,9 @@ function ManageProduct() {
                                     {recentProducts.map(product => (
                                         <tr key={product.id}>
                                             <td className="border px-4 py-2">{product.name}</td>
-                                            <td className="border px-4 py-2">${product.cost}</td>
-                                            <td className="border px-4 py-2">${product.price}</td>
                                             <td className="border px-4 py-2">{product.quantity}</td>
+                                            <td className="border px-4 py-2">${product.avgPrice}</td>
+                                            <td className="border px-4 py-2">${product.sellingPrice}</td>
                                         </tr>
                                     ))}
                                 </tbody>

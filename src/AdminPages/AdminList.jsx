@@ -1,66 +1,110 @@
 import { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2'; 
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
 import api from '../api';
 
 function AdminList() {
-    const [employeeList, setEmployeeList] = useState([]); // List of all employees
-    const [previousEmployeeCount, setPreviousEmployeeCount] = useState(0); // Keep track of the previous employee count
-    const [searchTerm, setSearchTerm] = useState(""); // Search term
-    const [currentPage, setCurrentPage] = useState(1); // Current page
-    const employeesPerPage = 7; // Number of employees per page'
-    
+    const [employeeList, setEmployeeList] = useState([]); 
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState(""); 
+    const [username, setUsername] = useState(""); 
+    const [password, setPassword] = useState(""); 
+    const [confirmPassword, setConfirmPassword] = useState(""); 
+    const [currentPage, setCurrentPage] = useState(1); 
+    const [searchTerm, setSearchTerm] = useState(""); 
+    const employeesPerPage = 7; 
+
+    const API_BASE_URL = 'http://localhost:8000/api/'; // Backend API base URL
+
     useEffect(() => {
-        fetchEmployeeList(); // Fetch employee list on mount
+        fetchEmployeeList();
         const intervalId = setInterval(fetchEmployeeList, 5000); // Poll every 5 seconds
 
-        return () => clearInterval(intervalId); // Clean up interval on component unmount
-    }, []); // Empty dependency array ensures this only runs once on mount
+        return () => clearInterval(intervalId); // Cleanup interval on component unmount
+    }, []);
 
-    // Fetch employees from the backend
     const fetchEmployeeList = async () => {
         try {
-            const response = await api.get('http://localhost:8000/api/employees/');
-
-            // Normalize the data to ensure every employee has an id
-            const newEmployeeList = response.data.map((emp, index) => ({
-                ...emp,
-                id: emp.id || emp.uid || index, // Fallback to index temporarily
-            }));
-
-            console.log("Normalized Employee List: ", newEmployeeList);
-
-            // Compare new and existing employee lists to detect changes
-            if (JSON.stringify(newEmployeeList) !== JSON.stringify(employeeList)) {
-                setEmployeeList(newEmployeeList);
-            }
-
-            // Handle new employee count logic
-            if (newEmployeeList.length > previousEmployeeCount) {
-                if (previousEmployeeCount !== 0) {
-                    Swal.fire({
-                        title: 'New Employee Added',
-                        text: 'A new employee has been added to the system.',
-                        icon: 'success',
-                        confirmButtonText: 'OK',
-                    });
-                }
-                setPreviousEmployeeCount(newEmployeeList.length);
-            }
+            const response = await api.get(`${API_BASE_URL}employees/`);
+            setEmployeeList(response.data);
         } catch (error) {
             console.error('Error fetching employees:', error);
         }
     };
 
-    // Handle search input change
     const handleSearchChange = (e) => {
-        setSearchTerm(e.target.value); // Update the search term
-        setCurrentPage(1); // Reset to the first page on new search
+        setSearchTerm(e.target.value);
+        setCurrentPage(1);
     };
 
-  
-    // Get filtered and paginated employees
+    const handleCreateAccount = async (e) => {
+        e.preventDefault();
+    
+        // Check if employee is selected
+        if (!selectedEmployeeId) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Please select an employee.'
+            });
+            return;
+        }
+    
+        // Check if passwords match
+        if (password !== confirmPassword) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Passwords do not match.'
+            });
+            return;
+        }
+    
+        try {
+            // Send POST request to backend API
+            const response = await api.post('http://localhost:8000/api/create-account/', {
+                user: {
+                    username: username,
+                    password: password
+                },
+                employee_name: "Mars"  // Replace with the actual employee name (dynamic if needed)
+            });
+    
+            // Check if response is successful
+            if (response.status === 201) {
+                // Successful account creation
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: response.data.message || 'Account created successfully'
+                });
+    
+                // Reset the input fields
+                setUsername('');               // Reset username
+                setPassword('');               // Reset password
+                setConfirmPassword('');        // Reset confirm password
+                setSelectedEmployeeId(null);   // Reset employee selection (if needed)
+    
+            } else {
+                // Something went wrong, show the error
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.data.error || 'Account creation failed. Please try again later.'
+                });
+            }
+        } catch (error) {
+            // Handle network or unexpected errors
+            console.error("Error creating account:", error.response || error.message);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.error || 'Account creation failed. Please try again later.'
+            });
+        }
+    };
+    
+    
     const filteredEmployees = employeeList.filter((employee) =>
         employee.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -69,49 +113,10 @@ function AdminList() {
     const indexOfLastEmployee = currentPage * employeesPerPage;
     const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
 
-    // Handle pagination
     const handlePageChange = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
             setCurrentPage(pageNumber);
         }
-    };
-
-    // Handle employee deletion
-    const handleDeleteEmployee = (employeeId) => {
-        if (!employeeId) {
-            console.error("Invalid employeeId passed to handleDeleteEmployee:", employeeId);
-            Swal.fire('Error!', 'Invalid employee selected for deletion.', 'error');
-            return;
-        }
-
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'No, keep it',
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    const response = await api.delete(`http://localhost:8000/api/employees/${employeeId}/`, {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-                        },
-                    });
-
-                    if (response.status === 204 || response.status === 200) {
-                        Swal.fire('Deleted!', 'The employee has been deleted.', 'success');
-                        setEmployeeList(prevList => prevList.filter(emp => emp.id !== employeeId));
-                    } else {
-                        Swal.fire('Error!', 'There was an issue deleting the employee.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error deleting employee:', error.response ? error.response.data : error.message);
-                    Swal.fire('Error!', 'There was an issue deleting the employee.', 'error');
-                }
-            }
-        });
     };
 
     useEffect(() => {
@@ -124,26 +129,11 @@ function AdminList() {
             <div id="add" className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
                 <h1 className="text-4xl font-bold mb-4 dark:text-[#e7e6e6]">EMPLOYEE LIST</h1>
                 <div className="w-full">
-                    <div className="flex">
+                    <div className="flex gap-2">
                         <div className="bg-white rounded-md shadow-md p-6 w-full h-[850px] dark:bg-[#374151]">
                             <div className="justify-between border-b mb-4 pb-3">
                                 <h1 className="font-semibold text-[18px] dark:text-[#e7e6e6]">Employee List</h1>
-                                <div className="w-full flex justify-between">
-                                    <div className="flex mt-5 w-1/2">
-                                        <div className="flex items-center space-x-2 text-xs xs:text-sm text-gray-900">
-                                            <span className="text-[13px] font-semibold text-gray-600 uppercase dark:text-[#e7e6e6]">Show</span>
-                                            <div className="relative inline-block">
-                                                <select className="appearance-none border border-gray-300 bg-white py-1 px-2 pr-8 rounded leading-tight focus:outline-none dark:border-gray-400 dark:bg-[#374151] focus:bg-white focus:border-gray-500 dark:text-[#e7e6e6]">
-                                                    <option value="1">1</option>
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-[#e7e6e6]">
-                                                    <img src="./src/assets/down.png" className="fill-current w-4 h-4 dark:invert" />
-                                                </div>
-                                            </div>
-                                            <span className="text-[13px] font-semibold text-gray-600 uppercase dark:text-[#e7e6e6]">entries</span>
-                                        </div>
-                                    </div>
-
+                                <div className="w-full mt-4">
                                     <div className="flex items-center space-x-2">
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none ">
@@ -198,14 +188,6 @@ function AdminList() {
                                                                 </button>
                                                                 <button
                                                                     className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full"
-                                                                    onClick={() => {
-                                                                        if (employee.id) {
-                                                                            handleDeleteEmployee(employee.id);
-                                                                        } else {
-                                                                            console.error("Employee missing id:", employee);
-                                                                            Swal.fire('Error!', 'Employee cannot be deleted as no ID is available.', 'error');
-                                                                        }
-                                                                    }}
                                                                 >
                                                                     <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
                                                                 </button>
@@ -240,6 +222,77 @@ function AdminList() {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Employee registration */}
+                        <div className="bg-white rounded-md shadow-md p-6 w-full h-[850px] dark:bg-[#374151]">
+                            <h2 className="font-semibold text-lg text-gray-600 dark:text-[#e7e6e6]">Create Account</h2>
+                            <form onSubmit={handleCreateAccount}>
+                                <div className="mt-4">
+                                    <label htmlFor="employee" className="block text-sm font-semibold text-gray-700 dark:text-[#e7e6e6]">
+                                        Select Employee
+                                    </label>
+                                    <select
+                                        id="employee"
+                                        value={selectedEmployeeId}
+                                        onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                                        className="mt-2 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none dark:bg-[#374151] dark:text-[#e7e6e6] dark:border-gray-600"
+                                        required
+                                    >
+                                        <option value="">Select an employee</option>
+                                        {employeeList.map((employee) => (
+                                            <option key={employee.id} value={employee.id}>
+                                                {employee.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="mt-4">
+                                    <label htmlFor="username" className="block text-sm font-semibold text-gray-700 dark:text-[#e7e6e6]">
+                                        Username
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        className="mt-2 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none dark:bg-[#374151] dark:text-[#e7e6e6] dark:border-gray-600"
+                                        required
+                                    />
+                                </div>
+                                <div className="mt-4">
+                                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-[#e7e6e6]">
+                                        Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        id="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="mt-2 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none dark:bg-[#374151] dark:text-[#e7e6e6] dark:border-gray-600"
+                                        required
+                                    />
+                                </div>
+                                <div className="mt-4">
+                                    <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 dark:text-[#e7e6e6]">
+                                        Confirm Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        id="confirmPassword"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="mt-2 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none dark:bg-[#374151] dark:text-[#e7e6e6] dark:border-gray-600"
+                                        required
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="w-full py-2 mt-4 hover:bg-[#09B0EF] bg-[#70b8d3] text-white rounded-md "
+                                >
+                                    Create Account
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

@@ -20,7 +20,7 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Employee
-from .serializers import EmployeeSerializer
+from .serializers import EmployeeSerializer, CreateAccountSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db import IntegrityError
@@ -30,7 +30,10 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Attendance
-from .serializers import AttendanceSerializer
+from .serializers import AttendanceSerializer, Account
+from .serializers import CreateAccountSerializer
+from datetime import date
+from django.contrib.auth import get_user_model
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -72,13 +75,112 @@ class CustomLoginView(APIView):
                 category="System"
             )
 
-            return Response({
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-                "user_type": user.user_type,
-            }, status=status.HTTP_200_OK)
+            # Check user type and provide restricted access if employee
+            if user.user_type == 'Employee':
+                return Response({
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user_type": user.user_type,
+                    "employee_page_url": f"/employee/{user.id}/"  # Redirect to employee page
+                }, status=status.HTTP_200_OK)
+            elif user.user_type == 'Admin':
+                return Response({
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user_type": user.user_type,
+                }, status=status.HTTP_200_OK)
+
         return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
+
+# Backend: CreateAccountView
+class CreateAccountView(APIView):
+    def post(self, request, *args, **kwargs):
+        user_data = request.data.get('user')
+        employee_name = request.data.get('employee_name')  # Getting employee_name from the request
+
+        # Check if both fields are provided
+        if not user_data or not employee_name:
+            return Response({'error': 'Missing user data or employee name'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if employee exists by name
+        try:
+            employee = Employee.objects.get(name=employee_name)  # Look for employee by name
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if username exists already
+        if get_user_model().objects.filter(username=user_data['username']).exists():
+            return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the user and handle potential errors
+        try:
+            user = get_user_model().objects.create_user(username=user_data['username'], password=user_data['password'])
+        except Exception as e:
+            return Response({'error': f'Error creating user: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Now, we pass employee_name correctly
+        data = {
+            'user': user.id,  # Link to the user object
+            'employee_name': employee_name  # Pass the employee name correctly
+        }
+
+        # Serialize and save the account
+        serializer = CreateAccountSerializer(data=data)
+        
+        if not serializer.is_valid():
+            print(f"Serializer errors: {serializer.errors}")  # Log errors to console for debugging
+            return Response({'error': 'Error serializing account data', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            serializer.save()  # Save the account and link the user to the employee
+            return Response({'message': 'Account created successfully'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': f'Error saving account: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class CheckUsernameView(APIView):
+    def get(self, request, username, *args, **kwargs):
+        # Check if the username already exists in the database
+        if get_user_model().objects.filter(username=username).exists():
+            return Response({'exists': True}, status=status.HTTP_200_OK)
+        return Response({'exists': False}, status=status.HTTP_200_OK)
+    
+class CreateAdminView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        # Get the super admin password from request data (for validation)
+        super_admin_password = request.data.get('super_admin_password', '')
+
+        # Validate super admin password (this is a hardcoded example; change this to a real check)
+        if super_admin_password != 'Admin123':  # You can replace this with a more secure check
+            return Response({'error': 'Invalid Super Admin Password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Proceed to create a new admin if super admin password is correct
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        # Validate that username and password are provided
+        if not username or not password:
+            return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the username already exists
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create a new admin user
+        try:
+            user = User.objects.create(
+                username=username,
+                password=make_password(password),  # Hash the password before saving
+            )
+            user.is_staff = True  # Set the user as an admin (staff)
+            user.is_superuser = True  # Optional, make them a superuser
+            user.save()
+
+            return Response({'message': 'Admin created successfully'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
 class UserDetailsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -567,45 +669,62 @@ class EmployeeCreateView(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
-
 class AttendanceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        print("POST request data:", request.data)
+        if 'user' not in request.data:
+            return Response({"detail": "'user' field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = AttendanceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            print("POST request successful")
             return Response({"message": "Attendance recorded successfully!"}, status=201)
-        print("POST request errors:", serializer.errors)
         return Response(serializer.errors, status=400)
 
     def get(self, request):
-        attendances = Attendance.objects.all()
+        user_id = request.query_params.get('user', None)
+        if user_id:
+            attendances = Attendance.objects.filter(user_id=user_id)
+        else:
+            attendances = Attendance.objects.all()
+
         serializer = AttendanceSerializer(attendances, many=True)
-        print("GET request serialized data:", serializer.data)  # Add this
-        return Response(serializer.data, status=200)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk=None):
-        try:
-            print(f"Received PUT request for UID: {pk}")  # Debug log
-            attendance = Attendance.objects.get(pk=pk)
-            print(f"Found attendance record: {attendance}")  # Debug log
-            serializer = AttendanceSerializer(attendance, data=request.data, partial=True)
-            if serializer.is_valid():
-                updated_attendance = serializer.save()
-                print(f"Time out updated to: {updated_attendance.time_out}")  # Debug log
-                return Response(serializer.data, status=200)
-            else:
-                print(f"Serializer errors: {serializer.errors}")  # Debug log for validation errors
-                return Response(serializer.errors, status=400)
-        except Attendance.DoesNotExist:
-            print(f"Attendance record with UID {pk} not found.")  # Debug log
-            return Response({"error": "Attendance record not found."}, status=404)
+        user_id = request.data.get('user')
+        if not user_id:
+            return Response({"detail": "'user' field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get today's date
+        today = date.today()
+
+        # Try to get today's attendance record for the user
+        attendances = Attendance.objects.filter(user_id=user_id, date=today)
+
+        if attendances.exists():
+            # Check if the user already has both time_in and time_out set for today
+            attendance = attendances.order_by('-time_in').first()
+            
+            if attendance.time_in and attendance.time_out:
+                # Both time_in and time_out are already filled
+                return Response({"detail": "Attendance already clocked out for today. Please try tomorrow."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # If only time_in exists, update the time_out field
+            time_out = request.data.get('time_out', None)
+            if time_out:
+                # Ensure time_out is valid and not in the past
+                attendance.time_out = time_out
+                attendance.save()
+                return Response({'message': 'Time out updated successfully!'}, status=status.HTTP_200_OK)
+
+            return Response({'detail': 'Invalid time_out format.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            # If no attendance record found for today, create a new one
+            return Response({'detail': 'Attendance record not found for today or already clocked out.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 
-
-
-
+        

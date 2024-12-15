@@ -15,6 +15,9 @@ function AdminAttendance() {
 
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
+  const currentTime = new Date();
+  // eslint-disable-next-line no-unused-vars
+  const timeOut = currentTime.toLocaleTimeString('en-GB', { hour12: false });
 
   const handleChange = (label) => {
     setSelectedDateRange(label);
@@ -55,41 +58,68 @@ function AdminAttendance() {
     try {
         const response = await api.get('http://localhost:8000/api/attendance/');
         console.log('Fetched attendance data:', response.data);
-        setTableRows(response.data);  // Update table rows with the fetched data
+
+        const sortedData = response.data.sort((a, b) => {
+            const dateTimeA = new Date(`${a.date} ${a.time_in}`);
+            const dateTimeB = new Date(`${b.date} ${b.time_in}`);
+            return dateTimeB - dateTimeA; // Descending order
+        });
+
+        setTableRows(sortedData); // Ensure this triggers a re-render with updated data
     } catch (error) {
         console.error('Error fetching attendance data:', error);
     }
 };
 
-useEffect(() => {
-    const interval = setInterval(() => {
-        fetchAttendanceData();
-    }, 5000);
+  // eslint-disable-next-line no-unused-vars
+  const updateAttendanceTimeOut = async (uid) => {
+    // eslint-disable-next-line no-unused-vars
+    const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const timeOut = new Date().toLocaleTimeString('en-GB', { hour12: false });
 
-    // Initial fetch on mount
-    fetchAttendanceData();
+    try {
+      const response = await api.put(`http://localhost:8000/api/attendance/${uid}/`, {
+        time_out: timeOut,
+      });
 
-    return () => clearInterval(interval);  // Cleanup interval on unmount
-}, []);
-
-// Calculate indexes for pagination
-const indexOfLastItem = currentPage * itemsPerPage;
-const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-const currentItems = tableRows.slice(indexOfFirstItem, indexOfLastItem);
-
-console.log('Current Items:', currentItems);  // Log the current items for debugging
-
-const paginate = (pageNumber) => {
-  setCurrentPage(pageNumber);
+      if (response.status === 200) {
+        console.log('Time-out successfully updated:', response.data);
+        fetchAttendanceData(); // Refresh data
+      }
+    } catch (error) {
+      if (error.response) {
+        console.error('Failed to update time-out:', error.response.status, error.response.data);
+      } else {
+        console.error('Error updating time-out:', error.message);
+      }
+    }
 };
 
-const totalPages = Math.ceil(tableRows.length / itemsPerPage);
 
-const firstItemIndex = indexOfFirstItem + 1;
-const lastItemIndex = Math.min(indexOfLastItem, tableRows.length);
-const showingText = `Showing ${firstItemIndex}-${lastItemIndex} of ${tableRows.length} entries`;
+  useEffect(() => {
+    const interval = setInterval(fetchAttendanceData, 5000); // Poll every 5 seconds
+    fetchAttendanceData(); // Initial fetch
 
+    return () => clearInterval(interval); // Cleanup interval on unmount
+  }, []);
+  
 
+  // Calculate indexes for pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = tableRows.slice(indexOfFirstItem, indexOfLastItem);
+
+  console.log('Current Items:', currentItems);  // Log the current items for debugging
+
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const totalPages = Math.ceil(tableRows.length / itemsPerPage);
+
+  const firstItemIndex = indexOfFirstItem + 1;
+  const lastItemIndex = Math.min(indexOfLastItem, tableRows.length);
+  const showingText = `Showing ${firstItemIndex}-${lastItemIndex} of ${tableRows.length} entries`;
 
   return (
     <div className="flex dark:bg-[#111827] bg-gray-100">
@@ -148,7 +178,7 @@ const showingText = `Showing ${firstItemIndex}-${lastItemIndex} of ${tableRows.l
                             )}
                         </div>
                     </div>
-                
+
                     {/* Options Button */}
                     <button
                         ref={buttonRef}
@@ -206,17 +236,17 @@ const showingText = `Showing ${firstItemIndex}-${lastItemIndex} of ${tableRows.l
 
                             <tbody>
                                 {currentItems.map((row) => {
-                                    console.log('Row rendered:', row); // Log each row data
+                                    console.log('Row rendered:', row); // Log the row data to check for time_out
                                     return (
-                                        <tr key={row.id}>
-                                            <td className="px-5 py-5 border-b border-r text-sm">{row.user}</td>
-                                            <td className="px-5 py-5 border-b border-r text-sm">{row.name}</td>
-                                            <td className="px-5 py-5 border-b border-r text-sm">{row.date}</td>
-                                            <td className="px-5 py-5 border-b border-r text-sm">{row.time_in}</td>
-                                            <td className={`px-5 py-5 border-b border-r text-sm ${!row.time_out ? 'text-red-400' : ''}`}>
-                                                {row.time_out || 'No time out yet'}
-                                            </td>
-                                        </tr>
+                                    <tr key={row.uid}>
+                                        <td className="px-5 py-5 border-b border-r text-sm">{row.user}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm">{row.name}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm">{row.date}</td>
+                                        <td className="px-5 py-5 border-b border-r text-sm">{row.time_in}</td>
+                                        <td className={`px-5 py-5 border-b border-r text-sm ${row.time_out === null ? 'text-red-400' : ''}`}>
+                                        {row.time_out !== null ? row.time_out : 'No time out yet'}
+                                        </td>
+                                    </tr>
                                     );
                                 })}
                             </tbody>

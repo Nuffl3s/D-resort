@@ -19,19 +19,10 @@ function ProductList() {
         fetchProducts();
     }, []);
 
-    const handleDeleteProduct = async (id) => {
-        try {
-            await api.delete(`http://localhost:8000/api/products/${id}/`);
-            setProducts(products.filter(product => product.id !== id));
-        } catch (error) {
-            console.error("Error deleting product:", error);
-        }
-    };
-
     const calculateTotalProfit = (product) => {
-        // Assuming the product has a 'sellingPrice' and 'avgPrice' (acquisition cost) attributes.
-        if (product.sellingPrice && product.avgPrice) {
-            return (product.sellingPrice - product.avgPrice) * product.quantity;
+        // Assuming the product has a 'sellingPrice' and 'acquisitionCost' attributes.
+        if (product.sellingPrice && product.acquisitionCost) {
+            return (product.sellingPrice - product.acquisitionCost) * product.quantity;
         }
         return 0; // Return 0 if prices are missing
     };
@@ -46,7 +37,7 @@ function ProductList() {
                 <div className='flex justify-between items-center mb-4'>
                     <div className="flex items-center space-x-4">
                         <div className="relative">
-                            <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none ">
+                            <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none">
                                 <svg
                                     className="w-5 h-5 text-gray-500"
                                     aria-hidden="true"
@@ -79,7 +70,6 @@ function ProductList() {
                                 <th scope="col" className="thDesign">Acquisition cost</th>
                                 <th scope="col" className="thDesign">Selling price</th>
                                 <th scope="col" className="thDesign">Total profit</th>
-                                <th scope="col" className="thDesign">ACTION</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,33 +80,9 @@ function ProductList() {
                                         <td className="px-6 py-4 font-medium text-black whitespace-nowrap">{product.name}</td>
                                         <td className="px-6 py-4">{product.date_added}</td>
                                         <td className="px-6 py-4">{product.quantity}</td>
-                                        <td className="px-6 py-4">{product.avgPrice}</td>
+                                        <td className="px-6 py-4">{product.acquisitionCost}</td> {/* Updated to 'acquisitionCost' */}
                                         <td className="px-6 py-4">{product.sellingPrice}</td>
                                         <td className="px-6 py-4">{calculateTotalProfit(product)}</td>
-                                        <td className="space-x-2">
-                                            <button
-                                                className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
-                                                onClick={() => handleDeleteProduct(product.id)}
-                                            >
-                                                <img
-                                                    src="./src/assets/edit.png"
-                                                    className="fill-current w-4 h-4"
-                                                    style={{ filter: 'invert(100%)' }}
-                                                    alt="Delete"
-                                                />
-                                            </button>
-                                            <button
-                                                className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"
-                                                onClick={() => handleDeleteProduct(product.id)}
-                                            >
-                                                <img
-                                                    src="./src/assets/delete.png"
-                                                    className="fill-current w-4 h-4"
-                                                    style={{ filter: 'invert(100%)' }}
-                                                    alt="Delete"
-                                                />
-                                            </button>
-                                        </td>
                                     </tr>
                                 ))
                             ) : (
@@ -140,7 +106,7 @@ ProductList.propTypes = {
             name: PropTypes.string.isRequired,
             date_added: PropTypes.string.isRequired,
             quantity: PropTypes.number.isRequired,
-            avgPrice: PropTypes.number.isRequired,
+            acquisitionCost: PropTypes.number.isRequired, // Changed from avgPrice to acquisitionCost
             sellingPrice: PropTypes.number.isRequired,
         })
     ).isRequired,

@@ -1,14 +1,14 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Account
 from .models import Attendance
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "password", "user_type"]
+        fields = ["id", "username", "password", "user_type"]  # Remove "employee" field
         extra_kwargs = {
             "password": {"write_only": True},  # Prevent password from being read back
         }
@@ -26,6 +26,29 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ['name', 'address']
+
+class CreateAccountSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(write_only=True)  # Employee name is not to be included in the response
+
+    class Meta:
+        model = Account
+        fields = ['user', 'employee_name']  # Specify the fields you want to serialize
+
+    def create(self, validated_data):
+        employee_name = validated_data.get('employee_name')  # Get employee name from the validated data
+        
+        # Try to retrieve the employee by name
+        try:
+            employee = Employee.objects.get(name=employee_name)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError("Employee not found")  # Provide a clearer error message
+
+        # Create and return the account with the linked user and employee
+        account = Account.objects.create(
+            user=validated_data.get('user'),  # This should be the user object passed in the validated data
+            employee=employee
+        )
+        return account
 
 class WeeklyScheduleSerializer(serializers.ModelSerializer):
     employee = serializers.CharField(source='employee.name')
@@ -151,15 +174,10 @@ class CottageSerializer(serializers.ModelSerializer):
         return obj.custom_prices
 
 class AttendanceSerializer(serializers.ModelSerializer):
-    time_out = serializers.SerializerMethodField()
+    time_out = serializers.TimeField(required=False, allow_null=True)  # TimeField for time_out
 
-    def get_time_out(self, obj):
-        if obj.time_out:
-            print(f"Time out for {obj.user}: {obj.time_out}")  # Debugging
-            return obj.time_out.strftime('%H:%M:%S')
-        return None
-        
     class Meta:
         model = Attendance
         fields = ['user', 'name', 'date', 'time_in', 'time_out']
-        extra_kwargs = {'time_out': {'required': False}}
+        extra_kwargs = {'time_out': {'required': False}}  # Allow 'time_out' to be optional
+

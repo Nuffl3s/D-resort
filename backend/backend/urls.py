@@ -8,6 +8,10 @@ from api.views import UpdatePayrollView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import EmployeeCreateView
 from api.views import AttendanceView
+from api.views import CreateAccountView
+from api.views import CheckUsernameView
+from api.views import CreateAdminView
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -41,4 +45,7 @@ urlpatterns = [
     path('api/employees/', EmployeeCreateView.as_view(), name='api_employee'),
     path('api/attendance/', AttendanceView.as_view(), name='attendance'),
     path('api/attendance/<int:pk>/', AttendanceView.as_view(), name='attendance-update'),
+    path('api/create-account/', CreateAccountView.as_view(), name='create_account'),
+    path('api/check-username/<str:username>/', CheckUsernameView.as_view(), name='check-username'),
+    path('api/create-admin/', CreateAdminView.as_view(), name='create-admin'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

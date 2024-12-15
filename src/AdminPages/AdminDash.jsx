@@ -21,10 +21,6 @@ function AdminDash () {
     const [salesSummaryModalOpen, setSalesSummaryModalOpen] = useState(false);
     const [attendanceData, setAttendanceData] = useState([]);
 
-
-    // New state for filtering attendance
-    const [attendanceFilter, setAttendanceFilter] = useState('Day');
-
     const lightTheme = createTheme({
         palette: {
           mode: 'light',
@@ -86,18 +82,26 @@ function AdminDash () {
      // Fetch Attendance Data
      useEffect(() => {
         const fetchAttendanceData = async () => {
-          try {
-            const response = await api.get('http://localhost:8000/api/attendance/'); 
-            console.log("Fetched attendance data:", response.data);
-            setAttendanceData(response.data); // Save fetched data to state
-          } catch (error) {
-            console.error('Error fetching attendance data:', error);
-          }
-
+            try {
+                const response = await api.get('http://localhost:8000/api/attendance/');
+                console.log("Fetched attendance data:", response.data);
+    
+                // Sort attendance data by date and time_in (latest first)
+                const sortedData = response.data.sort((a, b) => {
+                    const dateTimeA = new Date(`${a.date} ${a.time_in}`);
+                    const dateTimeB = new Date(`${b.date} ${b.time_in}`);
+                    return dateTimeB - dateTimeA; // Descending order
+                });
+    
+                setAttendanceData(sortedData); // Save sorted data to state
+            } catch (error) {
+                console.error('Error fetching attendance data:', error);
+            }
         };
-      
+    
         fetchAttendanceData();
-      }, []);
+    }, []);
+    
       
   useEffect(() => {
     // Update the current time every second
@@ -182,7 +186,7 @@ function AdminDash () {
 
                         <div className="p-6 w-full mx-auto mt-8 bg-white shadow-lg rounded-lg border-gray-200 mb-4 min-h-[610px] dark:bg-[#374151]">
                             <div className="flex justify-between">
-                                <h1 className="text-xl font-bold text-start mb-10 dark:text-[#e7e6e6]">Sales Summary</h1>
+                                <h1 className="text-xl font-bold text-start mb-10 dark:text-[#e7e6e6]">Summary</h1>
                                 <button onClick={handleViewAllClick} className="bg-[#70b8d3] hover:bg-[#09B0EF] mb-10 px-2 text-white text-sm rounded-[5px] font-medium">View all</button>
                             </div>
 
@@ -201,28 +205,30 @@ function AdminDash () {
                                                     <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Product Name</th>
                                                     <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Date</th>
                                                     <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Quantity</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Price</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Amount</th>
+                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Acquisition Cost</th>
+                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Selling Price</th>
+                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Total Profit</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="dark:text-[#e7e6e6]">
-                                            {products.length > 0 ? (
-                                                products.map((product, index) => (
-                                                    <tr key={index}>
-                                                        <td className="px-5 py-5 border-b border-gray-200tex t-start">{product.name}</td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 text-start">{product.date_added}</td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 text-start">{product.quantity}</td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 text-start">${product.avgPrice}</td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 text-start">${(product.quantity * product.avgPrice).toFixed(2)}</td>
+                                                {products.length > 0 ? (
+                                                    products.map((product, index) => (
+                                                        <tr key={index}>
+                                                            <td className="px-5 py-5 border-b border-gray-200 text-start">{product.name}</td>
+                                                            <td className="px-5 py-5 border-b border-gray-200 text-start">{product.date_added}</td>
+                                                            <td className="px-5 py-5 border-b border-gray-200 text-start">{product.quantity}</td>
+                                                            <td className="px-5 py-5 border-b border-gray-200 text-start">${product.avgPrice}</td> {/* Acquisition Cost */}
+                                                            <td className="px-5 py-5 border-b border-gray-200 text-start">${product.sellingPrice}</td> {/* Selling Price */}
+                                                            <td className="px-5 py-5 border-b border-gray-200 text-start">${(product.quantity * (product.sellingPrice - product.avgPrice)).toFixed(2)}</td> {/* Total Profit */}
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="5" className="px-5 py-5 text-center">No Products Available</td>
                                                     </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan="5" className="px-5 py-5 text-center">No Products Available</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -260,23 +266,9 @@ function AdminDash () {
                                 </div>
                             </div>
 
-                            {/* Filter Buttons */}
-                            <div className="flex justify-start mb-4">
-                                {['Day', 'Week', 'Month'].map((filter) => (
-                                    <button
-                                        key={filter}
-                                        className={`px-4 py-2 mx-1 text-sm font-medium text-white rounded-lg  ${
-                                            attendanceFilter === filter ? 'bg-[#70b8d3]' : 'bg-gray-400'
-                                        }`}
-                                        onClick={() => setAttendanceFilter(filter)}
-                                    >
-                                        {filter}
-                                    </button>
-                                ))}
-                            </div>
 
                             {/* Attendance Table */}
-                            <div className="overflow-x-auto max-h-[250px]"> {/* Added outer wrapper for horizontal scrolling */}
+                            <div className="overflow-x-auto max-h-[305px]"> {/* Added outer wrapper for horizontal scrolling */}
                                 <table className="min-w-full bg-white rounded-lg">
                                     <thead className="sticky top-0 border-gray-200 bg-gray-100 text-gray-600 dark:bg-[#1f2937] dark:text-[#e7e6e6] z-10"> {/* Fixes header position */}
                                         <tr>

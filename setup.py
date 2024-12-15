@@ -149,26 +149,30 @@ def fetch_attendance():
 
         for attendance in conn.live_capture():
             if attendance:
-                uid = attendance.uid
+                user_id = attendance.uid  # Assuming the user_id is used here instead of uid
                 timestamp = attendance.timestamp if isinstance(attendance.timestamp, datetime) else datetime.fromtimestamp(attendance.timestamp)
-                timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Convert the time part to a string (HH:MM:SS format)
+                time_in = timestamp.time().strftime('%H:%M:%S')  # Convert time to string (HH:MM:SS)
+                time_out = None  # Default for now, will be updated later
 
                 users = conn.get_users()
-                user = next((u for u in users if u.uid == uid), None)
+                user = next((u for u in users if u.uid == user_id), None)
                 user_name = user.name if user else 'Unknown'
 
-                if uid not in attendance_data:
-                    attendance_data[uid] = {'name': user_name, 'time_in': timestamp_str, 'time_out': 'No time out yet'}
-                    print(f"Time in for {user_name} at {timestamp_str}")
+                # Initialize time_out variable for the current iteration
+                if user_id not in attendance_data:
+                    attendance_data[user_id] = {'name': user_name, 'time_in': time_in, 'time_out': time_out, 'timestamp': timestamp}
+                    print(f"Time in for {user_name} at {time_in}")
 
-                    time_in = timestamp_str.split(' ')[1]
-                    date = timestamp_str.split(' ')[0]
+                    # Convert the date to a string format for JSON serialization
+                    date = timestamp.date().strftime('%Y-%m-%d')  # Convert date to string
 
                     data = {
-                        'name': user_name,
-                        'user': uid,
-                        'date': date,
-                        'time_in': time_in,
+                        'user': user_id,
+                        'date': date,  # Use string formatted date
+                        'time_in': time_in,  # Using string formatted time_in
+                        'time_out': time_out,
                     }
 
                     token = fetch_token()
@@ -177,29 +181,39 @@ def fetch_attendance():
                         response = requests.post(f"{API_URL}/attendance/", json=data, headers=headers)
 
                         if response.status_code == 201:
-                            print(f"Attendance recorded for UID {uid} - Name: {user_name} - Time In: {time_in}")
-                            attendance_data[uid]['sent'] = True
+                            print(f"Attendance recorded for {user_name} - Time In: {time_in}")
+                            attendance_data[user_id]['sent'] = True
                         else:
-                            print(f"Failed to record attendance for UID {uid}: {response.status_code}, {response.text}")
+                            print(f"Failed to record attendance for {user_name}: {response.status_code}, {response.text}")
 
-                elif attendance_data[uid]['time_out'] == 'No time out yet':
-                    print(f"Updating time-out for UID {uid} at {timestamp_str}")
-                    attendance_data[uid]['time_out'] = timestamp_str  # Set time_out in attendance_data
-                    time_out = timestamp.strftime('%H:%M:%S')
-                    data = {'time_out': time_out}
-                    print(f"Payload for time-out update: {data}")
+                else:
+                    # If time_out is None, it's the latest attendance we need to update
+                    if attendance_data[user_id]['time_out'] is None:
+                        # We update the latest entry only if its time_out is None
+                        print(f"Updating time-out for {user_name} at {timestamp}")
 
-                    token = fetch_token()
-                    if token:
-                        headers = {'Authorization': f'Bearer {token}'}
-                        url = f"{API_URL}/attendance/{uid}/"  # Ensure UID is correct
-                        print(f"Sending PUT request to: {url} with data: {data}")  # Debug log for URL and payload
-                        response = requests.put(url, json=data, headers=headers)
+                        # Convert the time_out to string (HH:MM:SS)
+                        time_out = timestamp.time().strftime('%H:%M:%S')  # Update with string formatted time
 
-                        if response.status_code == 200:
-                            print(f"Time out updated for UID {uid} - Name: {user_name} - Time Out: {time_out}")
-                        else:
-                            print(f"Failed to update time out for UID {uid}: {response.status_code}, {response.text}")
+                        data = {
+                            'user': user_id,  # Correct user ID
+                            'time_out': time_out,  # Pass the time_out as a string
+                        }
+
+                        token = fetch_token()
+                        if token:
+                            headers = {'Authorization': f'Bearer {token}'}
+                            url = f"{API_URL}/attendance/{user_id}/"  # Ensure the URL contains the correct user_id
+                            response = requests.put(url, json=data, headers=headers)
+
+                            if response.status_code == 200:
+                                print(f"Time out updated for {user_name} - Time Out: {time_out}")
+                                # Update time_out in the attendance_data after successful update
+                                attendance_data[user_id]['time_out'] = time_out
+                            else:
+                                print(f"Failed to update time out for {user_name}: {response.status_code}, {response.text}")
+                    else:
+                        print(f"Skipping update for {user_name}, time_out already set.")
 
     except Exception as e:
         print(f"Error: {e}")
@@ -208,19 +222,18 @@ def fetch_attendance():
         if conn:
             conn.disconnect()
 
-
 # Run both functions concurrently using threading
 if __name__ == "__main__":
     print("Starting both attendance capture and biometric sync...")
 
     # Create threads for both tasks
     attendance_thread = threading.Thread(target=fetch_attendance)
-    # sync_thread = threading.Thread(target=sync_biometric_data)
+    sync_thread = threading.Thread(target=sync_biometric_data)
 
     # Start both threads
     attendance_thread.start()
-    # sync_thread.start()
+    sync_thread.start()
 
     # Join both threads (wait for them to finish)
     attendance_thread.join()
-    # sync_thread.join()
+    sync_thread.join()

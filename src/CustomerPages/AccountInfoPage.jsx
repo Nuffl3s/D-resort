@@ -13,25 +13,61 @@ function AccountInfoPage() {
     const [newPassword, setNewPassword] = useState('');
     const [newEmail, setNewEmail] = useState('');
     const navigate = useNavigate();
+    const [groupedLogs, setGroupedLogs] = useState({});
 
     // Fetch account details and logs
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const accountRes = await api.get('/customer/details/'); // Get account details
-                
+                // Fetch account details
+                const accountRes = await api.get('/customer/details/');
                 setAccountData({
-                    fullName: `${accountRes.data.name}`,
+                    fullName: accountRes.data.name,
                     email: accountRes.data.email,
                     phoneNumber: accountRes.data.phone_number,
                 });
-
+    
+                // Fetch reservations
+                const reservationRes = await api.get('/reservations/'); // Use ReservationView endpoint
+                setLogs(reservationRes.data);
+    
             } catch (error) {
-                console.error('Error fetching account data:', error);
+                console.error('Error fetching account or reservation data:', error);
             }
         };
         fetchData();
     }, []);
+
+    const handleBookAgain = (reservation) => {
+        const { unit_name, unit_type } = reservation;
+    
+        // Fetch unit details dynamically
+        api.get(`/${unit_type.toLowerCase()}s/?name=${unit_name}`)
+            .then((response) => {
+                const unitDetails = response.data[0]; // Assuming the API returns a list
+                navigate("/payment", {
+                    state: {
+                        unit: {
+                            name: unitDetails.name,
+                            capacity: unitDetails.capacity,
+                            custom_prices: unitDetails.custom_prices,
+                            image_url: unitDetails.image_url,
+                            description: unitDetails.description || "No description available",
+                        },
+                        selectedDate: new Date(reservation.date_of_reservation),
+                    },
+                });
+            })
+            .catch((error) => {
+                console.error("Error fetching unit details:", error);
+                alert("Failed to fetch unit details. Please try again.");
+            });
+    };
+
+    const handleCheckAvailability = (unitName) => {
+        navigate(`/calendar/${unitName}`); // Pass the unit name as a parameter
+    };
+    
 
     const handleChangePassword = async () => {
         try {
@@ -99,19 +135,68 @@ function AccountInfoPage() {
 
             {/* Logs Section */}
             <div className="mt-6">
-                <h2 className="text-xl font-semibold mb-2">Booking Logs</h2>
-                <ul className="list-disc pl-5">
-                    {logs.length > 0 ? (
-                        logs.map((log) => (
-                            <li key={log.id} className="mb-2">
-                                <span className="font-bold">{log.timestamp}:</span> {log.action}
-                            </li>
-                        ))
-                    ) : (
-                        <p>No booking logs found.</p>
-                    )}
-                </ul>
-            </div>
+    <h2 className="text-xl font-semibold mb-4">Your Reservations</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {logs.length > 0 ? (
+            // Group reservations by unit_name
+            Object.values(
+                logs.reduce((acc, reservation) => {
+                    const key = reservation.unit_name;
+                    if (!acc[key]) {
+                        acc[key] = { ...reservation, count: 1 };
+                    } else {
+                        acc[key].count += 1;
+                    }
+                    return acc;
+                }, {})
+            ).map((reservation) => (
+                <div
+                    key={reservation.unit_name}
+                    className="bg-white rounded-xl shadow-md border border-gray-200 transition-transform hover:scale-105"
+                >
+                    {/* Image Section */}
+                    <img
+                        src={reservation.image_url || "/default-image.jpg"}
+                        alt={reservation.unit_name}
+                        className="w-full h-40 object-cover rounded-t-xl"
+                    />
+
+                    {/* Details Section */}
+                    <div className="p-4">
+                        <h3 className="text-xl font-semibold mb-2">{reservation.unit_name}</h3>
+                        <p className="text-gray-600 mb-1">
+                            <strong>Reservations:</strong> {reservation.count} times
+                        </p>
+                        <p className="text-gray-600 mb-1">
+                            <strong>Last Reserved:</strong> {reservation.date_of_reservation}
+                        </p>
+                        <p className="text-gray-600 mb-3">
+                            <strong>Total Price:</strong> ₱{reservation.total_price}
+                        </p>
+
+                        {/* Action Buttons */}
+                        <div className="flex space-x-4 mt-4">
+                            <button
+                                onClick={() => handleBookAgain(reservation)}
+                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow"
+                            >
+                                Book Again
+                            </button>
+                            <button
+                                onClick={() => handleCheckAvailability(reservation.unit_name)}
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md shadow"
+                            >
+                                Check Availability
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ))
+        ) : (
+            <p className="text-gray-500">No reservations found.</p>
+        )}
+    </div>
+</div>
         </div>
     );
 }

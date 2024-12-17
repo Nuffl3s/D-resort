@@ -173,9 +173,7 @@ class Lodge(models.Model):
         return f"{self.type} - {self.name}"
     
 class Reservation(models.Model):
-    customer_name = models.CharField(max_length=255)
-    customer_email = models.EmailField()
-    customer_mobile = models.CharField(max_length=15)
+    customer = models.ForeignKey('CustomerAccount', on_delete=models.CASCADE)  # Use a string reference
     unit_type = models.CharField(max_length=50)
     unit_name = models.CharField(max_length=255)
     transaction_date = models.DateField(auto_now_add=True)
@@ -183,13 +181,9 @@ class Reservation(models.Model):
     time_of_use = models.CharField(max_length=50, null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
-    # Add ContentType and ObjectID fields for GenericForeignKey
-    content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
-    object_id = models.PositiveIntegerField(null=True, blank=True)
-    unit = GenericForeignKey('content_type', 'object_id')
-
     def __str__(self):
-        return f"Reservation by {self.customer_name} for {self.unit_name} at {self.time_of_use}"
+        return f"Reservation for {self.customer.name} - {self.unit_name}"
+
 
 class CustomerAccountManager(BaseUserManager):
     def create_user(self, username, email, password=None):

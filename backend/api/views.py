@@ -9,6 +9,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.http import JsonResponse
 from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer, ReservationSerializer, CustomerAccountSerializer
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation, CustomerAccount
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -734,57 +735,107 @@ def get_reservations_with_unit_details():
 
     return serialized_reservations 
 
+def reservations_view(request):
+    reservations = Reservation.objects.all()
+    response = [
+        {
+            "unit_name": res.unit_name,
+            "date_of_reservation": res.date_of_reservation.strftime("%Y-%m-%d"),
+            "time_of_use": res.time_of_use,  # Include reserved times
+        }
+        for res in reservations
+    ]
+    return JsonResponse(response, safe=False)
+
+from datetime import datetime
+
 class ReservationView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, AllUser]
 
     def get(self, request):
-        reservations = Reservation.objects.all()
+        reservations = Reservation.objects.filter(customer=request.user.customer_account)
         serializer = ReservationSerializer(reservations, many=True, context={"request": request})
         return Response(serializer.data, status=200)
-
+    
     def post(self, request):
-        data = request.data.copy()
-        unit_type = data.get("unit_type", "").lower()
-        unit_name = data.get("unit_name")
+        # Validate if 'customer_account' is linked
+        if not hasattr(request.user, 'customer_account'):
+            return Response({"error": "Customer account not found for the user."}, status=400)
 
+        # Extract and validate the date
+        date_of_reservation = request.data.get("date_of_reservation")
+        if date_of_reservation:
+            try:
+                reservation_date = datetime.strptime(date_of_reservation, "%Y-%m-%d").date()
+            except ValueError:
+                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+        else:
+            return Response({"error": "Date of reservation is required."}, status=400)
+
+        # Prepare the data for saving
+        data = {
+            "customer_name": request.data.get("customer_name"),
+            "unit_name": request.data.get("unit_name"),
+            "date_of_reservation": reservation_date,
+            "time_of_use": request.data.get("time_of_use"),
+            "total_price": request.data.get("total_price"),
+        }
+
+        # Validate unit_type and unit_name
+        unit_type = request.data.get("unit_type", "").lower()
+        unit_name = request.data.get("unit_name")
         if unit_type and unit_name:
             try:
                 if unit_type == "cottage":
                     unit = Cottage.objects.get(name=unit_name)
-                    data["content_type"] = ContentType.objects.get_for_model(Cottage).id
-                    data["object_id"] = unit.id
                 elif unit_type == "lodge":
                     unit = Lodge.objects.get(name=unit_name)
-                    data["content_type"] = ContentType.objects.get_for_model(Lodge).id
-                    data["object_id"] = unit.id
+                else:
+                    return Response({"error": "Invalid unit type."}, status=400)
             except (Cottage.DoesNotExist, Lodge.DoesNotExist):
                 return Response({"error": f"Unit '{unit_name}' not found."}, status=400)
 
+        # Serialize and save the reservation
         serializer = ReservationSerializer(data=data)
         if serializer.is_valid():
-            reservation = serializer.save()  # Ensure data gets saved properly
+            reservation = serializer.save()
             Log.objects.create(
-                username=request.user.username if request.user.is_authenticated else "Guest",
-                action=f"Created reservation for {reservation.customer_name}",
+                username=request.user.username,
+                action=f"Created reservation for {reservation.customer_name} on {reservation_date}",
                 category="Reservation"
             )
             return Response(serializer.data, status=201)
-        else:
-            return Response(serializer.errors, status=400)
+        return Response(serializer.errors, status=400)
 
     def delete(self, request, pk):
         try:
             reservation = Reservation.objects.get(pk=pk)
             reservation.delete()
             Log.objects.create(
-                username=request.user.username if request.user.is_authenticated else "Guest",
-                action=f"Deleted reservation for {reservation.customer_name}",
+                username=request.user.username,
+                action=f"Deleted reservation for {reservation.customer.name}",
                 category="Reservation"
             )
             return Response({"message": "Reservation deleted successfully!"}, status=204)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
 
+    def put(self, request, pk):
+        try:
+            reservation = Reservation.objects.get(pk=pk)
+            serializer = ReservationSerializer(reservation, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_reservation = serializer.save()
+                Log.objects.create(
+                    username=request.user.username,
+                    action=f"Updated reservation for {updated_reservation.customer.name}",
+                    category="Reservation"
+                )
+                return Response(serializer.data, status=200)
+            return Response(serializer.errors, status=400)
+        except Reservation.DoesNotExist:
+            return Response({"error": "Reservation not found."}, status=404)
+        
     def put(self, request, pk):
         try:
             reservation = Reservation.objects.get(pk=pk)
@@ -801,7 +852,7 @@ class ReservationView(APIView):
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
 
-        
+
 class ReservationDetailView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer

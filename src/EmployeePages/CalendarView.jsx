@@ -2,39 +2,69 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import api from '../api';
+import { isDateFullyReserved } from "../Utils/reservationUtils";
+
 
 const CalendarView = () => {
-    const { title } = useParams();
+    const { title } = useParams(); // Unit name passed through navigation
     const [events, setEvents] = useState([]);
     const navigate = useNavigate();
-
-    const handleGoBack = () => {
-        navigate(-1);
-    };
-
-    const generateEvents = () => {
-        const currentDate = new Date();
-        const eventsArray = [];
-
-        for (let i = 0; i < 365 * 10; i++) {
-            const eventDate = new Date(currentDate);
-            eventDate.setDate(currentDate.getDate() + i);
-
-            eventsArray.push({
-                id: `event-${eventDate.toISOString().split('T')[0]}`,
-                date: eventDate.toISOString().split('T')[0],
-                backgroundColor: 'transparent',
-                borderColor: 'transparent',
-            });
-        }
-
-        return eventsArray;
-    };
+    const [reservedDates, setReservedDates] = useState([]);
+    const handleGoBack = () => navigate(-1);
 
     useEffect(() => {
-        const upcomingEvents = generateEvents();
-        setEvents(upcomingEvents);
-    }, []);
+        const fetchReservedDates = async () => {
+            try {
+                const response = await api.get("/reservations/");
+                const reservations = response.data;
+    
+                // Filter reservations for the specific unit
+                const unitReservations = reservations.filter(
+                    (res) => res.unit_name === title
+                );
+    
+                const eventsData = unitReservations.map((res) => ({
+                    title: `Reserved: ${
+                        Array.isArray(res.time_of_use)
+                            ? res.time_of_use.join(", ")
+                            : res.time_of_use || "N/A" // Handle string or null case
+                    }`,
+                    start: res.date_of_reservation,
+                    extendedProps: {
+                        unitName: res.unit_name,
+                        reservedTimes: Array.isArray(res.time_of_use)
+                            ? res.time_of_use
+                            : res.time_of_use
+                            ? res.time_of_use.split(", ")
+                            : [], // Split string into array if needed
+                    },
+                }));
+    
+                setEvents(eventsData);
+            } catch (error) {
+                console.error("Error fetching reservations:", error);
+            }
+        };
+    
+        fetchReservedDates();
+    }, [title]);
+    
+
+    // Function to check if all time slots are reserved for a date and unit
+    const isDateFullyReserved = (date, unitName) => {
+        const formatDateToLocal = (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString("en-US", { timeZone: "Asia/Manila" });
+        };
+        console.log(formatDateToLocal("2024-12-26"));
+        const reservedTimes = reservations.flatMap(event => event.extendedProps.reservedTimes);
+
+        const allTimes = unit.custom_prices ? Object.keys(unit.custom_prices) : [];
+        const remainingTimes = allTimes.filter((time) => !reservedTimes.includes(time));
+
+        return remainingTimes.length === 0;
+    };
 
     return (
         <div className="flex-row calendar-con">
@@ -42,54 +72,22 @@ const CalendarView = () => {
                 <img src="/src/assets/back.png" alt="" className="w-8 h-8" />
             </button>
             <div className="flex flex-col h-screen p-16 calendar">
-                <h2 className="text-2xl font-semibold mb-4">Events for {title}</h2>
+                <h2 className="text-2xl font-semibold mb-4">Availability for {title}</h2>
                 <div className="flex-grow overflow-hidden">
                     <FullCalendar
                         plugins={[dayGridPlugin]}
                         initialView="dayGridMonth"
                         events={events}
+                        eventContent={(eventInfo) => (
+                            <div className="text-red-500 text-sm font-semibold">
+                                {eventInfo.event.title}
+                            </div>
+                        )}                        
                         headerToolbar={{
+                            left: 'title',
                             right: 'prev,next today',
                         }}
                         height="100%"
-                        eventContent={(eventInfo) => {
-                            const eventDate = new Date(eventInfo.event.start); 
-                            const currentDate = new Date(); 
-                            currentDate.setHours(0, 0, 0, 0); 
-
-                            const eventYear = eventDate.getFullYear();
-                            const eventMonth = eventDate.getMonth();
-                            const eventDay = eventDate.getDate();
-
-                            const currentYear = currentDate.getFullYear();
-                            const currentMonth = currentDate.getMonth();
-                            const currentDay = currentDate.getDate();
-
-                            // Check if the event is in a future month
-                            const isFutureMonth = eventYear > currentYear || (eventYear === currentYear && eventMonth > currentMonth);
-
-                            // Check if the event is a future day in the current month
-                            const isFutureDayInCurrentMonth = eventYear === currentYear && eventMonth === currentMonth && eventDay >= currentDay;
-
-                            // Get the currently displayed month (FullCalendar view month)
-                            const calendarViewMonth = eventInfo.view.currentStart.getMonth(); // FullCalendar's current displayed month
-
-                            // Show "Book Now" if it's a future month or a future day in the current month and if the event is in the visible month
-                            const showBookNowButton = (isFutureMonth || isFutureDayInCurrentMonth) && eventMonth === calendarViewMonth;
-
-                            return (
-                                <div className="event-content flex justify-end">
-                                    <div>{eventInfo.event.title}</div>
-                                    {showBookNowButton && ( // Conditionally render the Book Now button
-                                        <p
-                                            className="relative top-9 right-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md self-end avail-text"
-                                        >
-                                            Available
-                                        </p>
-                                    )}
-                                </div>
-                            );
-                        }}
                     />
                 </div>
             </div>

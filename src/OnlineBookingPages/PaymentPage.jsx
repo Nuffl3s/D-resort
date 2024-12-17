@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import Modal from '../Modal/Modal';
 import 'react-datepicker/dist/react-datepicker.css';
+import api from '../api'; 
 
 function Payment({ bookingDetails }) {
 const navigate = useNavigate();
@@ -17,15 +18,18 @@ const [formData, setFormData] = useState({
     email: '',
     mobile: '',
     });
-const { unit, selectedDate } = location.state || {}; // Extract selectedDate
+    
+const { unit = {}, selectedDate } = location.state || {};
 const { image_url: imgSrc, name: title, capacity: persons, custom_prices, description } = unit;
 const [selectedPrices, setSelectedPrices] = useState([]);
 const totalPrice = selectedPrices.reduce((total, price) => total + parseFloat(price), 0);
-const [selectedUnits, setSelectedUnits] = useState([location.state?.unit]);
+const [selectedUnits, setSelectedUnits] = useState(() => {
+    return [location.state?.unit ? { ...location.state.unit, selectedPrices: [] } : {}];
+});
 const [isModalOpen, setModalOpen] = useState(false);
 const [currentUnitIndex, setCurrentUnitIndex] = useState(0);
 const currentUnit = selectedUnits[currentUnitIndex];
-
+const [reservedDates, setReservedDates] = useState([]); // State to store reserved dates and times
 
     const handleRemoveUnit = (index) => {
         setSelectedUnits((prevUnits) => {
@@ -42,6 +46,31 @@ const currentUnit = selectedUnits[currentUnitIndex];
         });
     };
     
+    useEffect(() => {
+        const fetchReservedDates = async () => {
+            try {
+                const response = await api.get("/reservations/");
+                const reservations = response.data;
+    
+                // Map reservations to include times safely
+                const formattedReservations = reservations.map((res) => ({
+                    unitName: res.unit_name,
+                    reservedDate: res.date_of_reservation, // e.g., "2024-06-10"
+                    reservedTimes: typeof res.time_of_use === "string" 
+                        ? res.time_of_use.split(", ")  // Split only if time_of_use is a string
+                        : [], // Default to empty array
+                }));
+    
+                setReservedDates(formattedReservations);
+            } catch (error) {
+                console.error("Error fetching reserved dates:", error);
+            }
+        };
+    
+        fetchReservedDates();
+    }, []);
+    
+
     const handleAddUnit = (unit) => {
         setSelectedUnits((prevUnits) => [...prevUnits, unit]); // Add the selected unit
         setCurrentUnitIndex(selectedUnits.length); // Set the index to the newly added unit
@@ -74,7 +103,7 @@ const currentUnit = selectedUnits[currentUnitIndex];
     useEffect(() => {
         const timer = setTimeout(() => {
             setLoading(false);
-        }, 2000);
+        }, 1000);
         return () => clearTimeout(timer);
     }, []);
 
@@ -82,28 +111,38 @@ const currentUnit = selectedUnits[currentUnitIndex];
         return <Loader />;
     }
 
+    const isTimeReserved = (time) => {
+        const formattedDate = selectedDate?.toISOString().split("T")[0];
+    
+        return reservedDates.some(
+            (res) =>
+                res.unit_name === unit.name &&
+                res.date_of_reservation === formattedDate &&
+                res.time_of_use?.includes(time) // Reserved times check
+        );
+    };
+
     const formatDate = (date) => {
         return date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
     };
 
-    const handleCheckboxChange = (unitIndex, time) => {
-        const updatedUnits = [...selectedUnits];
-        const unit = updatedUnits[unitIndex];
+    const handleCheckboxChange = (time) => {
+        setSelectedUnits((prevUnits) =>
+            prevUnits.map((unit, index) => {
+                if (index === currentUnitIndex) {
+                    const updatedSelectedPrices = unit.selectedPrices
+                        ? unit.selectedPrices.includes(time)
+                            ? unit.selectedPrices.filter((t) => t !== time) // Remove time
+                            : [...unit.selectedPrices, time] // Add time
+                        : [time]; // Initialize if undefined
     
-        // Initialize `selectedTimes` if it doesn't exist
-        if (!unit.selectedTimes) {
-            unit.selectedTimes = [];
-        }
-    
-        // Toggle selection
-        if (unit.selectedTimes.includes(time)) {
-            unit.selectedTimes = unit.selectedTimes.filter((t) => t !== time);
-        } else {
-            unit.selectedTimes.push(time);
-        }
-    
-        setSelectedUnits(updatedUnits); // Update state
+                    return { ...unit, selectedPrices: updatedSelectedPrices }; // Immutably update the unit
+                }
+                return unit; // Leave other units unchanged
+            })
+        );
     };
+    
     
     const handleConfirm = () => {
         const billingData = {
@@ -266,51 +305,29 @@ const currentUnit = selectedUnits[currentUnitIndex];
                                         </div>
                                     </div>
                                    {/* Price Selection Section */}
-                                    <div className="border mt-4 p-4 rounded-md shadow-sm">
+                                   <div className="border mt-4 p-4 rounded-md shadow-sm">
                                         <h3 className="text-lg font-bold mb-2">Select Time and Price</h3>
-                                        {selectedUnits[currentUnitIndex].custom_prices &&
-                                        Object.entries(selectedUnits[currentUnitIndex].custom_prices).length > 0 ? (
-                                            Object.entries(selectedUnits[currentUnitIndex].custom_prices).map(([key, value]) => (
-                                                <div key={key} className="flex items-center mb-2">
+                                        {selectedUnits[currentUnitIndex]?.custom_prices &&
+                                            Object.entries(selectedUnits[currentUnitIndex].custom_prices).map(([time, price]) => (
+                                                <div key={time} className="flex items-center mb-2">
                                                     <input
                                                         type="checkbox"
-                                                        id={`${currentUnitIndex}-${key}`} // Unique ID per unit
-                                                        value={key}
+                                                        id={`${currentUnitIndex}-${time}`}
+                                                        value={time}
                                                         checked={
-                                                            selectedUnits[currentUnitIndex].selectedPrices?.includes(key) || false
+                                                            selectedUnits[currentUnitIndex]?.selectedPrices?.includes(time) || false
                                                         }
-                                                        onChange={(e) => {
-                                                            const updatedUnits = [...selectedUnits];
-                                                            const currentUnit = updatedUnits[currentUnitIndex];
-
-                                                            // Initialize `selectedPrices` if not defined
-                                                            if (!currentUnit.selectedPrices) {
-                                                                currentUnit.selectedPrices = [];
-                                                            }
-
-                                                            if (e.target.checked) {
-                                                                // Add selected time if it's checked
-                                                                if (!currentUnit.selectedPrices.includes(key)) {
-                                                                    currentUnit.selectedPrices.push(key);
-                                                                }
-                                                            } else {
-                                                                // Remove unselected time
-                                                                currentUnit.selectedPrices = currentUnit.selectedPrices.filter(
-                                                                    (time) => time !== key
-                                                                );
-                                                            }
-
-                                                            setSelectedUnits(updatedUnits); // Update the state with changes
-                                                        }}
+                                                        disabled={isTimeReserved(time)} // Disable reserved times
+                                                        onChange={() => handleCheckboxChange(time)}
                                                     />
-                                                    <label htmlFor={`${currentUnitIndex}-${key}`} className="ml-2">
-                                                        {key}: ₱{value}
+                                                    <label
+                                                        htmlFor={`${currentUnitIndex}-${time}`}
+                                                        className={`ml-2 ${isTimeReserved(time) ? "text-red-500 line-through" : ""}`}
+                                                    >
+                                                        {time}: ₱{price} {isTimeReserved(time) && "(Reserved)"}
                                                     </label>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <p>No prices available</p>
-                                        )}
+                                            ))}
                                     </div>
 
                                     {/* Navigation Buttons */}

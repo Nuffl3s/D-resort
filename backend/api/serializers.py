@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.contenttypes.models import ContentType
 from .models import Account
 from rest_framework import serializers
-from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation, CustomerAccount
 from .models import Attendance
 from .models import Account 
 
@@ -217,4 +217,15 @@ class ReservationSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"Error fetching unit details: {e}")
             return None
+
+class CustomerAccountSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = CustomerAccount
+        fields = ['id', 'username', 'name', 'phone_number', 'email', 'password', 'user_type']
+
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
 

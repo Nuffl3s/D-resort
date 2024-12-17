@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.contrib.auth.models import AbstractUser, Group, Permission, AbstractBaseUser, BaseUserManager
 from django.core.files.storage import FileSystemStorage
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -190,3 +190,30 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f"Reservation by {self.customer_name} for {self.unit_name} at {self.time_of_use}"
+
+class CustomerAccountManager(BaseUserManager):
+    def create_user(self, username, email, password=None):
+        if not email:
+            raise ValueError("Email is required")
+        customer = self.model(username=username, email=self.normalize_email(email))
+        customer.set_password(password)
+        customer.save(using=self._db)
+        return customer
+    
+class CustomerAccount(AbstractBaseUser):
+    USER_TYPE_CHOICES = [('Customer', 'Customer')]
+
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='customer_account')
+    username = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15)
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='Customer')
+
+    objects = CustomerAccountManager()
+
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
+
+    def __str__(self):
+        return self.username

@@ -3,6 +3,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
 import DeductionModal from "../Modal/DeductionModal";
 import CashAdvanceModal from "../Modal/CashAdvanceModal";
+import PayrollFormModal from '../Modal/PayrollFormModal';
 import api from '../api';
 
 
@@ -38,6 +39,7 @@ function AdminPayroll() {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 9;
     const [currentPageSecondTable, setCurrentPageSecondTable] = useState(1);
+    const [selectedPayroll, setSelectedPayroll] = useState(null);
     
     
     useEffect(() => {
@@ -46,26 +48,47 @@ function AdminPayroll() {
                 const payrollResponse = await api.get(`${BASE_URL}/payroll/`);
                 console.log('Payroll Data:', payrollResponse.data);
                 setFilteredData(payrollResponse.data);
-            }  catch (error) {
+            } catch (error) {
                 console.error("Error fetching payroll data!", error);
             }
-          };
-   
+        };
+    
         const fetchEmployeeData = async () => {
             try {
                 const employeeResponse = await api.get(`${BASE_URL}/employees/`);
                 console.log('Employee Data:', employeeResponse.data);
                 setEmployees(employeeResponse.data);
                 setFilteredData(employeeResponse.data);  // Add this line
+    
+                // Fetch total hours worked for each employee in the last week
+                const totalHoursPromises = employeeResponse.data.map(async (employee) => {
+                    try {
+                        const attendanceResponse = await api.get(`${BASE_URL}/attendance/`, {
+                            params: { user: employee.id },
+                        });
+                        console.log('Attendance Data:', attendanceResponse.data);
+    
+                        // Calculate total hours worked in the last week
+                        const totalHours = attendanceResponse.data.total_hours || 0; // default to 0 if not available
+                        return { ...employee, total_hours: totalHours }; // Add total_hours to employee data
+                    } catch (error) {
+                        console.error(`Error fetching attendance data for employee ${employee.id}:`, error);
+                        return { ...employee, total_hours: 0 }; // Handle error by setting total_hours to 0
+                    }
+                });
+    
+                const updatedEmployees = await Promise.all(totalHoursPromises);
+                setEmployees(updatedEmployees); // Update employees with total hours
             } catch (error) {
                 console.error("Error fetching employee data:", error);
                 alert("Failed to fetch employee data. Please try again later.");
             }
         };
-        
+    
         fetchPayrollData();
         fetchEmployeeData();
     }, []); // Fetch data only once when component mounts
+    
    
      // Calculate the data to display on the current page
     const indexOfLastItem = page * itemsPerPage;
@@ -154,15 +177,15 @@ function AdminPayroll() {
         setActiveButton(buttonIndex); // Update the active button
     };
     
-    const handleEditClick = (name, payroll) => {
-        console.log("Editing payroll for employee:", name); // Debugging
+    const handleEditClick = (id, payroll) => {
+        console.log("Editing payroll for employee:", payroll.name); // Debugging
     
         if (!payroll) {
-            console.error("Payroll object is undefined for Name:", name);
+            console.error("Payroll object is undefined for ID:", id);
             return;
         }
     
-        setEditingRow(name); // Use name as the identifier
+        setEditingRow(id); // Use id as the identifier
         setEditValues({
             employee: payroll.employee || "",
             rate: payroll.rate || 0,
@@ -172,26 +195,15 @@ function AdminPayroll() {
             net_pay: payroll.net_pay || 0,
         });
     };
-    
-    
-    const handleEditChange = (field, value) => {
-        setEditValues((prev) => ({
-            ...prev,
-            [field]: value, // Dynamically update the field in editValues
-        }));
-    };
-    
-    
+
     const handleSave = async (name) => {
         const updatedRow = {
-            ...currentData.find((row) => row.name === name),
+            ...currentData.find((row) => row.name === name), 
             ...editValues, // Merge edited values
         };
     
         try {
-            // Correct the URL structure to avoid "api/api" duplication
             await api.put(`${BASE_URL}/payroll/${name}/update/`, updatedRow);
-            console.log("Save URL:", `${BASE_URL}/payroll/${name}/update/`);
             console.log("Payroll saved successfully!");
         } catch (error) {
             console.error("Failed to save payroll:", error);
@@ -199,7 +211,16 @@ function AdminPayroll() {
     
         setEditingRow(null); // Exit editing mode
     };
+   
     
+    const handleEditChange = (name, value) => {
+        setEditValues((prev) => ({
+            ...prev,
+            [name]: value, // Dynamically update the field in editValues
+        }));
+    };
+    
+     
     const handleCancel = () => {
         setEditingRow(null); // Exit editing mode without saving
     };
@@ -400,6 +421,12 @@ function AdminPayroll() {
             alert('Failed to save payroll data.');
         }
     };
+
+    const handleViewFormClick = (payroll) => {
+        setSelectedPayroll(payroll); // Set the selected payroll
+        setIsModalOpen(true); // Open the modal
+    };
+
     
 
     return (
@@ -986,7 +1013,8 @@ function AdminPayroll() {
                                                 <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium">
                                                     Edit
                                                 </button>
-                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] px-4 py-2 rounded-md text-white font-medium">
+                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] px-4 py-2 rounded-md text-white font-medium"
+                                                onClick={() => handleViewFormClick(payroll)}>
                                                     View
                                                 </button>
                                                 <button className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"  onClick={() => handleDelete(payroll.id)}>
@@ -997,6 +1025,12 @@ function AdminPayroll() {
                                     ))}
                                 </tbody>
                             </table>
+
+                            <PayrollFormModal
+                                isOpen={isModalOpen}
+                                onClose={handleClose}
+                                payroll={selectedPayroll} // Pass selected payroll data to the modal
+                            />
                         </div>
                     </div>
                 </div>

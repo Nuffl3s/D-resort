@@ -39,6 +39,7 @@ from .serializers import AttendanceSerializer, Account
 from .serializers import CreateAccountSerializer
 from datetime import date
 from django.contrib.auth import get_user_model
+from datetime import timedelta
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -431,11 +432,13 @@ class PayrollDetail(APIView):
 class UpdatePayrollView(UpdateAPIView):
     def put(self, request, name):
         try:
-            payroll = Payroll.objects.get(employee__name=name)  # Find payroll by employee name
+            # Find the payroll by employee name
+            payroll = Payroll.objects.get(employee__name=name)
         except Payroll.DoesNotExist:
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = PayrollSerializer(payroll, data=request.data, partial=True)  # Allow partial updates
+        # Partial update of the payroll fields
+        serializer = PayrollSerializer(payroll, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -870,11 +873,25 @@ class AttendanceView(APIView):
         user_id = request.query_params.get('user', None)
         if user_id:
             attendances = Attendance.objects.filter(user_id=user_id)
+
+            # Calculate total hours for the last week
+            last_week = date.today() - timedelta(days=7)
+            attendances_this_week = attendances.filter(time_in__gte=last_week)
+
+            # Calculate total hours worked in the last week
+            total_hours = 0
+            for attendance in attendances_this_week:
+                if attendance.time_in and attendance.time_out:
+                    total_hours += (attendance.time_out - attendance.time_in).total_seconds() / 3600  # Convert seconds to hours
+
+            return Response({
+                "attendances": AttendanceSerializer(attendances_this_week, many=True).data,
+                "total_hours": total_hours,
+            }, status=status.HTTP_200_OK)
         else:
             attendances = Attendance.objects.all()
-
-        serializer = AttendanceSerializer(attendances, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = AttendanceSerializer(attendances, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk=None):
         user_id = request.data.get('user')
@@ -882,11 +899,7 @@ class AttendanceView(APIView):
             return Response({"detail": "'user' field is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get today's date
-        # today = date.today()
-
-        # Try to get today's attendance record for the user
-        attendances = Attendance.objects.filter(user_id=user_id) 
-        # date=today
+        attendances = Attendance.objects.filter(user_id=user_id)
  
         if attendances.exists():
             # Check if the user already has both time_in and time_out set for today

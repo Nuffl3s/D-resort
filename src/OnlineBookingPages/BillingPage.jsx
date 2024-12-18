@@ -40,40 +40,47 @@ function BillingPage() {
     }, []);
 
     const handleSaveReservation = async () => {
-        const selectedDateObject = new Date(selectedDate);
-        const localDate = new Date(
-            selectedDateObject.getTime() - selectedDateObject.getTimezoneOffset() * 60000
-        ).toISOString().split("T")[0];
+        // Use billingData.selectedDates for multi-date selection; fallback to selectedDate
+        const selectedDates = billingData.selectedDates || [selectedDate]; 
     
-        const reservationData = units.flatMap((unit) =>
-            unit.timeAndPrice.map(({ time, price }) => {
-                const unitType = unit.unit_type || unit.type || "cottage";
+        if (!selectedDates || selectedDates.length === 0) {
+            Swal.fire("Error", "No selected dates available.", "error");
+            return;
+        }
     
-                return {
-                    customer_name: userDetails.username || "Anonymous",
-                    unit_name: unit.name,
-                    unit_type: unitType,
-                    date_of_reservation: localDate,
-                    time_of_use: time,
-                    total_price: price,
-                };
-            })
+        // Generate reservation data for all selected dates
+        const reservationData = selectedDates.flatMap((date) =>
+            units.flatMap((unit) =>
+                unit.timeAndPrice.map(({ time, price }) => {
+                    const unitType = unit.unit_type || unit.type || "cottage";
+    
+                    return {
+                        customer_name: userDetails.username || "Anonymous",
+                        unit_name: unit.name,
+                        unit_type: unitType,
+                        date_of_reservation: date, // Use valid selected date
+                        time_of_use: time,
+                        total_price: price,
+                    };
+                })
+            )
         );
     
         console.log("Reservation Data Sent:", reservationData); // Debugging log
     
         try {
+            // Send each reservation entry to the server
             await Promise.all(
                 reservationData.map((data) => api.post("/reservations/", data))
             );
             Swal.fire("Success!", "Reservation saved successfully.", "success");
-            navigate("/book");
+            navigate("/book"); // Navigate to booking page after success
         } catch (error) {
             console.error("Error saving reservation:", error.response?.data || error.message);
-            Swal.fire("Error", "Failed to save reservation. Please check inputs.", "error");
+            Swal.fire("Error", "Failed to save reservation. Please try again.", "error");
         }
     };
-    
+
     if (loading) {
         return <Loader />;
     }
@@ -106,7 +113,11 @@ function BillingPage() {
                                 unit.timeAndPrice?.map(({ time, price }, idx) => (
                                     <tr key={`${index}-${idx}`} className="bg-white border-b">
                                         <td className="px-6 py-4 font-medium text-gray-900">{unit.name} ({unit.type})</td>
-                                        <td className="px-6 py-4">{selectedDate ? new Date(selectedDate).toLocaleDateString() : "N/A"}</td>
+                                        <td className="px-6 py-4">
+                                            {billingData.selectedDates
+                                                ? billingData.selectedDates.join(", ")
+                                                : "N/A"}
+                                        </td>
                                         <td className="px-6 py-4">{time}</td>
                                         <td className="px-6 py-4">₱{price}</td>
                                     </tr>

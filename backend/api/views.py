@@ -762,6 +762,16 @@ class ReservationView(APIView):
         serializer = ReservationSerializer(reservations, many=True, context={"request": request})
         return Response(serializer.data, status=200)
     
+    def get(self, request):
+        unit_name = request.query_params.get('unit_name', None)
+        reservations = Reservation.objects.all()
+        
+        if unit_name:
+            reservations = reservations.filter(unit_name=unit_name)
+        
+        serializer = ReservationSerializer(reservations, many=True)
+        return Response(serializer.data)
+    
     def post(self, request):
         if not hasattr(request.user, 'customer_account'):
             return Response({"error": "Customer account not found for the user."}, status=400)

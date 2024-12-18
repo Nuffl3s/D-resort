@@ -7,7 +7,6 @@ import Modal from "../Modal/Modal";
 import api from "../api";
 import Loader from "../components/Loader";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 
 function Payment() {
     const navigate = useNavigate();
@@ -20,25 +19,44 @@ function Payment() {
     const [units, setUnits] = useState(location.state?.unit ? [{ ...location.state.unit, selectedPrices: [] }] : []);
     const [currentUnitIndex, setCurrentUnitIndex] = useState(0);
     const [isModalOpen, setModalOpen] = useState(false);
+    const [isMultiDateMode, setIsMultiDateMode] = useState(false);
+    const [multiSelectedDates, setMultiSelectedDates] = useState([]);
+    const [reservedEvents, setReservedEvents] = useState([]);
+    const [confirmedDates, setConfirmedDates] = useState([]);
+    const [reservedTimesByDate, setReservedTimesByDate] = useState({});
+
 
     useEffect(() => {
         const fetchReservedDates = async () => {
             try {
-                // Add unit_name as a query parameter to fetch reservations for the specific unit
                 const response = await api.get("/reservations/", {
                     params: { unit_name: location.state?.unit?.name },
                 });
     
                 const reservations = response.data;
     
-                // Map reservation data to events, ensuring dates and times are processed correctly
+                const reservedByDate = {};
+    
+                reservations.forEach((res) => {
+                    if (!reservedByDate[res.date_of_reservation]) {
+                        reservedByDate[res.date_of_reservation] = [];
+                    }
+                    reservedByDate[res.date_of_reservation].push(res.time_of_use);
+                });
+    
+                setReservedTimesByDate(reservedByDate);
+    
+                // Map reservation data to events
                 const eventsData = reservations.map((res) => ({
-                    title: "Reserved",
-                    start: res.date_of_reservation, // Ensure correct date
+                    title: res.time_of_use
+                        ? `Reserved: ${formatTimeRange(res.time_of_use)}`
+                        : "Reserved",
+                    start: res.date_of_reservation,
                     backgroundColor: "#50b0d0",
                     borderColor: "#50b0d0",
                 }));
     
+                setReservedEvents(eventsData);
                 setEvents(eventsData);
             } catch (error) {
                 console.error("Error fetching reservations:", error);
@@ -46,28 +64,80 @@ function Payment() {
                 setLoading(false);
             }
         };
-    
         fetchReservedDates();
     }, [location.state?.unit?.name]);
+    
+    const formatTimeTo12Hour = (time24) => {
+        const [hour, minute] = time24.split(":");
+        const period = +hour >= 12 ? "PM" : "AM";
+        const hour12 = +hour % 12 || 12; // Convert to 12-hour format
+        return `${hour12}:${minute} ${period}`;
+    };    
+
+    const formatTimeRange = (timeRange) => {
+        const [start, end] = timeRange.split("-");
+        return `${formatTimeTo12Hour(start)} - ${formatTimeTo12Hour(end)}`;
+    };
 
     const handleDateClick = (info) => {
-        const newSelectedDate = info.dateStr;
-
-        if (selectedDateEvent) {
-            setEvents((prevEvents) => prevEvents.filter((event) => event.id !== "selected-date"));
+        const clickedDate = info.dateStr;
+    
+        if (isMultiDateMode) {
+            setMultiSelectedDates((prevDates) => {
+                const alreadySelected = prevDates.includes(clickedDate);
+    
+                // Toggle date in selection
+                const updatedDates = alreadySelected
+                    ? prevDates.filter((date) => date !== clickedDate)
+                    : [...prevDates, clickedDate];
+    
+                // Update events: add/remove "Selected" markers while keeping reserved ones
+                const selectedEvents = updatedDates.map((date) => ({
+                    title: "Selected",
+                    start: date,
+                    backgroundColor: "#37bc4e",
+                    borderColor: "#37bc4e",
+                }));
+    
+                setEvents([...reservedEvents, ...selectedEvents]);
+                return updatedDates;
+            });
+        } else {
+            // Default single date selection
+            setSelectedDate(clickedDate);
+            setEvents([...reservedEvents, { title: "Selected", start: clickedDate, backgroundColor: "#37bc4e" }]);
         }
+    };
 
-        const newEvent = {
-            id: "selected-date",
+    const toggleMultiDateMode = () => {
+        setIsMultiDateMode((prev) => !prev);
+        setMultiSelectedDates([]); // Reset multi-date selection
+        setEvents(reservedEvents); // Reset events to only reserved ones
+    };
+
+    
+    const handleConfirmDates = () => {
+        if (multiSelectedDates.length === 0) {
+            alert("No dates selected.");
+            return;
+        }
+    
+        console.log("Confirmed dates:", multiSelectedDates);
+        alert(`Confirmed dates: ${multiSelectedDates.join(", ")}`);
+    
+        // Save confirmed dates and reset multi-date mode
+        setConfirmedDates(multiSelectedDates);
+    
+        // Update the events state with confirmed dates
+        const selectedEvents = multiSelectedDates.map((date) => ({
             title: "Selected",
-            start: newSelectedDate,
+            start: date,
             backgroundColor: "#37bc4e",
             borderColor: "#37bc4e",
-        };
-
-        setEvents((prevEvents) => [...prevEvents, newEvent]);
-        setSelectedDate(newSelectedDate);
-        setSelectedDateEvent(newEvent);
+        }));
+    
+        setEvents([...reservedEvents, ...selectedEvents]); // Merge reserved events with confirmed dates
+        setIsMultiDateMode(false);
     };
 
     const handleAddUnit = (unit) => {
@@ -112,16 +182,21 @@ function Payment() {
     };
 
     const handleGoToBilling = () => {
-        if (!selectedDate || units.length === 0) {
+        const selectedDates = confirmedDates.length > 0 ? confirmedDates : selectedDate ? [selectedDate] : [];
+    
+        if (!selectedDates.length || units.length === 0) {
             Swal.fire("Error", "Please select a date and at least one unit.", "error");
             return;
         }
     
         const state = {
-            selectedDate,
+            selectedDates, // Pass selected confirmed dates
             units: units.map((unit) => ({
                 ...unit,
-                timeAndPrice: Object.entries(unit.custom_prices || {}).map(([time, price]) => ({ time, price })),
+                timeAndPrice: unit.selectedPrices.map((time) => ({
+                    time,
+                    price: unit.custom_prices[time],
+                })),
             })),
         };
     
@@ -149,10 +224,46 @@ function Payment() {
                             events={events}
                             height="600px"
                             dateClick={handleDateClick}
+                            eventContent={(eventInfo) => (
+                                <div
+                                    style={{
+                                        whiteSpace: "normal",
+                                        wordWrap: "break-word",
+                                        fontSize: "12px",
+                                        lineHeight: "1.2",
+                                        padding: "4px",
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    {eventInfo.event.title}
+                                </div>
+                            )}
                         />
                         <div className="mt-4">
                             <h3 className="text-md font-semibold">Selected Date:</h3>
-                            <p>{selectedDate || "No date selected"}</p>
+                            <p>
+                                {isMultiDateMode
+                                    ? multiSelectedDates.length > 0
+                                        ? multiSelectedDates.join(", ")
+                                        : "No dates selected"
+                                    : selectedDate || "No date selected"}
+                            </p>
+                        </div>
+                        <div className="flex space-x-4 mb-4">
+                            <button
+                                onClick={toggleMultiDateMode}
+                                className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600"
+                            >
+                                {isMultiDateMode ? "Disable Multi-Date Selection" : "Enable Multi-Date Selection"}
+                            </button>
+                            {isMultiDateMode && (
+                                <button
+                                    onClick={handleConfirmDates}
+                                    className="px-4 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600"
+                                >
+                                    Confirm Selected Dates
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -160,7 +271,13 @@ function Payment() {
                     <div className="w-1/3 space-y-4">
                     <div className="border rounded-md p-4 shadow-sm">
                             <h3 className="text-lg font-bold mb-4">Selected Date</h3>
-                            <p>{selectedDate || "No date selected"}</p>
+                            <p>
+                                {isMultiDateMode
+                                    ? multiSelectedDates.length > 0
+                                        ? multiSelectedDates.join(", ")
+                                        : "No dates selected"
+                                    : selectedDate || "No date selected"}
+                            </p>
                     </div>
                     {units.length > 0 && units[currentUnitIndex] && (
                         <div className="border rounded-md p-4 shadow-sm">
@@ -176,18 +293,31 @@ function Payment() {
                             <div className="mt-4">
                                 <h4 className="font-semibold">Select Time and Price</h4>
                                 {units[currentUnitIndex]?.custom_prices &&
-                                    Object.entries(units[currentUnitIndex].custom_prices).map(([time, price]) => (
-                                        <div key={time} className="flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={units[currentUnitIndex]?.selectedPrices?.includes(time)}
-                                                onChange={(e) => handlePriceChange(time, e.target.checked)}
-                                            />
-                                            <label>
-                                                {time}: ₱{price}
-                                            </label>
-                                        </div>
-                                    ))}
+                                    Object.entries(units[currentUnitIndex].custom_prices).map(([time, price]) => {
+                                        const isTimeReserved =
+                                            reservedTimesByDate[selectedDate]?.includes(time) ?? false;
+
+                                        return (
+                                            <div key={time} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    disabled={isTimeReserved} // Disable if time is reserved
+                                                    checked={
+                                                        !isTimeReserved &&
+                                                        units[currentUnitIndex]?.selectedPrices?.includes(time)
+                                                    }
+                                                    onChange={(e) => handlePriceChange(time, e.target.checked)}
+                                                />
+                                                <label
+                                                    className={`${
+                                                        isTimeReserved ? "text-gray-400 line-through" : ""
+                                                    }`}
+                                                >
+                                                    {time}: ₱{price} {isTimeReserved ? "(Unavailable)" : ""}
+                                                </label>
+                                            </div>
+                                        );
+                                    })}
                             </div>
                            {/* Breakdown Section */}
                             <div className="border rounded-md p-4 shadow-sm mt-6">
@@ -251,13 +381,14 @@ function Payment() {
                         >
                             Add More Units
                         </button>
-
                         <button
                             onClick={handleGoToBilling}
-                            disabled={!selectedDate || units.length === 0}
+                            disabled={
+                                confirmedDates.length === 0 && !selectedDate || units.length === 0
+                            }
                             className={`w-full px-4 py-2 rounded-md ${
-                                selectedDate && units.length > 0
-                                    ? "bg-green-500 text-white"
+                                (confirmedDates.length > 0 || selectedDate) && units.length > 0
+                                    ? "bg-green-500 text-white hover:bg-green-600"
                                     : "bg-gray-400 text-gray-500 cursor-not-allowed"
                             }`}
                         >

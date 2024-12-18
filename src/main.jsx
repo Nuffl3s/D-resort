@@ -16,7 +16,7 @@ import EmployeeDash from './EmployeePages/EmployeeDash.jsx';
 import EmployeeReservation from './EmployeePages/EmployeeReservation.jsx';
 import ProductList from './EmployeePages/ProductList.jsx';
 import AddProduct from './AdminPages/AddProduct.jsx';
-import ManageProduct from './EmployeePages/ManageProduct.jsx';
+import ManageSales from './EmployeePages/ManageSales.jsx';
 import SalesReport from './EmployeePages/SalesReport.jsx';
 import BookingReport from './EmployeePages/BookingReport.jsx';
 import BookingMainPage from './OnlineBookingPages/BookingMainPage.jsx';
@@ -59,7 +59,7 @@ const App = () => {
         <Route path="/EmployeeDash" element={<EmployeeDash />} />
         <Route path="/EmployeeReservation" element={<EmployeeReservation />} />
         <Route path="/ProductList" element={<ProductList />} />
-        <Route path="/ManageProduct" element={<ManageProduct />} />
+        <Route path="/ManageSales" element={<ManageSales />} />
         <Route path="/SalesReport" element={<SalesReport />} />
         <Route path="/BookingReport" element={<BookingReport />} />
 

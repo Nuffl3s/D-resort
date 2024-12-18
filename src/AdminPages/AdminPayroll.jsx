@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
-
+import DeductionModal from "../Modal/DeductionModal";
+import CashAdvanceModal from "../Modal/CashAdvanceModal";
 import api from '../api';
 
+
+const BASE_URL = 'http://localhost:8000/api';
 // Function to format dates
 const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -12,11 +15,10 @@ const formatDate = (dateString) => {
 
 function AdminPayroll() {
     const [employees, setEmployees] = useState([]);
-    const [selectedEmployee, setSelectedEmployee] = useState('');
-    const [totalHours, setTotalHours] = useState(0);
-    const [hourlyRate, setHourlyRate] = useState(0);
-    const [payrollType, setPayrollType] = useState('weekly');
-    const [payrollRange, setPayrollRange] = useState({ from: '', to: '' });
+    const [selectedEmployee] = useState('');
+    const [totalHours] = useState(0);
+    const [hourlyRate] = useState(0);
+    const [payrollType] = useState('weekly');
     const [payrollEntries, setPayrollEntries] = useState([]);
     // const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     const [payrollData, setPayrollData] = useState([]);
@@ -24,100 +26,71 @@ function AdminPayroll() {
     const [filteredData, setFilteredData] = useState([]); // Filtered data
     const [sortOption, setSortOption] = useState('All'); // Default is "All"
     const [searchTerm, setSearchTerm] = useState(''); // Search term
-    const [selectAll, setSelectAll] = useState(false); // For the "select all" checkbox
-    const [checkedItems, setCheckedItems] = useState({}); // Tracks which items are checked
+    const [activeButton, setActiveButton] = useState(1);
+    const [editingRow, setEditingRow] = useState(null); // Tracks which row is being edited
+    const [editValues, setEditValues] = useState({});
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalData, setModalData] = useState(null);
+    const [deductions, setDeductions] = useState([]);
+    const [entries] = useState([]);
+    const [page, setPage] = useState(1); // Track the current page
+    const [itemsPerPage] = useState(9); // Number of items per page
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 9;
+    const [currentPageSecondTable, setCurrentPageSecondTable] = useState(1);
     
     useEffect(() => {
-        api.get('http://localhost:8000/api/payroll/')
-            .then((response) => {
-                console.log('Payroll Data:', response.data); // Log the data to debug
-                setPayrollData(response.data);
-                setFilteredData(response.data); // Initialize filtered data
-            })
-            .catch((error) => {
+        const fetchPayrollData = async () => {
+            try {
+                const payrollResponse = await api.get(`${BASE_URL}/payroll/`);
+                console.log('Payroll Data:', payrollResponse.data);
+                setFilteredData(payrollResponse.data);
+            }  catch (error) {
                 console.error("Error fetching payroll data!", error);
-            });
-    }, []);
-
-    useEffect(() => {
-        api.get('http://localhost:8000/api/employees/')
-            .then((response) => {
-                // Log the response to verify data
-                console.log('Employee Data:', response.data);
-                setEmployees(response.data); // Set the employees in state
-            })
-            .catch((error) => {
+            }
+          };
+   
+        const fetchEmployeeData = async () => {
+            try {
+                const employeeResponse = await api.get(`${BASE_URL}/employees/`);
+                console.log('Employee Data:', employeeResponse.data);
+                setEmployees(employeeResponse.data);
+                setFilteredData(employeeResponse.data);  // Add this line
+            } catch (error) {
                 console.error("Error fetching employee data:", error);
-            });
-    }, []);
-
-    useEffect(() => {
-        fetch('/api/employees/', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-                'Content-Type': 'application/json',
-            },
-        })
-            .then((response) => response.json())
-            .then((data) => setEmployees(data))
-            .catch((error) => console.error('Error fetching employees:', error));
-    }, []);
-    
-
-    // Handle payroll calculation (just calculate, don't change status yet)
-    const handleCalculate = () => {
-        if (!selectedEmployee) {
-            alert("Please select an employee before calculating.");
-            return;
-        }
-    
-        if (totalHours <= 0 || hourlyRate <= 0) {
-            alert("Please enter valid Total Hours and Hourly Rate.");
-            return;
-        }
-    
-        let payment = totalHours * hourlyRate;
-    
-        const newEntry = {
-            name: selectedEmployee,
-            hours: totalHours, // Add hours
-            rate: hourlyRate, // Add hourly rate
-            net: payment,
-            status: 'Not yet'
+                alert("Failed to fetch employee data. Please try again later.");
+            }
         };
+        
+        fetchPayrollData();
+        fetchEmployeeData();
+    }, []); // Fetch data only once when component mounts
+   
+     // Calculate the data to display on the current page
+    const indexOfLastItem = page * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentData = filteredData.slice(indexOfFirstItem, indexOfLastItem);
     
-        setPayrollEntries([...payrollEntries, newEntry]);
+    const indexOfLastItem2 = currentPageSecondTable * pageSize;
+    const indexOfFirstItem2 = indexOfLastItem2 - pageSize;
+    const currentDataSecondTable = filteredData.slice(indexOfFirstItem2, indexOfLastItem2);
+
+    const indexOfLastItem3 = currentPage * pageSize;
+    const indexOfFirstItem3 = indexOfLastItem3 - pageSize;
+    const currentData3 = filteredData.slice(indexOfFirstItem3, indexOfLastItem3);
+
+
+
+    // Handle pagination button clicks
+    const handleNextPage = () => {
+        if (page < Math.ceil(filteredData.length / itemsPerPage)) {
+        setPage(page + 1);
+        }
     };
 
-    // Handle the "Done" button click, this will update the employee status
-    const handleDone = async () => {
-        if (payrollEntries.length === 0) {
-            alert("No payroll entries to save.");
-            return;
-        }
-    
-        // Prepare updated payroll entries
-        const updatedEntries = payrollEntries.map(entry => ({
-            employee_name: entry.name,
-            net_pay: entry.net.toFixed(2), // Ensure net pay is formatted
-            status: 'Calculated',         // Set status to Calculated
-            payroll_type: payrollType,    // Include payroll type
-        }));
-    
-        try {
-            await api.post('http://localhost:8000/api/payroll/', updatedEntries);
-            alert('Payroll data saved successfully!');
-            setPayrollEntries([]); // Clear entries after saving
-    
-            // Fetch updated payroll list
-            const response = await api.get('http://localhost:8000/api/payroll/');
-            console.log('Updated Payroll Data:', response.data); // Log updated data
-            setPayrollData(response.data);
-            setFilteredData(response.data); // Refresh the filtered data
-        } catch (error) {
-            console.error("Error saving payroll data:", error);
-            alert('Failed to save payroll data.');
+    const handlePrevPage = () => {
+        if (page > 1) {
+        setPage(page - 1);
         }
     };
 
@@ -125,16 +98,16 @@ function AdminPayroll() {
     const handleSort = (option) => {
         setSortOption(option);
         setSortDropdownOpen(false);
-    
+
         const filteredByStatus = option === 'All'
             ? payrollData
             : payrollData.filter(emp => emp.status === option);
-    
+
         // Apply search filter if searchTerm is present
         const finalFiltered = filteredByStatus.filter(emp =>
             emp.employee.toLowerCase().includes(searchTerm)
         );
-    
+
         setFilteredData(finalFiltered);
     };
 
@@ -142,12 +115,12 @@ function AdminPayroll() {
     const handleSearch = (event) => {
         const value = event.target.value.toLowerCase();
         setSearchTerm(value);
-    
+
         // Filter payroll data by search term
         const filtered = payrollData.filter(emp =>
             emp.employee.toLowerCase().includes(value)
         );
-    
+
         // Apply active sort filter
         if (sortOption !== 'All') {
             setFilteredData(filtered.filter(emp => emp.status === sortOption));
@@ -158,7 +131,7 @@ function AdminPayroll() {
 
     const handleDelete = (id) => {
         if (window.confirm("Are you sure you want to delete this payroll entry?")) {
-            api.delete(`http://localhost:8000/api/payroll/${id}/`)
+            api.delete(`${BASE_URL}/payroll/${id}/`)
                 .then(() => {
                     // Refresh the list after deletion
                     setPayrollData(payrollData.filter(payroll => payroll.id !== id));
@@ -171,52 +144,710 @@ function AdminPayroll() {
         }
     };
 
-    // Handle "select all" checkbox
-    const handleSelectAll = () => {
-        const newSelectAll = !selectAll;
-        setSelectAll(newSelectAll);
-        const newCheckedItems = {};
-        filteredData.forEach(item => {
-            newCheckedItems[item.id] = newSelectAll;
-        });
-        setCheckedItems(newCheckedItems);
-    };
-
-    // Handle individual checkbox change
-    const handleCheckboxChange = (id) => {
-        setCheckedItems(prevCheckedItems => ({
-            ...prevCheckedItems,
-            [id]: !prevCheckedItems[id]
-        }));
-    };
-
-    // const toggleDropdown = () => {
-    //     setIsDropdownVisible(!isDropdownVisible);
-    // };
-
-    // // Function to handle print action
-    // const handlePrint = () => {
-    //     window.print(); // Simple print functionality
-    //     setIsDropdownVisible(false); // Hide dropdown after action
-    // };
-
-    // // Function to handle download action
-    // const handleDownload = () => {
-    //     alert('Download functionality not implemented yet.'); // Placeholder
-    //     setIsDropdownVisible(false); // Hide dropdown after action
-    // };
-
     useEffect(() => {
         applyTheme();
     }, []);
+
+    // This is for Employee Section
+    const handleButtonClick = (buttonIndex) => {
+        setActiveButton(buttonIndex); // Update the active button
+    };
+    
+    const handleEditClick = (id, payroll) => {
+        setEditingRow(id);
+        setEditValues({
+            employee: payroll.employee, // Make sure this is populated
+            rate: payroll.rate,
+            total_hours: payroll.total_hours,
+            deductions: payroll.deductions,
+            cash_advance: payroll.cash_advance,
+            net_pay: payroll.net_pay
+        });
+    };
+    
+    const handleEditChange = (name, field, value) => {
+        setFilteredData((prevData) =>
+            prevData.map((row) =>
+                row.name === name ? { ...row, [field]: value } : row
+            )
+        );
+    };
+    
+    
+
+    const handleSave = (rowId) => {
+        setFilteredData((prevData) =>
+            prevData.map((row) =>
+                row.id === rowId ? { ...row, ...editValues } : row
+            )
+        );
+        setEditingRow(null); // Exit editing mode
+    };
+
+    const handleDeductionSave = () => {
+        if (!modalData) return;
+    
+        // Update the deduction state with the modified modal data
+        setDeductions(prevDeductions => 
+            prevDeductions.map(deduction => 
+                deduction.id === modalData.id ? { ...deduction, ...modalData } : deduction
+            )
+        );
+    
+        setIsModalOpen(false);  // Close the modal after saving
+    };
+    
+    
+
+    const handleCancel = () => {
+        setEditingRow(null); // Exit editing mode without saving
+    };
+
+
+    // This is for Deductions
+    const handleEditDeductionClick = (rowData) => {
+        const defaultData = {
+            descriptions: rowData.description || '',
+            amount: rowData.amount || ''
+        };
+        setModalData(defaultData);  // Set the modal data for the selected deduction
+        setIsModalOpen(true);  // Open the modal
+    };
+    
+    
+
+    const handleModalChange = (field, value) => {
+        setModalData(prevData => ({
+            ...prevData,
+            [field]: value  // Correctly update the field based on the dynamic key
+        }));
+    };
+    
+    
+
+
+    const handleClose = () => {
+        setIsModalOpen(false); // Close the modal without saving
+    };
+
+
+    // This is for Cash Advance
+    const handleNewButtonClick = () => {
+        setIsModalOpen(true);
+    };
+
+    const handleCashClose = () => {
+        setIsModalOpen(false);
+    };
+
+
+    // NEW
+    const openModal = (payrollId) => {
+        const selectedPayroll = deductions.find(payroll => payroll.id === payrollId);
+        setModalData(selectedPayroll); // Set the data of the selected payroll to be used in the modal
+        setIsModalOpen(true); // Open the modal
+    };
+
+    const handleRateChange = (employeeId, rate) => {
+        // Update the rate in the employee data
+        setEmployees(prevEmployees =>
+          prevEmployees.map(employee =>
+            employee.id === employeeId ? { ...employee, rate: rate } : employee
+          )
+        );
+        // Save to the backend or local storage
+        api.post(`${BASE_URL}/employees/${employeeId}`, { rate });
+      };
+    
+    const handleDeductionChange = (payrollId, deduction) => {
+    // Update the deduction in the payroll data
+    setDeductions(prevDeductions =>
+        prevDeductions.map(payroll =>
+        payroll.id === payrollId ? { ...payroll, deductions: deduction } : payroll
+        )
+    );
+    // Optionally, make a post request to save the deduction
+    api.post(`${BASE_URL}/deductions/`, { payrollId, deduction });
+    };
+      
+    const handleCashAdvanceChange = (employeeId, cashAdvance) => {
+        // Update cash advance in employee data
+        setEmployees(prevEmployees =>
+          prevEmployees.map(employee =>
+            employee.id === employeeId ? { ...employee, cash_advance: cashAdvance } : employee
+          )
+        );
+        // Save cash advance data to backend
+        api.post(`${BASE_URL}/cash_advance/`, { employeeId, cash_advance: cashAdvance });
+    };
+
+    const calculateNetPay = (totalHours, hourlyRate, deductions, cashAdvances) => {
+        // Calculate total pay based on hourly rate and total hours
+        let totalPay = totalHours * hourlyRate;
+    
+        // Calculate total deductions
+        const totalDeductions = deductions.reduce((sum, deduction) => sum + deduction.amount, 0);
+    
+        // Calculate total cash advances
+        const totalCashAdvance = cashAdvances.reduce((sum, advance) => sum + advance.amount, 0);
+    
+        // Calculate and return net pay
+        return totalPay - totalDeductions - totalCashAdvance;
+    };
+    
+        
+    const handleInputChange = (field, value) => {
+        // Update relevant state for the field
+        setEditValues(prevValues => {
+            const updatedValues = { ...prevValues, [field]: value };
+    
+            // Recalculate net pay whenever input changes
+            const updatedNetPay = calculateNetPay(updatedValues.total_hours, updatedValues.rate, deductions, cashAdvances);
+            
+            return { ...updatedValues, netPay: updatedNetPay };  // Update net pay
+        });
+    };
+    
+    const handleAddDeduction = (description, amount) => {
+        setDeductions(prevDeductions => {
+            const updatedDeductions = [...prevDeductions, { description, amount }];
+            const updatedNetPay = calculateNetPay(totalHours, hourlyRate, updatedDeductions, cashAdvances);
+            setEditValues(prevValues => ({ ...prevValues, deductions: updatedDeductions, netPay: updatedNetPay }));
+            return updatedDeductions;
+        });
+    };
+    
+    const handleAddCashAdvance = (amount) => {
+        setCashAdvances(prevCashAdvances => {
+            const updatedAdvances = [...prevCashAdvances, { amount }];
+            const updatedNetPay = calculateNetPay(totalHours, hourlyRate, deductions, updatedAdvances);
+            setEditValues(prevValues => ({ ...prevValues, cashAdvances: updatedAdvances, netPay: updatedNetPay }));
+            return updatedAdvances;
+        });
+    };
+
+    
+    
+    const handleDone = async () => {
+        if (payrollEntries.length === 0) {
+            alert("No payroll entries to save.");
+            return;
+        }
+    
+        const updatedEntries = payrollEntries.map(entry => ({
+            employee_name: entry.employee_name,
+            net_pay: entry.net.toFixed(2),
+            status: 'Calculated',
+            payroll_type: payrollType,
+        }));
+    
+        try {
+            await api.post(`${BASE_URL}/payroll/`, updatedEntries);
+            alert('Payroll data saved successfully!');
+            setPayrollEntries([]);
+        } catch (error) {
+            console.error("Error saving payroll data:", error);
+            alert('Failed to save payroll data.');
+        }
+    };
+    
 
     return (
         <div className="flex h-screen overflow-hidden dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
             <div id="report" className="p-7 flex-1 h-screen overflow-hidden">
-                <h1 className="text-4xl font-bold mb-5 dark:text-[#e7e6e6]">PAYROLL</h1>
-                <div className="flex space-x-5">
-                    <div className="bg-white rounded-md shadow p-6 w-full h-[830px] dark:bg-[#374151] dark:shadow">
+                <h1 className="text-4xl font-bold mb-5 dark:text-[#e7e6e6]">PAYROLL SYSTEM</h1>
+                <div className="flex space-x-5">                  
+                    <div className="rounded-md bg-white shadow p-6 w-full dark:bg-[#374151] dark:shadow min-h-[860px]">
+                        <div className="flex">
+                            <button
+                                className={`w-full py-2 px-5 border border-gray-100 text-[15px] font-medium rounded-l-md ${
+                                    activeButton === 1 ? "bg-[#70b8d3] text-white" : "bg-gray-200 text-gray-600"
+                                }`}
+                                onClick={() => handleButtonClick(1)}
+                            >
+                                Employee Section
+                            </button>
+                            <button
+                                className={`w-full py-2 px-5 border border-gray-100 text-[15px] font-medium ${
+                                    activeButton === 2 ? "bg-[#70b8d3] text-white" : "bg-gray-200 text-gray-600"
+                                }`}
+                                onClick={() => handleButtonClick(2)}
+                            >
+                                Deductions
+                            </button>
+                            <button
+                                className={`w-full py-2 px-5 border border-gray-100 text-[15px] font-medium ${
+                                    activeButton === 3 ? "bg-[#70b8d3] text-white" : "bg-gray-200 text-gray-600"
+                                }`}
+                                onClick={() => handleButtonClick(3)}
+                            >
+                                Cash Advance
+                            </button>
+                            <button
+                                className={`w-full py-2 px-5 border border-gray-100 text-[15px] font-medium rounded-r-md ${
+                                    activeButton === 4 ? "bg-[#70b8d3] text-white" : "bg-gray-200 text-gray-600"
+                                }`}
+                                onClick={() => handleButtonClick(4)}
+                            >
+                                Payroll Section
+                            </button>
+                        </div>
+
+                         {/* Page Containers */}
+
+                        {/* EMPLOYEE SECTION */}
+                        <div className="mt-5 p-6 border rounded-md">
+                            {activeButton === 1 && (
+                                <div>
+                                    <div className="relative mb-2">
+                                        <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none">
+                                            <svg
+                                                className="w-5 h-5 text-gray-500"
+                                                aria-hidden="true"
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                            <input
+                                            type="text"
+                                                id="table-search"
+                                                className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-md w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                                                placeholder="Search by name"
+                                            />
+                                    </div>
+                                    <table className="w-full text-sm text-left text-gray-500">
+                                        <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                            <tr>
+                                                <th scope="col" className="p-4">No.</th>
+                                                <th scope="col" className="px-4">Name</th>
+                                                <th scope="col" className="px-4">Rate</th>
+                                                <th scope="col" className="px-4">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {currentData.map((payroll, index) => (
+                                                <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
+                                                    <td className="px-6 py-3">{index + 1 + (page - 1) * itemsPerPage}</td>
+                                                    {editingRow === payroll.id ? (
+                                                        <>
+                                                            {/* Name Field - Not Editable */}
+                                                            <td className="px-6 py-3">
+                                                                <input
+                                                                    type="text"
+                                                                    name="name"
+                                                                    value={payroll.name}
+                                                                    className="w-full p-1 border border-gray-300 rounded"
+                                                                    disabled // Name is not editable
+                                                                />
+                                                            </td>
+                                                            {/* Rate Field - Editable */}
+                                                            <td className="px-6 py-3">
+                                                                <input
+                                                                    type="number"
+                                                                    name="rate"
+                                                                    value={payroll.rate} // Value comes from the specific row
+                                                                    onChange={(e) =>
+                                                                        handleEditChange(payroll.name, "rate", e.target.value)
+                                                                    }
+                                                                    className="w-full p-1 border border-gray-300 rounded"
+                                                                />
+                                                            </td>
+                                                            {/* Action Buttons */}
+                                                            <td className="px-4 py-3 space-x-1">
+                                                                <button
+                                                                    className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md text-white font-medium"
+                                                                    onClick={handleSave}
+                                                                >
+                                                                    Save
+                                                                </button>
+                                                                <button
+                                                                    className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
+                                                                    onClick={handleCancel}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <td className="px-6 py-3">{payroll.name}</td>
+                                                            <td className="px-6 py-3">{payroll.rate}</td>
+                                                            <td className="px-4 py-3 space-x-1">
+                                                                <button
+                                                                    className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
+                                                                    onClick={() => handleEditClick(payroll.id)}
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
+                                                                    onClick={() => handleDelete(payroll.id)}
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+
+                                    <div className="flex space-x-2 mt-5 justify-end">
+                                        <button
+                                            className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-l"
+                                            onClick={handlePrevPage}
+                                            disabled={page === 1}
+                                        >
+                                        Prev
+                                        </button>
+                                        <button
+                                            className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-r"
+                                            onClick={handleNextPage}
+                                            disabled={page === Math.ceil(filteredData.length / itemsPerPage)}
+                                        >
+                                        Next
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* DEDUCTIONS */}
+                            {activeButton === 2 && (
+                                <div>
+                                    <div className="relative mb-2">
+                                        {/* Search Bar */}
+                                        <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none">
+                                            <svg
+                                                className="w-5 h-5 text-gray-500"
+                                                aria-hidden="true"
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                                    clipRule="evenodd"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="table-search"
+                                            value={searchTerm}
+                                            onChange={handleSearch}
+                                            className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-md w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                                            placeholder="Search by name"
+                                        />
+                                    </div>
+                        
+                                    <table className="w-full text-sm text-left text-gray-500">
+                                        <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                            <tr>
+                                                <th scope="col" className="p-4">No.</th>
+                                                <th scope="col" className="px-4">Name</th>
+                                                <th scope="col" className="px-4">Description</th>
+                                                <th scope="col" className="px-4">Amount</th>
+                                                <th scope="col" className="px-4">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {currentDataSecondTable.map((payroll, index) => (
+                                                <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
+                                                    <td className="px-6 py-3">{index + 1 + indexOfFirstItem}</td>
+                                                    <td className="px-6 py-3">{payroll.name}</td>
+                                                    <td className="px-6 py-3">{payroll.deductions}</td>
+                                                    <td className="px-6 py-3">{payroll.amount}</td>
+                                                    <td className="px-4 py-3 space-x-1">
+                                                        <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
+                                                        onClick={() => {
+                                                            setModalData(payroll); // Pass the relevant data to the modal
+                                                            setIsModalOpen(true); // Open the modal
+                                                        }}>
+                                                            
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
+                                                            onClick={() => handleDelete(payroll.id)}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                        
+                                    {/* Pagination */}
+                                    <div className="flex space-x-2 mt-5 justify-between">
+                                            <p className="text-sm text-gray-500 mt-3">
+                                                Page {currentPage} of {Math.ceil(filteredData.length / pageSize)}
+                                            </p>
+                                            <div className="space-x-2">
+                                                <button
+                                                    className={`text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-l ${
+                                                        currentPageSecondTable === 1 && "opacity-50 cursor-not-allowed"
+                                                    }`}
+                                                    onClick={() => setCurrentPageSecondTable((prev) => Math.max(prev - 1, 1))}
+                                                    disabled={currentPageSecondTable === 1}
+                                                >
+                                                    Prev
+                                                </button>
+                                                <button
+                                                    className={`text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-r ${
+                                                        currentPageSecondTable === Math.ceil(filteredData.length / pageSize) &&
+                                                        "opacity-50 cursor-not-allowed"
+                                                    }`}
+                                                    onClick={() =>
+                                                        setCurrentPageSecondTable((prev) =>
+                                                            Math.min(prev + 1, Math.ceil(filteredData.length / pageSize))
+                                                        )
+                                                    }
+                                                    disabled={currentPageSecondTable === Math.ceil(filteredData.length / pageSize)}
+                                                >
+                                                    Next
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                    {/* Edit Modal */}
+                                    <DeductionModal
+                                        isOpen={isModalOpen}
+                                        data={modalData}  // This should reflect the current state from deductions
+                                        onChange={handleModalChange}  // This should handle the updates to modalData
+                                        onClose={handleClose}  // Close modal without saving
+                                        onSave={handleDeductionSave}  // Save the modal data and update the state
+                                    />
+                                </div>
+                            )}
+
+                            {/* CASH ADVANCE */}
+                            {activeButton === 3 && (
+                                <div>
+                                    <div>
+                                        <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] text-white py-1 px-3 rounded mb-2 flex items-center font-medium"
+                                        onClick={handleNewButtonClick}
+                                        ><img src="src/assets/plus.png" alt="" className="w-5 h-5 invert" />New</button>
+                                    </div>
+                                    <table className="w-full text-sm text-left text-gray-500">
+                                        <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                            <tr>
+                                                <th scope="col" className="p-4">Date</th>
+                                                <th scope="col" className="px-4">Name</th>
+                                                <th scope="col" className="px-4">Amount</th>
+                                                <th scope="col" className="px-4">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {entries.map((entry, index) => (
+                                                <tr key={index} className="border-b dark:text-[#e7e6e6]">
+                                                    <td className="px-6 py-3">{entry.date}</td>
+                                                    <td className="px-6 py-3">{entry.name}</td>
+                                                    <td className="px-6 py-3">{entry.amount}</td>
+                                                    <td className="px-6 py-3">
+                                                        <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md">
+                                                            Delete
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+
+                                      {/* Pagination */}
+                                    <div className="flex space-x-2 mt-5 justify-end">
+                                        <button
+                                            className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-l"
+                                        >
+                                            Prev
+                                        </button>
+                                        <button
+                                            
+                                            className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-r"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+
+                                    <CashAdvanceModal
+                                        isOpen={isModalOpen}
+                                        onClose={handleCashClose}
+                                        employees={employees}
+                                    />
+                                </div>
+                            )}
+
+                            {/* PAYROLL SECTION */}
+                            {activeButton === 4 && (
+                                <div>
+                                    <div className="flex relative mb-2 justify-between items-center">
+                                        <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none">
+                                            <svg
+                                                className="w-5 h-5 text-gray-500"
+                                                aria-hidden="true"
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="table-search"
+                                            value={searchTerm}
+                                            onChange={handleSearch}
+                                            className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-md w-80 bg-white focus:ring-blue-500 focus:border-blue-500 dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
+                                            placeholder="Search by name"
+                                        />
+
+                                        <div>
+                                            <button
+                                                className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded-md text-white font-medium"
+                                            >
+                                                Post All
+                                            </button>
+                                        </div>
+                                        
+                                    </div>
+                                    <table className="w-full text-sm text-left text-gray-500">
+                                        <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
+                                            <tr>
+                                                <th scope="col" className="p-4">No.</th>
+                                                <th scope="col" className="px-4">Name</th>
+                                                <th scope="col" className="px-4">Total Hours</th>
+                                                <th scope="col" className="px-4">Rate</th>
+                                                <th scope="col" className="px-4">Deductions</th>
+                                                <th scope="col" className="px-4">Net Pay</th>
+                                                <th scope="col" className="px-4">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {currentData3.map((payroll, index) => (
+                                                <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
+                                                    <td className="px-6 py-3">{index + 1}</td>
+                                                        {editingRow === payroll.id ? (
+                                                            <>
+                                                                <td className="px-6 py-3">
+                                                                    {payroll.name}
+                                                                </td>
+                                                                <td className="px-2 py-3">12</td>
+                                                                <td className="px-2 py-3">
+                                                                    <input
+                                                                        type="number"
+                                                                        name="net_pay"
+                                                                        value={editValues.net_pay}
+                                                                        onChange={handleEditChange}
+                                                                        className="w-full p-1 border border-gray-300 rounded"
+                                                                    />
+                                                                </td>
+                                                                <td className="px-2 py-3">
+                                                                    <input
+                                                                        type="number"
+                                                                        name="net_pay"
+                                                                        value={editValues.net_pay}
+                                                                        onChange={handleEditChange}
+                                                                        className="w-full p-1 border border-gray-300 rounded"
+                                                                    />
+                                                                </td>
+                                                                <td className="px-2 py-3">235</td>
+
+
+
+                                                                
+                                                                <td className="px-4 py-3 space-x-1">
+                                                                    <button
+                                                                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md text-white font-medium"
+                                                                        onClick={() => handleSave(payroll.id)}
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                    <button
+                                                                        className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
+                                                                        onClick={handleCancel}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </td>
+                                                            </>
+                                                        ) : (
+                                                        <>
+                                                            <td className="px-6 py-3">{payroll.name}</td>
+                                                            <td className="px-6 py-3">{payroll.total_hours}</td>
+                                                            <td className="px-6 py-3">{payroll.rate}</td>
+                                                            <td className="px-6 py-3">{payroll.deductions}</td>
+                                                            <td className="px-6 py-3">{payroll.net_pay}</td>
+                                                            <td className="px-4 py-3 space-x-1 flex">
+                                                                <button
+                                                                    className="bg-green-500 hover:bg-green-600 px-3 py-2 rounded-md text-white font-medium"
+                                                                    onClick={() => handleEditClick(payroll.id, payroll)}
+                                                                >
+                                                                    Post
+                                                                </button>
+                                                                <button
+                                                                    className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-3 py-2 rounded-md text-white font-medium"
+                                                                    onClick={() => handleEditClick(payroll.id, payroll)}
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    className="bg-[#FF6767] hover:bg-[#f35656] px-3 py-2 rounded-md text-white font-medium"
+                                                                    onClick={() => handleDelete(payroll.id)}
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+
+                                    <div className="flex space-x-2 mt-5 justify-between">
+                                        <p className="text-sm text-gray-500 mt-3">
+                                            Page {currentPage} of {Math.ceil(filteredData.length / pageSize)}
+                                        </p>
+                                        <div className="space-x-2">
+                                            <button
+                                                className={`text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-l ${
+                                                    currentPage === 1 && "opacity-50 cursor-not-allowed"
+                                                }`}
+                                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                            >
+                                                Prev
+                                            </button>
+                                            <button
+                                                className={`text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-r ${
+                                                    currentPage === Math.ceil(filteredData.length / pageSize) &&
+                                                    "opacity-50 cursor-not-allowed"
+                                                }`}
+                                                onClick={() =>
+                                                    setCurrentPage((prev) =>
+                                                        Math.min(prev + 1, Math.ceil(filteredData.length / pageSize))
+                                                    )
+                                                }
+                                                disabled={currentPage === Math.ceil(filteredData.length / pageSize)}
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    
+
+                    {/* RIGHT SIDE */}
+                    <div className="bg-white rounded-md shadow p-6 w-full  dark:bg-[#374151] dark:shadow min-h-[860px]">
                         <div className="flex justify-between border-b mb-4 pb-3">
                             <h1 className="font-semibold text-[18px] dark:text-[#e7e6e6]">Payroll List</h1>
                             <div className="flex space-x-2 items-center">
@@ -290,197 +921,39 @@ function AdminPayroll() {
                             <table className="w-full text-sm text-left text-gray-500">
                                 <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                     <tr>
-                                        <th scope="col" className="p-4">
-                                            <div className="flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectAll}
-                                                    onChange={handleSelectAll}
-                                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 "
-                                                />
-                                                <label htmlFor="checkbox-all-search" className="sr-only">checkbox</label>
-                                            </div>
-                                        </th>
-                                        <th scope="col" className="px-4">No.</th>
-                                        <th scope="col" className="px-4">Name</th>
-                                        <th scope="col" className="px-4">Net Payment</th>
-                                        <th scope="col" className="px-4">Status</th>
-                                        <th scope="col" className="px-4">Action</th>
+                                        <th scope="col" className="p-4">No.</th>
+                                        <th scope="col" className="p-4">Name</th>
+                                        <th scope="col" className="p-4">Net Payment</th>
+                                        <th scope="col" className="p-4">Status</th>
+                                        <th scope="col" className="p-4">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredData.map((payroll, index) => (
                                         <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
-                                            <td className="p-4">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={checkedItems[payroll.id] || false}
-                                                    onChange={() => handleCheckboxChange(payroll.id)}
-                                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                                />
-                                            </td>
                                             <td className="px-6 py-3">{index + 1}</td>
-                                            <td className="px-6 py-3">{payroll.employee}</td> {/* Employee name */}
-                                            <td className="px-6 py-3">{parseFloat(payroll.net_pay).toFixed(2) || 'N/A'}</td>
+                                            <td className="px-6 py-3">{payroll.name}</td> {/* Employee name */}
+                                            <td className="px-6 py-3"></td>
                                             <td className="px-6 py-3">
                                                 <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 'text-[#FF6767]'} py-2 rounded`}>
                                                     {payroll.status}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 space-x-1">
-                                                <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full">
-                                                    <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
+                                                <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium">
+                                                    Edit
                                                 </button>
-                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] p-2 rounded-full">
-                                                    <img src="./src/assets/view.png" className="w-4 h-4 filter brightness-0 invert" alt="View" />
+                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] px-4 py-2 rounded-md text-white font-medium">
+                                                    View
                                                 </button>
-                                                <button className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"  onClick={() => handleDelete(payroll.id)}>
-                                                    <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
+                                                <button className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"  onClick={() => handleDelete(payroll.id)}>
+                                                    Delete
                                                 </button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-
-                    <div className="rounded-md bg-white shadow p-6 w-full dark:bg-[#374151] dark:shadow">
-                        <div className="shadow p-6 rounded-md">
-                            <div className="mb-4">
-                            <select
-                                value={selectedEmployee}
-                                onChange={(e) => setSelectedEmployee(e.target.value)}
-                                className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                            >
-                                <option value="" disabled>Select Employee</option>
-                                {employees.map(employee => (
-                                    <option key={employee.id} value={employee.name}>
-                                        {employee.name}
-                                    </option>
-                                ))}
-                            </select>
-                            </div>
-
-                            <div className="flex space-x-2 mb-2">
-                                <div className="w-full space-y-2">
-                                    <p className="dark:text-[#e7e6e6]">Date From</p>
-                                    <input
-                                        type="date"
-                                        value={payrollRange.from}
-                                        onChange={(e) => setPayrollRange({ ...payrollRange, from: e.target.value })}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                                    />
-                                </div>
-                                <div className="w-full space-y-2">
-                                    <p className="dark:text-[#e7e6e6]">Date To</p>
-                                    <input
-                                        type="date"
-                                        value={payrollRange.to}
-                                        onChange={(e) => setPayrollRange({ ...payrollRange, to: e.target.value })}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                                    />
-                                </div>
-
-                                <div className="w-full space-y-2">
-                                    <p className="dark:text-[#e7e6e6]">Payroll Type</p>
-                                    <select
-                                        value={payrollType}
-                                        onChange={(e) => setPayrollType(e.target.value)}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                                    >
-                                        <option value="weekly">Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="flex space-x-2">
-                                <div className="w-full space-y-2">
-                                    <p className="dark:text-[#e7e6e6]">Total Hours</p>
-                                    <input
-                                        type="number"
-                                        value={totalHours}
-                                        onChange={(e) => setTotalHours(Number(e.target.value))}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                                    />
-                                </div>
-
-                                <div className="w-full space-y-2">
-                                    <p className="dark:text-[#e7e6e6]">Hourly Rate</p>
-                                    <input
-                                        type="number"
-                                        value={hourlyRate}
-                                        onChange={(e) => setHourlyRate(Number(e.target.value))}
-                                        className="block w-full p-2 border border-gray-300 rounded-lg dark:border-gray-400 dark:bg-[#374151] dark:text-[#e7e6e6] dark:placeholder-white"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex w-full justify-end mt-4">
-                                <button 
-                                    onClick={handleCalculate}
-                                    className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white w-[90px] p-2 rounded-md"
-                                >
-                                    Calculate
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 p-6 h-[430px] dark:bg-[#1f2937]">
-                            {/* <div className="flex justify-end pb-3">
-                                <button onClick={toggleDropdown}>
-                                    <img src="./src/assets/option.png" alt="Options" className="w-4 h-4 dark:invert" />
-                                </button>
-                                {isDropdownVisible && (
-                                    <div className="absolute right-[30px] mt-5 w-40 bg-white border border-gray-300 rounded-md shadow-lg z-10">
-                                        <ul className="py-1 p-2">
-                                            <li onClick={handlePrint} className="p-2 py-2 hover:bg-gray-200 hover:rounded-md cursor-pointer border-b flex"><img src="./src/assets/printer.png" alt="" className="w-5 h-5 mr-2"/>Print</li>
-                                            <li onClick={handleDownload} className="p-2 py-2 hover:bg-gray-200 hover:rounded-md cursor-pointer flex"><img src="./src/assets/download.png" alt="" className="w-5 h-5 mr-2"/>Download</li>
-                                        </ul>
-                                    </div>
-                                )}
-                            </div> */}
-
-                            <div className="shadow p-4 h-[280px] dark:bg-[#374151] rounded-md">
-                                <table className="w-full text-sm text-left text-gray-500">
-                                    <caption className="p-5 text-[20px] font-semibold text-gray-900 bg-white dark:bg-[#374151] dark:text-[#e7e6e6]">
-                                        Payroll Form
-                                        <p className="mt-5 text-[16px] text-left font-normal text-gray-500 dark:text-[#f3f2f2]">
-                                            Payroll Range: {`${formatDate(payrollRange.from)} to ${formatDate(payrollRange.to)}`}
-                                        </p>
-                                        <p className="mt-1 text-[16px] text-left font-normal text-gray-500 dark:text-[#f3f2f2]">
-                                            Payroll Type: {payrollType}
-                                        </p>
-                                    </caption>
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
-                                        <tr>
-                                            <th scope="col" className="px-6 py-3">Name</th>
-                                            <th scope="col" className="px-6 py-3">Hours</th>
-                                            <th scope="col" className="px-6 py-3">Rate</th>
-                                            <th scope="col" className="px-6 py-3">Net Payment</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {payrollEntries.map((entry, index) => (
-                                            <tr key={index} className="border-b dark:text-[#e7e6e6]">
-                                                <td className="px-6 py-4">{entry.name}</td>
-                                                <td className="px-6 py-4">{entry.hours || 0}</td>
-                                                <td className="px-6 py-4">{entry.rate ? entry.rate.toFixed(2) : '0.00'}</td>
-                                                <td className="px-6 py-4">{entry.net ? entry.net.toFixed(2) : '0.00'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <div className="flex w-full mt-5 justify-end">
-                                <button 
-                                    onClick={handleDone}  // Now updating status when 'Done' is clicked
-                                    className="bg-[#70b8d3] hover:bg-[#09B0EF] text-white p-2 w-[80px] rounded-md">
-                                    Done
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>

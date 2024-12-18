@@ -5,7 +5,6 @@ import api from '../api';
 function ManageProduct() {
     const [inventory, setInventory] = useState([]);
     const [salesInput, setSalesInput] = useState({});
-    const [totalProfit, setTotalProfit] = useState(0);
     const [salesHistory, setSalesHistory] = useState([]);
     const [recentProducts, setRecentProducts] = useState([]);
 
@@ -60,10 +59,6 @@ function ManageProduct() {
                 )
             );
 
-            // Calculate profit and update total profit
-            const profit = (soldItem.sellingPrice - soldItem.avgPrice) * quantitySold;
-            setTotalProfit(prevProfit => prevProfit + profit);
-
             // Clear the sales input for that product
             setSalesInput(prevState => ({
                 ...prevState,
@@ -90,7 +85,7 @@ function ManageProduct() {
         <div className="flex bg-gray-100">
             <Sidebar />
             <div className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
-                <h1 className="text-4xl font-bold mb-4">MANAGE PRODUCT</h1>
+                <h1 className="text-4xl font-bold mb-4 uppercase">MANAGE SALES</h1>
 
                 <div className="flex-col mt-10">
                     <div className="relative">
@@ -124,8 +119,7 @@ function ManageProduct() {
                                     <th className="thDesign">Acquisition Cost</th>
                                     <th className="thDesign">Ending Balance</th>
                                     <th className="thDesign">Quantity to Sell</th>
-                                    <th className="thDesign">Profit</th>
-                                    <th className="thDesign">Actions</th>
+                                    <th className="thDesign">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white">
@@ -145,9 +139,6 @@ function ManageProduct() {
                                                 onChange={(e) => handleInputChange(item.name, e.target.value)} 
                                             />
                                         </td>
-                                        <td className="border px-4 py-2">
-                                            ${(item.sellingPrice - item.avgPrice) * (parseInt(salesInput[item.name] || 0, 10) || 0)}
-                                        </td>
                                         <td className="border px-4 py-2 flex space-x-2">
                                             <button
                                                 onClick={() => handleSale(item.name)}
@@ -160,11 +151,6 @@ function ManageProduct() {
                                 ))}
                             </tbody>
                         </table>
-
-                        {/* Reset and Total Profit */}
-                        <div className="mt-4 flex items-center">
-                            <h2 className="text-2xl font-semibold mr-4">Total Profit: ${totalProfit.toFixed(2)}</h2>
-                        </div>
                     </div>
 
                     {/* Summary Tables */}

@@ -12,7 +12,7 @@ function AdminList() {
     const [confirmPassword, setConfirmPassword] = useState(""); 
     const [currentPage, setCurrentPage] = useState(1); 
     const [searchTerm, setSearchTerm] = useState(""); 
-    const employeesPerPage = 7; 
+    const employeesPerPage = 9; 
 
     const API_BASE_URL = 'http://localhost:8000/api/'; // Backend API base URL
 
@@ -175,21 +175,21 @@ function AdminList() {
                                             <tbody>
                                                 {filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee).map((employee, index) => (
                                                     <tr key={employee.uid || employee.id}>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
                                                             <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{indexOfFirstEmployee + index + 1}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
                                                             <p className="text-gray-900 whitespace-no-wrap dark:text-[#e7e6e6]">{employee.name}</p>
                                                         </td>
-                                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
+                                                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
                                                             <div className="flex space-x-1 justify-center">
-                                                                <button className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
-                                                                    <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
+                                                                <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium">
+                                                                    Edit
                                                                 </button>
                                                                 <button
-                                                                    className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full"
+                                                                    className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
                                                                 >
-                                                                    <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
+                                                                    Delete
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -209,14 +209,14 @@ function AdminList() {
                                     <button
                                         onClick={() => handlePageChange(currentPage - 1)}
                                         disabled={currentPage === 1}
-                                        className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r"
+                                        className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-l"
                                     >
                                         Prev
                                     </button>
                                     <button
                                         onClick={() => handlePageChange(currentPage + 1)}
                                         disabled={currentPage === totalPages}
-                                        className="text-sm text-indigo-50 transition duration-150 hover:bg-[#09B0EF] bg-[#70b8d3] font-semibold py-2 px-4 rounded-r"
+                                        className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-r"
                                     >
                                         Next
                                     </button>

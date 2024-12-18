@@ -273,13 +273,13 @@ const AdminAddUnit = () => {
                                                 <div className="flex space-x-1">
                                                     <button 
                                                         onClick={() => handleEdit(unit)}
-                                                        className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
-                                                            <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
+                                                        className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium">
+                                                            Edit
                                                     </button>
                                                     <button 
                                                         onClick={() => handleDelete(unit.id, unitType)}
-                                                        className="bg-[#FF6767] hover:bg-[#f35656] p-3 rounded-full">
-                                                            <img src="./src/assets/delete.png" className="w-4 h-4 filter brightness-0 invert" alt="Delete" />
+                                                        className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium">
+                                                            Delete
                                                     </button>
                                                 </div>
                                             </td>                

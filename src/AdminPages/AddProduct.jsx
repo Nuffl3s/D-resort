@@ -512,37 +512,27 @@ function AddProduct() {
                                                         )}
                                                     </td>
                                                     <td className="px-5 py-5 border-b border-gray-400 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                                        <div className="space-x-2">
+                                                        <div className="space-x-1 flex">
                                                             {editProductId === product.id ? (
                                                                 <button
-                                                                    className="px-3 py-2 text-base font-medium rounded-md shadow-md text-white bg-[#1089D3] hover:bg-[#3d9fdb]"
+                                                                    className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
                                                                     onClick={handleSaveClick}
                                                                 >
                                                                     Save
                                                                 </button>
                                                             ) : (
                                                                 <button
-                                                                    className="bg-[#1089D3] hover:bg-[#3d9fdb] p-2 rounded-full"
+                                                                    className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
                                                                     onClick={() => handleEditClick(product)}
                                                                 >
-                                                                    <img
-                                                                        src="./src/assets/edit.png"
-                                                                        className="fill-current w-4 h-4"
-                                                                        style={{ filter: 'invert(100%)' }}
-                                                                        alt="Edit"
-                                                                    />
+                                                                    Edit
                                                                 </button>
                                                             )}
                                                             <button
-                                                                className="bg-[#FF6767] hover:bg-[#f35656] p-2 rounded-full"
+                                                                className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
                                                                 onClick={() => handleDeleteProduct(product.id)}
                                                             >
-                                                                <img
-                                                                    src="./src/assets/delete.png"
-                                                                    className="fill-current w-4 h-4"
-                                                                    style={{ filter: 'invert(100%)' }}
-                                                                    alt="Delete"
-                                                                />
+                                                                Delete
                                                             </button>
                                                         </div>
                                                     </td>
@@ -568,7 +558,7 @@ function AddProduct() {
                                             <button
                                                 key={number}
                                                 onClick={() => setCurrentPage(number)}
-                                                className={`text-sm px-3 py-2 mx-1 ${currentPage === number ? 'bg-[#70b8d3] text-white' : 'bg-gray-200 text-gray-700'} hover:bg-[#09B0EF] rounded`}
+                                                className={`text-sm px-3 py-2 ${currentPage === number ? ' bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-700'} rounded`}
                                             >
                                                 {number}
                                             </button>

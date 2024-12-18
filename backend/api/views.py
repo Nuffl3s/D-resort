@@ -387,13 +387,19 @@ class PayrollListCreate(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
 
     def get(self, request):
-        # Ensure all employees have a payroll entry
-        employees = Employee.objects.all()
-        for employee in employees:
-            Payroll.objects.get_or_create(employee=employee, defaults={'status': 'Not yet'})
-        payrolls = Payroll.objects.select_related('employee').all()
-        serializer = PayrollSerializer(payrolls, many=True)
-        return Response(serializer.data, status=200)
+        try:
+            print("Fetching Payroll Data...")
+            employees = Employee.objects.all()
+            for employee in employees:
+                Payroll.objects.get_or_create(employee=employee, defaults={'status': 'Not yet'})
+            
+            payrolls = Payroll.objects.select_related('employee').all()
+            print("Payrolls fetched successfully")
+            serializer = PayrollSerializer(payrolls, many=True)
+            return Response(serializer.data, status=200)
+        except Exception as e:
+            print(f"Error fetching payroll data: {str(e)}")  # Log error details
+            return Response({"error": "Internal Server Error"}, status=500)
 
     def post(self, request):
         data = request.data  # Expecting a list of payroll entries
@@ -439,18 +445,12 @@ class UpdatePayrollView(UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        data = request.data
-        if 'status' in data:
-            instance.status = data['status']
-        if 'net_pay' in data:
-            instance.net_pay = data['net_pay']
-        instance.save()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()  # Triggers net pay calculation in the serializer
+        return Response(serializer.data, status=200)
+    
 
-        return Response({
-            "id": instance.id,
-            "status": instance.status,
-            "net_pay": instance.net_pay
-        }, status=200)
 
 class LogView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]

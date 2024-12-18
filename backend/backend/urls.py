@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from django.urls import path, include
 from api.views import RegisterUserView, CustomLoginView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView, PayrollListCreate, PayrollDetail, UserDetailsView, LogView, WeeklyScheduleView
 from api.views import EditEmployeeView, DeleteEmployeeView, CottageListView, LodgeListView, AddUnitView, DeleteCottageView, DeleteLodgeView, TotalUnitsView, FilterUnitsView, UpdateCottageView, UpdateLodgeView
-from api.views import UpdatePayrollView, TotalUnitsView, ReservationView
+from api.views import UpdatePayrollView, TotalUnitsView, ReservationView, AdminAccountsView, CustomerAccountRegisterView, CustomerLoginView, CustomerDetailsView, ChangePasswordView, CalendarView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import EmployeeCreateView
 from api.views import AttendanceView
@@ -40,5 +40,14 @@ urlpatterns = [
     path("api/reservations/", ReservationView.as_view(), name="reservation"),
     path("api-auth/", include("rest_framework.urls")),
     path('api/employees/', EmployeeCreateView.as_view(), name='api_employee'),
-    path('api/attendance/', AttendanceView.as_view(), name='attendance')
+    path('api/attendance/', AttendanceView.as_view(), name='attendance'),
+    path('api/attendance/<int:pk>/', AttendanceView.as_view(), name='attendance-update'),
+    path('api/create-account/', CreateAccountView.as_view(), name='create_account'),
+    path('api/check-username/<str:username>/', CheckUsernameView.as_view(), name='check-username'),
+    path('api/create-admin/', CreateAdminView.as_view(), name='create-admin'),
+    path('api/customer/register/', CustomerAccountRegisterView.as_view(), name='customer-register'),
+    path("api/customer/login/", CustomerLoginView.as_view(), name="customer-login"),
+    path('api/customer/details/', CustomerDetailsView.as_view(), name='customer-details'),
+    path('api/customer/change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('api/calendar/', CalendarView.as_view(), name='calendar-view'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

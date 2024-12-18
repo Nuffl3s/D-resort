@@ -13,8 +13,7 @@ function BillingPage() {
     const navigate = useNavigate(); // Hook for navigation
     const location = useLocation();
     const billingData = location.state || {};
-
-    const { customerInfo, units, selectedDate } = location.state || {};
+    const { customerInfo = {}, units = [], selectedDate = null } = location.state || {};
 
 
     // Temporary data for testing
@@ -33,45 +32,45 @@ function BillingPage() {
     ];
 
     const totalPrice = units?.reduce((total, unit) => {
-        return total + unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0);
-    }, 0);
+        const unitTotal = unit.timeAndPrice?.reduce(
+            (sum, { price }) => sum + parseFloat(price || 0),
+            0
+        ) || 0;
+        return total + unitTotal;
+    }, 0) || 0;
 
-    const handleContinue = async () => {
-        // Swal.fire({
-        //     title: "IMPORTANT!",
-        //     text: "Screenshot or download the receipt first before you continue.",
-        //     icon: "warning",
-        //     showCancelButton: true,
-        //     cancelButtonText: "Close",
-        //     confirmButtonText: "Continue",
-        //     customClass: {
-        //         confirmButton:
-        //             "bg-[#12B1D1] text-white font-semibold px-4 py-2 rounded-md hover:bg-[#3ebae7] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#12B1D1]",
-        //         cancelButton:
-        //             "bg-red-500 text-white font-semibold px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
-        //         actions: "flex justify-center gap-4", // Adds space between the buttons
-        //     },
-        //     buttonsStyling: false, // Disable SweetAlert2's default button styles
-        // }).then((result) => {
-        //     if (result.isConfirmed) {
-        //         navigate("/booking"); // Navigate to booking main page
-        //     }
-        // });
-        const reservationData = billingData.units.map((unit) => ({
-            customer_name: `${billingData.customerInfo.firstName} ${billingData.customerInfo.lastName}`,
-            customer_email: billingData.customerInfo.email,
-            customer_mobile: billingData.customerInfo.mobile,
-            unit_type: unit.type,
-            unit_name: unit.name,
-            transaction_date: new Date().toISOString().split('T')[0],
-            date_of_reservation: new Date(selectedDate).toISOString().split('T')[0],
-            time_of_use: unit.timeAndPrice.map(({ time }) => time).join(', '),
-            total_price: unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0),
-            content_type: unit.type.toLowerCase() === "cottage" ? "cottage" : "lodge",
-            object_id: unit.id, // Pass the ID of the unit
-        }));
+    // Fetch user details
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const response = await api.get('/customer/details/'); // Fetch user details
+                setUserDetails(response.data);
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserDetails();
+    }, []);
+
+    const handleSaveReservation = async () => {
+        const selectedDateObject = new Date(selectedDate);
+        const localDate = new Date(selectedDateObject.getTime() - selectedDateObject.getTimezoneOffset() * 60000)
+            .toISOString()
+            .split("T")[0];
     
-        console.log("Sending reservation data:", reservationData);
+        const reservationData = units.flatMap((unit) =>
+            unit.timeAndPrice.map(({ time, price }) => ({
+                customer_name: userDetails.username, // From userDetails state
+                unit_name: unit.name,
+                unit_type: unit.type.toLowerCase(), // Add unit type
+                date_of_reservation: localDate, 
+                time_of_use: time,
+                total_price: price,
+            }))
+        );
     
         try {
             const response = await Promise.all(

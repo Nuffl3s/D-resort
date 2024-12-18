@@ -177,12 +177,40 @@ function BookingPage({ setBookingDetails }) {
             .filter(price => !isNaN(price));
     };
     
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Adjust month to be 1-based
+        const day = String(date.getDate()).padStart(2, '0'); // Ensure two digits
+        return `${year}-${month}-${day}`;
+    };
+    
+    const isDateReserved = (unit) => {
+        const formattedSelectedDate = formatDate(selectedDate);
+        return reservedDates.some(
+            (res) => res.unitName === unit.name && res.reservedDate === formattedSelectedDate
+        );
+    };
+    
+    // Function to check if a specific time is reserved
+    const isTimeReserved = (unit, selectedTime) => {
+        const formattedDate = formatDate(selectedDate);
+    
+        return reservedDates.some((res) =>
+            res.unit_name === unit.name &&
+            res.date_of_reservation === formattedDate &&
+            res.time_of_use?.includes(selectedTime) // Check reserved times
+        );
+    };
+    
+
     const handleBookClick = (unit) => {
-        navigate("/payment", { state: { unit, selectedDate } });
+        if (!isDateReserved(unit)) {
+            navigate("/payment", { state: { unit } }); // Pass unit details to PaymentPage
+        }
     };
 
-    const handleCheckAvailability = (title) => {
-        navigate(`/calendar/${title}`);
+    const handleCheckAvailability = (unit) => {
+        navigate(`/calendar/${unit.name}`);
     };
 
     const scrollToTop = () => {

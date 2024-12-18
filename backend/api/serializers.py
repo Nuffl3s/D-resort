@@ -145,12 +145,8 @@ class UnitDetailsSerializer(serializers.Serializer):
     custom_prices = serializers.JSONField()
 
 class ReservationSerializer(serializers.ModelSerializer):
-    transaction_date = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
-    date_of_reservation = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
-    content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all(), required=False)
-    object_id = serializers.IntegerField(required=False)
-    unit_details = serializers.SerializerMethodField()  # Add this field
-    
+    image_url = serializers.SerializerMethodField()
+    unit_type = serializers.CharField(source='unit.unit_type', read_only=True)
     class Meta:
         model = Reservation
         fields = [
@@ -159,17 +155,60 @@ class ReservationSerializer(serializers.ModelSerializer):
             'transaction_date', 'content_type', 'object_id', 'unit_details'
         ]
 
-    def get_unit_details(self, obj):
-        if not obj.content_type or not obj.object_id:
-            return None
-        try:
-            unit_model = obj.content_type.get_object_for_this_type(id=obj.object_id)
-            return {
-                "image": unit_model.image.url if hasattr(unit_model, "image") and unit_model.image else "/static/default-image.jpg",
-                "capacity": getattr(unit_model, "capacity", "N/A"),
-                "custom_prices": getattr(unit_model, "custom_prices", {}),
-            }
-        except Exception as e:
-            print(f"Error fetching unit details: {e}")
-            return None
+    def get(self, request):
+        reservations = Reservation.objects.all()  # Remove filtering by customer
+        serializer = ReservationSerializer(reservations, many=True, context={"request": request})
+        return Response(serializer.data, status=200)
+    
+    def create(self, validated_data):
+        user = self.context['request'].user  # Get the currently authenticated user
+        if hasattr(user, 'customer_account'):  # Ensure user has a CustomerAccount
+            validated_data['customer'] = user.customer_account
+        else:
+            raise serializers.ValidationError("Customer account not found for the user.")
+        
+        return super().create(validated_data)
+    
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.unit_type.lower() == "cottage":
+            try:
+                unit = Cottage.objects.get(name=obj.unit_name)
+                if unit.image and request:
+                    return request.build_absolute_uri(unit.image.url)
+            except Cottage.DoesNotExist:
+                return None
+        elif obj.unit_type.lower() == "lodge":
+            try:
+                unit = Lodge.objects.get(name=obj.unit_name)
+                if unit.image and request:
+                    return request.build_absolute_uri(unit.image.url)
+            except Lodge.DoesNotExist:
+                return None
+        return None
 
+
+class CustomerAccountSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = CustomerAccount
+        fields = ['id', 'username', 'name', 'phone_number', 'email', 'password', 'user_type']
+
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
+
+class CalendarEventSerializer(serializers.ModelSerializer):
+    date = serializers.DateField(source='date_of_reservation')  # Explicit mapping for clarity
+    times = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Reservation
+        fields = ['unit_name', 'date', 'times']  # No need for `source` on `unit_name`
+
+    def get_times(self, obj):
+        # Split `time_of_use` into a list if it's a string
+        if isinstance(obj.time_of_use, str):
+            return obj.time_of_use.split(", ")
+        return obj.time_of_use or []

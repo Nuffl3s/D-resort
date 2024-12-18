@@ -20,7 +20,7 @@ const DeductionModal = ({ isOpen, data, onChange, onClose, onSave }) => {
                     <input
                         type="text"
                         name="description"
-                        value={data.descriptions || ""}  // Ensure correct field name
+                        value={data.descriptions || ""}  // Use the modal data for description
                         onChange={handleDescriptionChange}
                         className="block w-full p-2 border border-gray-300 rounded-md"
                         placeholder="Enter description"
@@ -31,7 +31,7 @@ const DeductionModal = ({ isOpen, data, onChange, onClose, onSave }) => {
                     <input
                         type="number"
                         name="amount"
-                        value={data.amount || ""}  // Ensure correct field name
+                        value={data.amount || ""}  // Use the modal data for amount
                         onChange={handleAmountChange}
                         className="block w-full p-2 border border-gray-300 rounded-md"
                         placeholder="Enter amount"
@@ -46,7 +46,7 @@ const DeductionModal = ({ isOpen, data, onChange, onClose, onSave }) => {
                     </button>
                     <button
                         className="bg-[#70b8d3] hover:bg-[#3d9fdb] text-white px-4 py-2 rounded-md"
-                        onClick={onSave}  // Ensure save is properly wired
+                        onClick={onSave}  // Save the changes
                     >
                         Save
                     </button>

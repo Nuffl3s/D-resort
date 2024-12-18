@@ -115,14 +115,14 @@ class PayrollSerializer(serializers.ModelSerializer):
         read_only_fields = ['net_pay']  # Calculated automatically
 
     def update(self, instance, validated_data):
-        # Update fields
+        # Ensure that rate is being passed in validated_data
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         
         # Recalculate net pay
         instance.calculate_net_pay()
+        instance.save()  # Save the instance after updating the rate
         return instance
-
 
 class LogSerializer(serializers.ModelSerializer):
     class Meta:

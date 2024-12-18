@@ -228,12 +228,12 @@ if __name__ == "__main__":
 
     # Create threads for both tasks
     attendance_thread = threading.Thread(target=fetch_attendance)
-    sync_thread = threading.Thread(target=sync_biometric_data)
+    # sync_thread = threading.Thread(target=sync_biometric_data)
 
     # Start both threads
     attendance_thread.start()
-    sync_thread.start()
+    # sync_thread.start()
 
     # Join both threads (wait for them to finish)
     attendance_thread.join()
-    sync_thread.join()
+    # sync_thread.join()

@@ -87,38 +87,38 @@ class Product(models.Model):
         return self.name
 
     
-class Payroll(models.Model):
-    STATUS_CHOICES = [
-        ('Calculated', 'Calculated'),
-        ('Not yet', 'Not yet'),
-    ]
-    PAYROLL_TYPE_CHOICES = [
-        ('Weekly', 'Weekly'),
-        ('Monthly', 'Monthly'),
-    ]
+# class Payroll(models.Model):
+#     STATUS_CHOICES = [
+#         ('Calculated', 'Calculated'),
+#         ('Not yet', 'Not yet'),
+#     ]
+#     PAYROLL_TYPE_CHOICES = [
+#         ('Weekly', 'Weekly'),
+#         ('Monthly', 'Monthly'),
+#     ]
 
-    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)
-    net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
-    payroll_type = models.CharField(max_length=50, choices=PAYROLL_TYPE_CHOICES, default="Weekly")
-    last_updated = models.DateTimeField(auto_now=True)
+#     employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)
+#     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+#     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
+#     payroll_type = models.CharField(max_length=50, choices=PAYROLL_TYPE_CHOICES, default="Weekly")
+#     last_updated = models.DateTimeField(auto_now=True)
 
-    def should_reset(self):
-        """Determine if the payroll status should be reset to 'Not yet'."""
-        now = timezone.now()
-        if self.payroll_type == "Weekly":
-            return (now - self.last_updated).days >= 6
-        elif self.payroll_type == "Monthly":
-            next_month = self.last_updated + timedelta(days=30)
-            reset_day = next_month - timedelta(days=1)
-            return now >= reset_day
-        return False
+#     def should_reset(self):
+#         """Determine if the payroll status should be reset to 'Not yet'."""
+#         now = timezone.now()
+#         if self.payroll_type == "Weekly":
+#             return (now - self.last_updated).days >= 6
+#         elif self.payroll_type == "Monthly":
+#             next_month = self.last_updated + timedelta(days=30)
+#             reset_day = next_month - timedelta(days=1)
+#             return now >= reset_day
+#         return False
 
-    def reset_status(self):
-        """Reset status to 'Not yet' if conditions are met."""
-        if self.should_reset():
-            self.status = "Not yet"
-            self.save()
+#     def reset_status(self):
+#         """Reset status to 'Not yet' if conditions are met."""
+#         if self.should_reset():
+#             self.status = "Not yet"
+#             self.save()
 
 class Payroll(models.Model):
     STATUS_CHOICES = [
@@ -127,16 +127,15 @@ class Payroll(models.Model):
     ]
 
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Add this field
     total_hours = models.DecimalField(max_digits=10, decimal_places=2)
     deductions = models.DecimalField(max_digits=10, decimal_places=2)
     cash_advance = models.DecimalField(max_digits=10, decimal_places=2)
-    net_pay = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    status = models.CharField(max_length=20)
+    net_pay = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    status = models.CharField(max_length=50)
 
     def calculate_net_pay(self):
-        self.net_pay = (self.rate * self.total_hours) - (self.deductions + self.cash_advance)
-        self.save()
+        self.net_pay = self.total_hours * self.rate - self.deductions - self.cash_advance
 
 class Log(models.Model):
     CATEGORY_CHOICES = [

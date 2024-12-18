@@ -29,6 +29,7 @@ import About from './OnlineBookingPages/AboutUsPage.jsx';
 import Terms from './OnlineBookingPages/TermsAndConditionPage.jsx';
 import CalendarView from './EmployeePages/CalendarView.jsx';
 import AccountCreation from './AdminPages/AccountCreation.jsx';
+import AccountInfoPage from './CustomerPages/AccountInfoPage.jsx';
 import './index.css';
 
 const App = () => {
@@ -64,9 +65,10 @@ const App = () => {
         <Route path="/BookingReport" element={<BookingReport />} />
 
         {/* Public Pages */}
+        <Route path="/AccountDetails" element={<AccountInfoPage/>} />
         <Route path="/booking" element={<BookingMainPage />} />
         <Route path="/book" element={<CottageAndLodge setBookingDetails={setBookingDetails} />} />
-        <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/signin" element={<SignIn />} />
         <Route path="/register" element={<Register />} />
         <Route path="/payment" element={<Payment bookingDetails={bookingDetails} />} />
         <Route path="/billing" element={<BillingPage />} />

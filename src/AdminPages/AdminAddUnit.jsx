@@ -9,7 +9,9 @@ const AdminAddUnit = () => {
     const [name, setName] = useState("");
     const [capacity, setCapacity] = useState("");
     const [image, setImage] = useState(null);
-    const [customPrices, setCustomPrices] = useState([]);
+    const [customPrices, setCustomPrices] = useState([
+        { startTime: "", endTime: "", price: "" },
+    ]);
     const [cottages, setCottages] = useState([]);
     const [lodges, setLodges] = useState([]);
     const [selectedUnitId, setSelectedUnitId] = useState(null); // Track the unit being edited
@@ -19,13 +21,15 @@ const AdminAddUnit = () => {
     const fetchUnits = async () => {
         try {
             const cottageResponse = await api.get("/cottages/");
-            setCottages(cottageResponse.data);
+            setCottages(cottageResponse.data.map(unit => ({ ...unit, type: "Cottage" })));
+    
             const lodgeResponse = await api.get("/lodges/");
-            setLodges(lodgeResponse.data);
+            setLodges(lodgeResponse.data.map(unit => ({ ...unit, type: "Lodge" })));
         } catch (error) {
             console.error("Error fetching units:", error);
         }
     };
+    
 
     useEffect(() => {
         fetchUnits();
@@ -37,8 +41,27 @@ const AdminAddUnit = () => {
                 i === index ? { ...price, [field]: value } : price
             )
         );
-        
     };
+
+    const convertTo12HourFormat = (time) => {
+        const [hour, minute] = time.split(":");
+        const period = +hour < 12 || +hour === 0 ? "AM" : "PM";
+        const adjustedHour = +hour % 12 || 12; // Convert 0 to 12
+        return `${adjustedHour}:${minute} ${period}`;
+    };
+    
+    const formatTimeRange = (range) => {
+        if (!range || !range.includes("-")) return range; // Return original if not a range
+        const [start, end] = range.split("-");
+        return `${convertTo12HourFormat(start)} - ${convertTo12HourFormat(end)}`;
+    };
+    
+    const handleUnitTypeChange = (e) => {
+        const newUnitType = e.target.value;
+        setUnitType(newUnitType);
+        setCustomPrices(newUnitType === "Cottage" ? [] : [{ timeRange: "Default", price: "" }]);
+    };
+    
     const handleDelete = async (unitId, unitType) => {
         const confirmDelete = window.confirm("Are you sure you want to delete this unit?");
         if (!confirmDelete) return;
@@ -55,41 +78,47 @@ const AdminAddUnit = () => {
     };
     
     const handleAddOrEditUnit = async () => {
-        const formattedCustomPrices = customPrices.reduce((acc, price) => {
-            acc[price.timeRange] = price.price;
-            return acc;
-        }, {});
+        let formattedCustomPrices = {};
+    
+        if (unitType === "Cottage") {
+            formattedCustomPrices = customPrices.reduce((acc, price) => {
+                const timeRange = `${price.startTime}-${price.endTime}`;
+                acc[timeRange] = price.price;
+                return acc;
+            }, {});
+        } else if (unitType === "Lodge") {
+            formattedCustomPrices = customPrices.reduce((acc, price) => {
+                acc[`${price.hours} Hours`] = price.price;
+                return acc;
+            }, {});
+        }
     
         const formData = new FormData();
         formData.append("name", name);
-        formData.append("unit_type", unitType.toLowerCase()); //always have it on unit_type (bugged)
+        formData.append("unit_type", unitType.toLowerCase());
         formData.append("capacity", capacity);
         if (image) formData.append("image", image);
         formData.append("custom_prices", JSON.stringify(formattedCustomPrices));
     
         try {
             const endpoint = selectedUnitId
-                ? `/${unitType.toLowerCase()}/${selectedUnitId}/`
+                ? `/${unitType.toLowerCase()}s/${selectedUnitId}/`
                 : "/add-unit/";
             const method = selectedUnitId ? "put" : "post";
     
             const response = await api[method](endpoint, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
+    
             console.log("Response:", response.data);
             alert(`Unit ${selectedUnitId ? "updated" : "added"} successfully`);
             fetchUnits();
             resetForm();
         } catch (error) {
-            console.error(
-                `Error ${selectedUnitId ? "updating" : "adding"} unit:`,
-                error.response?.data || error.message
-            );
-            alert(
-                `Failed to ${selectedUnitId ? "update" : "add"} unit. Check console for more details.`
-            );
+            console.error(`Error ${selectedUnitId ? "updating" : "adding"} unit:`, error.response?.data || error.message);
+            alert(`Failed to ${selectedUnitId ? "update" : "add"} unit. Check console for more details.`);
         }
-    };
+    };    
 
     const resetForm = () => {
         setName("");
@@ -106,15 +135,28 @@ const AdminAddUnit = () => {
         setSelectedUnitId(unit.id);
         setName(unit.name);
         setCapacity(unit.capacity);
-        setCustomPrices(
-            Object.entries(unit.custom_prices || {}).map(([timeRange, price]) => ({
-                timeRange,
-                price,
-            }))
-        );
-        setUnitType(unitType.charAt(0).toUpperCase() + unitType.slice(1)); // Keep the tab selected
+    
+        // Infer unit type dynamically
+        setUnitType(unit.type.charAt(0).toUpperCase() + unit.type.slice(1));
+    
+        if (unit.type === "Cottage") {
+            setCustomPrices(
+                Object.entries(unit.custom_prices || {}).map(([timeRange, price]) => {
+                    const [startTime, endTime] = timeRange.split("-");
+                    return { startTime, endTime, price };
+                })
+            );
+        } else if (unit.type === "Lodge") {
+            setCustomPrices(
+                Object.entries(unit.custom_prices || {}).map(([hours, price]) => ({
+                    hours: hours.replace(" Hours", ""),
+                    price,
+                }))
+            );
+        }
     };
-
+    
+    
     return (
         <div className="flex h-screen overflow-hidden dark:bg-[#111827] bg-gray-100">
             {/* Sidebar */}
@@ -131,7 +173,7 @@ const AdminAddUnit = () => {
                             <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Unit Type</label>
                             <select
                                 value={unitType}
-                                onChange={(e) => setUnitType(e.target.value)}
+                                onChange={handleUnitTypeChange}
                                 className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                             >
                                 <option value="Cottage">Cottage</option>
@@ -165,47 +207,100 @@ const AdminAddUnit = () => {
                                 className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
                             />
                         </div>
-                        <div className="mb-4">
-                            <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Custom Prices</label>
-                            {customPrices.map((price, index) => (
-                                <div key={index} className="flex items-center space-x-2 mb-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Time Range"
-                                        value={price.timeRange}
-                                        onChange={(e) =>
-                                            handleCustomPriceChange(index, "timeRange", e.target.value)
-                                        }
-                                        className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
-                                    />
-                                    <input
-                                        type="number"
-                                        placeholder="Price"
-                                        value={price.price}
-                                        onChange={(e) =>
-                                            handleCustomPriceChange(index, "price", e.target.value)
-                                        }
-                                        className="mt-1 p-2 w-full border border-gray-500 rounded-md bg-white dark:bg-[#374151] dark:border-gray-400 dark:text-[#e7e6e6] placeholder:text-gray-300"
-                                    />
-                                    <button
-                                        onClick={() =>
-                                            setCustomPrices(customPrices.filter((_, i) => i !== index))
-                                        }
-                                        className="bg-[#FF6767] hover:bg-[#f35656] text-white px-4 py-2 rounded ml-2 font-medium"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            ))}
-                            <button
-                                onClick={() =>
-                                    setCustomPrices([...customPrices, { timeRange: "", price: "" }])
-                                }
-                                className="underline text-[#70b8d3] hover:text-[#62c5e9] font-medium rounded"
-                            >
-                                Add Price
-                            </button>
-                        </div>
+                        {unitType === "Cottage" && (
+    <div className="mb-4">
+        <label className="block font-medium mb-2 dark:text-[#e7e6e6]">
+            Custom Prices (Start Time, End Time, Price)
+        </label>
+        {customPrices.map((price, index) => (
+            <div key={index} className="flex items-center space-x-2 mb-2">
+                <input
+                    type="time"
+                    value={price.startTime}
+                    onChange={(e) => handleCustomPriceChange(index, "startTime", e.target.value)}
+                    className="p-2 border rounded"
+                />
+                <input
+                    type="time"
+                    value={price.endTime}
+                    onChange={(e) => handleCustomPriceChange(index, "endTime", e.target.value)}
+                    className="p-2 border rounded"
+                />
+                <input
+                    type="number"
+                    placeholder="Price"
+                    value={price.price}
+                    onChange={(e) => handleCustomPriceChange(index, "price", e.target.value)}
+                    className="p-2 border rounded"
+                />
+                <button
+                    onClick={() => setCustomPrices(customPrices.filter((_, i) => i !== index))}
+                    className="text-red-500 font-medium"
+                >
+                    Remove
+                </button>
+            </div>
+        ))}
+        <button
+            onClick={() => setCustomPrices([...customPrices, { startTime: "", endTime: "", price: "" }])}
+            className="underline text-blue-500"
+        >
+            Add Time & Price
+        </button>
+    </div>
+)}
+
+{unitType === "Lodge" && (
+    <div className="mb-4">
+        <label className="block font-medium mb-2 dark:text-[#e7e6e6]">Custom Prices (Hours & Price)</label>
+        {customPrices.map((price, index) => (
+            <div key={index} className="flex items-center space-x-2 mb-2">
+                {/* Hours Input */}
+                <input
+                    type="number"
+                    placeholder="Hours"
+                    value={price.hours}
+                    onChange={(e) =>
+                        handleCustomPriceChange(index, "hours", e.target.value)
+                    }
+                    className="p-2 border rounded w-1/2"
+                />
+                <span className="font-medium text-gray-600 dark:text-[#e7e6e6]">Hours</span>
+                
+                {/* Price Input */}
+                <input
+                    type="number"
+                    placeholder="Price"
+                    value={price.price}
+                    onChange={(e) =>
+                        handleCustomPriceChange(index, "price", e.target.value)
+                    }
+                    className="p-2 border rounded w-1/2"
+                />
+
+                {/* Remove Button */}
+                <button
+                    onClick={() =>
+                        setCustomPrices(customPrices.filter((_, i) => i !== index))
+                    }
+                    className="text-red-500 font-medium"
+                >
+                    Remove
+                </button>
+            </div>
+        ))}
+        {/* Add Price Button */}
+        <button
+            onClick={() =>
+                setCustomPrices([...customPrices, { hours: "", price: "" }])
+            }
+            className="underline text-blue-500"
+        >
+            Add Hours & Price
+        </button>
+    </div>
+)}
+
                         <button
                             onClick={handleAddOrEditUnit}
                             className="bg-[#70b8d3] hover:bg-[#62c5e9] text-white px-4 py-2 rounded font-medium"
@@ -262,19 +357,22 @@ const AdminAddUnit = () => {
                                             <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">{unit.name}</td>
                                             <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">{unit.capacity}</td>
                                             <td className="px-5 py-5 border-b border-r border-gray-200 bg-white text-sm dark:bg-[#66696e] dark:text-[#e7e6e6]">
-                                                {Object.entries(unit.custom_prices || {}).map(
-                                                    ([time, price]) => (
-                                                        <div key={time}>{`${time}: ${price}`}</div>
-                                                    )
-                                                )}
+                                            {Object.entries(unit.custom_prices || {}).map(([time, price]) => (
+                                                <div key={time}>
+                                                    {time === "Default" ? `Price: ${price}` : `${formatTimeRange(time)}: ${price}`}
+                                                </div>
+                                            ))}
                                             </td>
 
                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:bg-[#66696e]">
                                                 <div className="flex space-x-1">
                                                     <button 
-                                                        onClick={() => handleEdit(unit)}
-                                                        className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium">
-                                                            Edit
+                                                        onClick={() => {
+                                                            setUnitType(unit.type); // Ensure type is set correctly
+                                                            handleEdit(unit);
+                                                        }}
+                                                        className="bg-[#1089D3] hover:bg-[#3d9fdb] p-3 rounded-full">
+                                                        <img src="./src/assets/edit.png" className="w-4 h-4 filter brightness-0 invert" alt="Edit" />
                                                     </button>
                                                     <button 
                                                         onClick={() => handleDelete(unit.id, unitType)}

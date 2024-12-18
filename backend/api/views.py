@@ -3,18 +3,21 @@ from django.db.models import Q
 from django.contrib.auth import authenticate
 from rest_framework.generics import UpdateAPIView, DestroyAPIView
 from django.contrib.auth.models import update_last_login
+from rest_framework.generics import RetrieveUpdateAPIView
+from django.contrib.auth.hashers import check_password, make_password
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer, ReservationSerializer
-from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation
+from django.http import JsonResponse
+from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer, ReservationSerializer, CustomerAccountSerializer
+from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation, CustomerAccount
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from itertools import combinations
 from django.conf import settings
-from .permissions import IsAdminOrEmployee, IsAdminOnly
+from .permissions import IsAdminOrEmployee, IsAdminOnly, AllUser
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.generics import RetrieveAPIView
 from django.contrib.contenttypes.models import ContentType
@@ -472,9 +475,7 @@ class LogView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CottageListView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated, IsAdminOrEmployee]
-    # permission_classes = [AllowAny]
-    # authentication_classes = []
+    permission_classes = [IsAuthenticated, AllUser]
     serializer_class = CottageSerializer
 
     def get_queryset(self):
@@ -515,7 +516,7 @@ class CottageListView(generics.ListCreateAPIView):
 
 
 class LodgeListView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated, IsAdminOrEmployee]
+    permission_classes = [IsAuthenticated, AllUser]
     serializer_class = LodgeSerializer
 
     def get_queryset(self):
@@ -734,57 +735,107 @@ def get_reservations_with_unit_details():
 
     return serialized_reservations 
 
+def reservations_view(request):
+    reservations = Reservation.objects.all()
+    response = [
+        {
+            "unit_name": res.unit_name,
+            "date_of_reservation": res.date_of_reservation.strftime("%Y-%m-%d"),
+            "time_of_use": res.time_of_use,  # Include reserved times
+        }
+        for res in reservations
+    ]
+    return JsonResponse(response, safe=False)
+
+from datetime import datetime
+
 class ReservationView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, AllUser]
 
     def get(self, request):
-        reservations = Reservation.objects.all()
+        reservations = Reservation.objects.filter(customer=request.user.customer_account)
         serializer = ReservationSerializer(reservations, many=True, context={"request": request})
         return Response(serializer.data, status=200)
-
+    
     def post(self, request):
-        data = request.data.copy()
-        unit_type = data.get("unit_type", "").lower()
-        unit_name = data.get("unit_name")
+        # Validate if 'customer_account' is linked
+        if not hasattr(request.user, 'customer_account'):
+            return Response({"error": "Customer account not found for the user."}, status=400)
 
+        # Extract and validate the date
+        date_of_reservation = request.data.get("date_of_reservation")
+        if date_of_reservation:
+            try:
+                reservation_date = datetime.strptime(date_of_reservation, "%Y-%m-%d").date()
+            except ValueError:
+                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+        else:
+            return Response({"error": "Date of reservation is required."}, status=400)
+
+        # Prepare the data for saving
+        data = {
+            "customer_name": request.data.get("customer_name"),
+            "unit_name": request.data.get("unit_name"),
+            "date_of_reservation": reservation_date,
+            "time_of_use": request.data.get("time_of_use"),
+            "total_price": request.data.get("total_price"),
+        }
+
+        # Validate unit_type and unit_name
+        unit_type = request.data.get("unit_type", "").lower()
+        unit_name = request.data.get("unit_name")
         if unit_type and unit_name:
             try:
                 if unit_type == "cottage":
                     unit = Cottage.objects.get(name=unit_name)
-                    data["content_type"] = ContentType.objects.get_for_model(Cottage).id
-                    data["object_id"] = unit.id
                 elif unit_type == "lodge":
                     unit = Lodge.objects.get(name=unit_name)
-                    data["content_type"] = ContentType.objects.get_for_model(Lodge).id
-                    data["object_id"] = unit.id
+                else:
+                    return Response({"error": "Invalid unit type."}, status=400)
             except (Cottage.DoesNotExist, Lodge.DoesNotExist):
                 return Response({"error": f"Unit '{unit_name}' not found."}, status=400)
 
+        # Serialize and save the reservation
         serializer = ReservationSerializer(data=data)
         if serializer.is_valid():
-            reservation = serializer.save()  # Ensure data gets saved properly
+            reservation = serializer.save()
             Log.objects.create(
-                username=request.user.username if request.user.is_authenticated else "Guest",
-                action=f"Created reservation for {reservation.customer_name}",
+                username=request.user.username,
+                action=f"Created reservation for {reservation.customer_name} on {reservation_date}",
                 category="Reservation"
             )
             return Response(serializer.data, status=201)
-        else:
-            return Response(serializer.errors, status=400)
+        return Response(serializer.errors, status=400)
 
     def delete(self, request, pk):
         try:
             reservation = Reservation.objects.get(pk=pk)
             reservation.delete()
             Log.objects.create(
-                username=request.user.username if request.user.is_authenticated else "Guest",
-                action=f"Deleted reservation for {reservation.customer_name}",
+                username=request.user.username,
+                action=f"Deleted reservation for {reservation.customer.name}",
                 category="Reservation"
             )
             return Response({"message": "Reservation deleted successfully!"}, status=204)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
 
+    def put(self, request, pk):
+        try:
+            reservation = Reservation.objects.get(pk=pk)
+            serializer = ReservationSerializer(reservation, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_reservation = serializer.save()
+                Log.objects.create(
+                    username=request.user.username,
+                    action=f"Updated reservation for {updated_reservation.customer.name}",
+                    category="Reservation"
+                )
+                return Response(serializer.data, status=200)
+            return Response(serializer.errors, status=400)
+        except Reservation.DoesNotExist:
+            return Response({"error": "Reservation not found."}, status=404)
+        
     def put(self, request, pk):
         try:
             reservation = Reservation.objects.get(pk=pk)
@@ -801,7 +852,7 @@ class ReservationView(APIView):
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
 
-        
+
 class ReservationDetailView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
@@ -871,3 +922,103 @@ class AttendanceView(APIView):
         else:
             # If no attendance record found for today, create a new one
             return Response({'detail': 'Attendance record not found for today or already clocked out.'}, status=status.HTTP_404_NOT_FOUND)
+
+class CustomerAccountRegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = CustomerAccountSerializer(data=request.data)
+        if serializer.is_valid():
+            # Step 1: Create a CustomUser
+            user = CustomUser.objects.create_user(
+                username=request.data['username'],
+                password=request.data['password'],
+                user_type="Customer"  # Set user_type explicitly
+            )
+
+            # Step 2: Create the CustomerAccount and link to the CustomUser
+            customer = CustomerAccount.objects.create(
+                user=user,
+                username=request.data['username'],
+                email=request.data['email'],
+                name=request.data['name'],
+                phone_number=request.data['phone_number']
+            )
+
+            # Step 3: Generate tokens for the customer
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "message": "Customer registered successfully!",
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user_type": customer.user_type
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomerLoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        if not username or not password:
+            return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Authenticate using Django's built-in function
+        customer = authenticate(username=username, password=password)
+
+        if customer is not None and hasattr(customer, 'customer_account'):
+            refresh = RefreshToken.for_user(customer)
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "username": customer.username,
+                "user_type": customer.customer_account.user_type,
+            }, status=status.HTTP_200_OK)
+
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+
+class CustomerDetailsView(APIView):
+    serializer_class = CustomerAccountSerializer
+    permission_classes = [IsAuthenticated, AllUser]
+
+    def get_object(self):
+        # Fetch the CustomerAccount linked to the authenticated user
+        try:
+            return self.request.user.customer_account
+        except CustomerAccount.DoesNotExist:
+            return None
+
+    def get(self, request, *args, **kwargs):
+        customer = self.get_object()
+        if not customer:
+            return Response({"error": "Customer account not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(customer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated, AllUser]
+
+    def post(self, request):
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+
+        customer = request.user
+
+        # Check if current password is correct
+        if not check_password(current_password, customer.password):
+            return Response({"error": "Current password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate new password length
+        if len(new_password) < 8:
+            return Response({"error": "New password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the password
+        customer.password = make_password(new_password)
+        customer.save()
+
+        return Response({"message": "Password updated successfully!"}, status=status.HTTP_200_OK)

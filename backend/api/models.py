@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.contrib.auth.models import AbstractUser, Group, Permission, AbstractBaseUser, BaseUserManager
 from django.core.files.storage import FileSystemStorage
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -178,9 +178,7 @@ class Lodge(models.Model):
         return f"{self.type} - {self.name}"
     
 class Reservation(models.Model):
-    customer_name = models.CharField(max_length=255)
-    customer_email = models.EmailField()
-    customer_mobile = models.CharField(max_length=15)
+    customer = models.ForeignKey('CustomerAccount', on_delete=models.CASCADE)  # Use a string reference
     unit_type = models.CharField(max_length=50)
     unit_name = models.CharField(max_length=255)
     transaction_date = models.DateField(auto_now_add=True)
@@ -188,10 +186,33 @@ class Reservation(models.Model):
     time_of_use = models.CharField(max_length=50, null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
-    # Add ContentType and ObjectID fields for GenericForeignKey
-    content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
-    object_id = models.PositiveIntegerField(null=True, blank=True)
-    unit = GenericForeignKey('content_type', 'object_id')
+    def __str__(self):
+        return f"Reservation for {self.customer.name} - {self.unit_name}"
+
+
+class CustomerAccountManager(BaseUserManager):
+    def create_user(self, username, email, password=None):
+        if not email:
+            raise ValueError("Email is required")
+        customer = self.model(username=username, email=self.normalize_email(email))
+        customer.set_password(password)
+        customer.save(using=self._db)
+        return customer
+    
+class CustomerAccount(AbstractBaseUser):
+    USER_TYPE_CHOICES = [('Customer', 'Customer')]
+
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='customer_account')
+    username = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15)
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='Customer')
+
+    objects = CustomerAccountManager()
+
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
 
     def __str__(self):
-        return f"Reservation by {self.customer_name} for {self.unit_name} at {self.time_of_use}"
+        return self.username

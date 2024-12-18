@@ -8,6 +8,7 @@ import { useLocation } from 'react-router-dom';
 import api from '../api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { isDateFullyReserved } from '../Utils/reservationUtils';
 
 function BookingPage({ setBookingDetails }) {
     const navigate = useNavigate();
@@ -38,11 +39,12 @@ function BookingPage({ setBookingDetails }) {
     const [capacity, setCapacity] = useState(''); // Capacity filter
     const [filters, setFilters] = useState({ capacity: null, date: null });
     const [selectedDate, setSelectedDate] = useState(new Date()); // Default to today's date
+    const [reservedDates, setReservedDates] = useState([]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
             setLoading(false);
-        }, 2000); 
+        }, 1000); 
         return () => clearTimeout(timer);
     }, []);
 
@@ -72,24 +74,6 @@ function BookingPage({ setBookingDetails }) {
         };
     }, []);
 
-    // useEffect(() => {
-    //     // Fetch cottages
-    //     api
-    //         .get("/cottages/") // Update the URL based on your Django REST API endpoint
-    //         .then((response) => {
-    //         setCottages(response.data);
-    //     })
-    //         .catch((error) => console.error("Error fetching cottages:", error));
-    
-    //     // Fetch lodges
-    //     api
-    //         .get("/lodges/") // Update the URL based on your Django REST API endpoint
-    //         .then((response) => {
-    //         setLodges(response.data);
-    //     })
-    //         .catch((error) => console.error("Error fetching lodges:", error));
-    // }, []);
-
     useEffect(() => {
         fetchUnits();
         }, [filter, filters]);
@@ -109,6 +93,27 @@ function BookingPage({ setBookingDetails }) {
             }
     };
     
+    useEffect(() => {
+        const fetchReservedDates = async () => {
+            try {
+                const response = await api.get("/reservations/");
+                const reservations = response.data;
+    
+                // Extract dates for the currently viewed units
+                const unitReservedDates = reservations.map(reservation => ({
+                    unitName: reservation.unit_name,
+                    reservedDate: reservation.date_of_reservation, // Date format: "YYYY-MM-DD"
+                }));
+    
+                setReservedDates(unitReservedDates);
+            } catch (error) {
+                console.error("Error fetching reservations:", error);
+            }
+        };
+    
+        fetchReservedDates();
+    }, []);
+
     const handleDateChange = (date) => {
         setSelectedDate(date);
         setBookingDetails((prevDetails) => ({
@@ -177,12 +182,41 @@ function BookingPage({ setBookingDetails }) {
             .filter(price => !isNaN(price));
     };
     
-    const handleBookClick = (unit) => {
-        navigate("/payment", { state: { unit, selectedDate } });
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Adjust month to be 1-based
+        const day = String(date.getDate()).padStart(2, '0'); // Ensure two digits
+        return `${year}-${month}-${day}`;
     };
+    
+    const isDateReserved = (unit) => {
+        const formattedSelectedDate = formatDate(selectedDate);
+        return reservedDates.some(
+            (res) => res.unitName === unit.name && res.reservedDate === formattedSelectedDate
+        );
+    };
+    
+    // Function to check if a specific time is reserved
+    const isTimeReserved = (unit, selectedTime) => {
+        const formattedDate = formatDate(selectedDate);
+    
+        return reservedDates.some((res) =>
+            res.unit_name === unit.name &&
+            res.date_of_reservation === formattedDate &&
+            res.time_of_use?.includes(selectedTime) // Check reserved times
+        );
+    };
+    
 
-    const handleCheckAvailability = (title) => {
-        navigate(`/calendar/${title}`);
+const handleBookClick = (unit) => {
+    if (!isDateReserved(unit)) {
+        navigate("/payment", { state: { unit, selectedDate } });
+    }
+};
+
+
+    const handleCheckAvailability = (unit) => {
+        navigate(`/calendar/${unit.name}`);
     };
 
     const scrollToTop = () => {
@@ -368,17 +402,17 @@ function BookingPage({ setBookingDetails }) {
 
                     {/* Main Content Section */}
                     <div className="w-full sm:w-3/4 flex flex-col space-y-6">
-                        {units.map((unit) => (
+                    {units.map((unit) => {
+                        const isReserved = isDateFullyReserved(unit, selectedDate, reservedDates);
+
+                        return (
                             <div key={unit.id} className="bg-white rounded-xl shadow-lg p-6 flex items-center mx-auto border border-gray-200 transition-transform duration-300 hover:scale-105 w-full">
                                 {/* Image Section */}
                                 <div className="w-full sm:w-1/3">
                                     <img
                                         src={unit.image_url}
                                         alt={unit.name}
-                                        className={`w-full h-[200px] object-cover rounded-lg transition-transform duration-300 ${zoomedImage === unit.id ? 'scale-125' : ''} cursor-zoom-in`}
-                                        onMouseDown={() => handleZoomStart(unit.id)}
-                                        onMouseUp={handleZoomEnd}
-                                        onMouseLeave={handleZoomEnd}
+                                        className="w-full h-[200px] object-cover rounded-lg"
                                     />
                                 </div>
 
@@ -390,25 +424,43 @@ function BookingPage({ setBookingDetails }) {
 
                                     <div className="text-lg font-semibold mb-4">
                                         Prices:
-                                        {unit.custom_prices && Object.entries(unit.custom_prices).length > 0 ? (
-                                            Object.entries(unit.custom_prices).map(([key, value]) => (
-                                                <p key={`${unit.id}-${key}`} className="text-sm text-gray-700">{key}: {value}</p>
-                                            ))
-                                        ) : (
-                                            <p className="text-sm text-gray-500">No prices available</p>
-                                        )}
+                                        {unit.custom_prices && Object.entries(unit.custom_prices).map(([time, price]) => (
+                                            <div key={time} className="flex items-center mb-2">
+                                                <span
+                                                    className={`mr-2 ${
+                                                        isTimeReserved(unit, time) ? "text-red-500 line-through" : "text-gray-700"
+                                                    }`}
+                                                >
+                                                    {time}: ₱{price} {isTimeReserved(unit, time) && "(Reserved)"}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     {/* Action Buttons */}
                                     <div className="flex space-x-4 mt-4">
+                                    <button
+                                        onClick={() => {
+                                            if (!isReserved) {
+                                                handleBookClick(unit);
+                                            }
+                                        }}
+                                        className={`px-6 py-3 rounded-md font-semibold shadow-md transition-transform ${
+                                            isReserved
+                                                ? "bg-gray-400 text-gray-500 cursor-not-allowed line-through opacity-70"
+                                                : "bg-[#12B1D1] hover:bg-[#3ebae7] text-white hover:scale-105"
+                                        }`}
+                                        disabled={isReserved}
+                                        style={{
+                                            backgroundColor: isReserved ? "#d1d5db" : "", // Force light gray color for disabled
+                                            color: isReserved ? "#6b7280" : "",          // Force gray text color
+                                            textDecoration: isReserved ? "line-through" : "none", // Ensure line-through text
+                                        }}
+                                    >
+                                        {isReserved ? "Book Now (Unavailable)" : "Book Now"}
+                                    </button>
                                         <button
-                                            onClick={() => handleBookClick(unit)}
-                                            className="bg-[#12B1D1] hover:bg-[#3ebae7] text-white px-6 py-3 rounded-md transition-colors font-semibold shadow-md transform hover:scale-105"
-                                        >
-                                            Book Now
-                                        </button>
-                                        <button
-                                            onClick={() => handleCheckAvailability(unit.title)}
+                                            onClick={() => handleCheckAvailability(unit)}
                                             className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-md transition-colors font-semibold shadow-md transform hover:scale-105"
                                         >
                                             Check Availability
@@ -416,8 +468,8 @@ function BookingPage({ setBookingDetails }) {
                                     </div>
                                 </div>
                             </div>
-                        ))}
-
+                        );
+                    })}
                     </div>
 
                     {showScrollButton && (

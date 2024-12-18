@@ -753,56 +753,53 @@ class ReservationView(APIView):
     permission_classes = [IsAuthenticated, AllUser]
 
     def get(self, request):
+        # Fetch reservations for the authenticated user
         reservations = Reservation.objects.filter(customer=request.user.customer_account)
+        # Check for optional 'unit_name' query parameter
+        unit_name = request.query_params.get("unit_name")
+        if unit_name:
+            reservations = reservations.filter(unit_name=unit_name)
         serializer = ReservationSerializer(reservations, many=True, context={"request": request})
         return Response(serializer.data, status=200)
     
     def post(self, request):
-        # Validate if 'customer_account' is linked
         if not hasattr(request.user, 'customer_account'):
             return Response({"error": "Customer account not found for the user."}, status=400)
 
-        # Extract and validate the date
         date_of_reservation = request.data.get("date_of_reservation")
-        if date_of_reservation:
-            try:
-                reservation_date = datetime.strptime(date_of_reservation, "%Y-%m-%d").date()
-            except ValueError:
-                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
-        else:
-            return Response({"error": "Date of reservation is required."}, status=400)
+        try:
+            reservation_date = datetime.strptime(date_of_reservation, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid or missing date format. Use YYYY-MM-DD."}, status=400)
 
-        # Prepare the data for saving
+        unit_type = request.data.get("unit_type")
+        unit_name = request.data.get("unit_name")
+        if not unit_type or not unit_name:
+            return Response({"error": "Both 'unit_type' and 'unit_name' are required."}, status=400)
+
+        try:
+            unit_model = Cottage if unit_type.lower() == "cottage" else Lodge
+            unit = unit_model.objects.get(name=unit_name)
+        except unit_model.DoesNotExist:
+            return Response({"error": f"{unit_type} '{unit_name}' does not exist."}, status=404)
+
         data = {
-            "customer_name": request.data.get("customer_name"),
-            "unit_name": request.data.get("unit_name"),
+            "customer": request.user.customer_account.id,
+            "unit_type": unit_type,
+            "unit_name": unit_name,
             "date_of_reservation": reservation_date,
             "time_of_use": request.data.get("time_of_use"),
             "total_price": request.data.get("total_price"),
         }
 
-        # Validate unit_type and unit_name
-        unit_type = request.data.get("unit_type", "").lower()
-        unit_name = request.data.get("unit_name")
-        if unit_type and unit_name:
-            try:
-                if unit_type == "cottage":
-                    unit = Cottage.objects.get(name=unit_name)
-                elif unit_type == "lodge":
-                    unit = Lodge.objects.get(name=unit_name)
-                else:
-                    return Response({"error": "Invalid unit type."}, status=400)
-            except (Cottage.DoesNotExist, Lodge.DoesNotExist):
-                return Response({"error": f"Unit '{unit_name}' not found."}, status=400)
-
-        # Serialize and save the reservation
-        serializer = ReservationSerializer(data=data)
+        # Pass context with the request
+        serializer = ReservationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             reservation = serializer.save()
             Log.objects.create(
                 username=request.user.username,
-                action=f"Created reservation for {reservation.customer_name} on {reservation_date}",
-                category="Reservation"
+                action=f"Created reservation for {reservation.customer.name} on {reservation_date}.",
+                category="Reservation",
             )
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
@@ -851,7 +848,6 @@ class ReservationView(APIView):
             return Response(serializer.errors, status=400)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
-
 
 class ReservationDetailView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()
@@ -956,7 +952,6 @@ class CustomerAccountRegisterView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class CustomerLoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -1022,3 +1017,23 @@ class ChangePasswordView(APIView):
         customer.save()
 
         return Response({"message": "Password updated successfully!"}, status=status.HTTP_200_OK)
+
+class CalendarView(APIView):
+    permission_classes = [IsAuthenticated, AllUser]
+
+    def get(self, request):
+        unit_name = request.query_params.get("unit_name")
+        if not unit_name:
+            return Response({"error": "unit_name is required."}, status=400)
+        try:
+            reservations = Reservation.objects.filter(unit_name=unit_name)
+            data = [
+                {
+                    "date": res.date_of_reservation,
+                    "times": res.time_of_use.split(",") if res.time_of_use else [],
+                }
+                for res in reservations
+            ]
+            return Response(data, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

@@ -4,6 +4,7 @@ import Loader from "../components/Loader";
 import Swal from "sweetalert2";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from '../api';
+import Header from "../components/Header";
 
 function BillingPage() {
     const [showModal, setShowModal] = useState(false);
@@ -12,11 +13,15 @@ function BillingPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const billingData = location.state || {};
-    const { customerInfo, units, selectedDate } = location.state || {};
+    const { customerInfo = {}, units = [], selectedDate = null } = location.state || {};
 
     const totalPrice = units?.reduce((total, unit) => {
-        return total + unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0);
-    }, 0);
+        const unitTotal = unit.timeAndPrice?.reduce(
+            (sum, { price }) => sum + parseFloat(price || 0),
+            0
+        ) || 0;
+        return total + unitTotal;
+    }, 0) || 0;
 
     // Fetch user details
     useEffect(() => {
@@ -35,21 +40,27 @@ function BillingPage() {
     }, []);
 
     const handleSaveReservation = async () => {
-        const selectedDateObject = new Date(selectedDate); // Use selectedDate passed from location.state
-        const localDate = new Date(selectedDateObject.getTime() - selectedDateObject.getTimezoneOffset() * 60000)
-            .toISOString()
-            .split("T")[0]; // Format date as YYYY-MM-DD
+        const selectedDateObject = new Date(selectedDate);
+        const localDate = new Date(
+            selectedDateObject.getTime() - selectedDateObject.getTimezoneOffset() * 60000
+        ).toISOString().split("T")[0];
     
         const reservationData = units.flatMap((unit) =>
-            unit.timeAndPrice.map(({ time, price }) => ({
-                customer_name: userDetails.username, // Get from userDetails state
-                unit_name: unit.name,
-                unit_type: unit.type.toLowerCase(), // Include unit type here (e.g., "cottage", "lodge")
-                date_of_reservation: localDate, // Send corrected date
-                time_of_use: time,
-                total_price: price,
-            }))
+            unit.timeAndPrice.map(({ time, price }) => {
+                const unitType = unit.unit_type || unit.type || "cottage";
+    
+                return {
+                    customer_name: userDetails.username || "Anonymous",
+                    unit_name: unit.name,
+                    unit_type: unitType,
+                    date_of_reservation: localDate,
+                    time_of_use: time,
+                    total_price: price,
+                };
+            })
         );
+    
+        console.log("Reservation Data Sent:", reservationData); // Debugging log
     
         try {
             await Promise.all(
@@ -59,16 +70,17 @@ function BillingPage() {
             navigate("/book");
         } catch (error) {
             console.error("Error saving reservation:", error.response?.data || error.message);
-            Swal.fire("Error", "Failed to save reservation.", "error");
+            Swal.fire("Error", "Failed to save reservation. Please check inputs.", "error");
         }
     };
-
+    
     if (loading) {
         return <Loader />;
     }
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
+            <Header />
             <div className="w-[90%] mx-auto mt-10">
                 <h1 className="text-[30px] font-bold uppercase mb-6">Billing Details</h1>
                 <div className="mb-4 space-y-2">

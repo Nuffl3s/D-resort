@@ -1,3 +1,4 @@
+
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.contenttypes.models import ContentType
@@ -6,7 +7,6 @@ from rest_framework import serializers
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation, CustomerAccount
 from .models import Attendance
 from .models import Account 
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -20,13 +20,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["password"] = make_password(validated_data["password"])
         return super().create(validated_data)
-    
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        data['user_type'] = self.user.user_type
-        return data
-    
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
@@ -107,22 +101,11 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class PayrollSerializer(serializers.ModelSerializer):
-    employee = serializers.CharField(source='employee.name', read_only=True)
+    employee = serializers.CharField(source='employee.name')  # Display employee name instead of ID
 
     class Meta:
         model = Payroll
-        fields = ['id', 'employee', 'rate', 'total_hours', 'deductions', 'cash_advance', 'net_pay', 'status']
-        read_only_fields = ['net_pay']  # Calculated automatically
-
-    def update(self, instance, validated_data):
-        # Update fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        
-        # Recalculate net pay
-        instance.calculate_net_pay()
-        return instance
-
+        fields = ['id', 'employee', 'net_pay', 'status']
 
 class LogSerializer(serializers.ModelSerializer):
     class Meta:
@@ -264,4 +247,3 @@ class CustomerAccountSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
-

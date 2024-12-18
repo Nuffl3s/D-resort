@@ -3,68 +3,64 @@ import { useParams, useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import api from '../api';
-import { isDateFullyReserved } from "../Utils/reservationUtils";
-
 
 const CalendarView = () => {
-    const { title } = useParams(); // Unit name passed through navigation
+    const { title } = useParams();
     const [events, setEvents] = useState([]);
     const navigate = useNavigate();
-    const [reservedDates, setReservedDates] = useState([]);
     const handleGoBack = () => navigate(-1);
 
+    const formatTimeTo12Hour = (time24) => {
+        const [hour, minute] = time24.split(":");
+        const period = +hour >= 12 ? "PM" : "AM";
+        const hour12 = +hour % 12 || 12; // Convert to 12-hour format
+        return `${hour12}:${minute} ${period}`;
+    };
+    
+    const formatTimeRange = (timeRange) => {
+        const [start, end] = timeRange.split("-");
+        return `${formatTimeTo12Hour(start)} - ${formatTimeTo12Hour(end)}`;
+    };
+
     useEffect(() => {
-        const fetchReservedDates = async () => {
+        const fetchCalendarEvents = async () => {
             try {
-                const response = await api.get("/reservations/");
+                console.log("Fetching events for title:", title); // Debug title
+                const response = await api.get('/calendar/', {
+                    params: { unit_name: title },
+                });
+                console.log("Fetched reservations:", response.data); // Debug response
+    
                 const reservations = response.data;
     
-                // Filter reservations for the specific unit
-                const unitReservations = reservations.filter(
-                    (res) => res.unit_name === title
-                );
+                const isValidDate = (dateStr) => !isNaN(new Date(dateStr).getTime());
     
-                const eventsData = unitReservations.map((res) => ({
-                    title: `Reserved: ${
-                        Array.isArray(res.time_of_use)
-                            ? res.time_of_use.join(", ")
-                            : res.time_of_use || "N/A" // Handle string or null case
-                    }`,
-                    start: res.date_of_reservation,
-                    extendedProps: {
-                        unitName: res.unit_name,
-                        reservedTimes: Array.isArray(res.time_of_use)
-                            ? res.time_of_use
-                            : res.time_of_use
-                            ? res.time_of_use.split(", ")
-                            : [], // Split string into array if needed
-                    },
-                }));
+                const eventsData = reservations
+                    .filter(res => isValidDate(res.date)) // Ensure valid dates
+                    .map((res) => ({
+                        title: `Reserved: ${
+                            res.times?.map(time => 
+                                time.includes("HOURS") ? time : formatTimeRange(time) // Check for 'HOURS'
+                            ).join(", ") || "Unavailable"
+                        }`,
+                        start: res.date,
+                        backgroundColor: "#50b0d0",
+                        borderColor: "#50b0d0",
+                        extendedProps: {
+                            unitName: res.unit_name,
+                            reservedTimes: res.times || [],
+                        },
+                    }));
     
+                console.log("Processed events data:", eventsData); // Debug processed events
                 setEvents(eventsData);
             } catch (error) {
-                console.error("Error fetching reservations:", error);
+                console.error("Error fetching calendar events:", error);
             }
         };
     
-        fetchReservedDates();
+        fetchCalendarEvents();
     }, [title]);
-    
-
-    // Function to check if all time slots are reserved for a date and unit
-    const isDateFullyReserved = (date, unitName) => {
-        const formatDateToLocal = (dateString) => {
-            const date = new Date(dateString);
-            return date.toLocaleDateString("en-US", { timeZone: "Asia/Manila" });
-        };
-        console.log(formatDateToLocal("2024-12-26"));
-        const reservedTimes = reservations.flatMap(event => event.extendedProps.reservedTimes);
-
-        const allTimes = unit.custom_prices ? Object.keys(unit.custom_prices) : [];
-        const remainingTimes = allTimes.filter((time) => !reservedTimes.includes(time));
-
-        return remainingTimes.length === 0;
-    };
 
     return (
         <div className="flex-row calendar-con">
@@ -72,22 +68,21 @@ const CalendarView = () => {
                 <img src="/src/assets/back.png" alt="" className="w-8 h-8" />
             </button>
             <div className="flex flex-col h-screen p-16 calendar">
-                <h2 className="text-2xl font-semibold mb-4">Availability for {title}</h2>
+                <h2 className="text-2xl font-semibold mb-4">Events for {title}</h2>
                 <div className="flex-grow overflow-hidden">
-                    <FullCalendar
+                <FullCalendar
                         plugins={[dayGridPlugin]}
                         initialView="dayGridMonth"
                         events={events}
                         eventContent={(eventInfo) => (
-                            <div className="text-red-500 text-sm font-semibold">
+                            <div className="text-black text-base font-semibold" style={{ whiteSpace: 'normal', padding: '2px' }}>
                                 {eventInfo.event.title}
                             </div>
-                        )}                        
+                        )}
+                        height="100%"
                         headerToolbar={{
-                            left: 'title',
                             right: 'prev,next today',
                         }}
-                        height="100%"
                     />
                 </div>
             </div>

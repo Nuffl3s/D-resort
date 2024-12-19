@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Loader from '../components/Loader';
 import api from "../api";
@@ -43,20 +43,68 @@ function RegisterForm() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-100">
-            <div className="bg-white rounded-3xl p-10 shadow-lg border-4 border-white max-w-lg w-full">
-                <h2 className="text-3xl font-black text-center text-blue-500 mb-6">Sign Up</h2>
-                <form onSubmit={handleRegister} className="space-y-4">
-                    <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                    <input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} required />
-                    <input type="tel" placeholder="Phone Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
-                    <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                    <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    <input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-                    <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md">Register</button>
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+            <div className="bg-white rounded-xl p-12 shadow-2xl border-4 border-white max-w-lg w-full">
+                <h2 className="text-4xl font-extrabold text-center text-[#12B1D1] mb-6">Create Your Account</h2>
+                <p className="text-center text-lg text-gray-600 mb-4">Create an account to reserve your stay!</p>
+                <form onSubmit={handleRegister} className="space-y-6">
+                    <input
+                        type="text"
+                        placeholder="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full px-5 py-3 border-2 border-[#12B1D1] rounded-lg focus:ring-2 focus:ring-[#12B1D1] transition duration-300 ease-in-out"
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full px-5 py-3 border-2 border-[#12B1D1] rounded-lg focus:ring-2 focus:ring-[#12B1D1] transition duration-300 ease-in-out"
+                        required
+                    />
+                    <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="w-full px-5 py-3 border-2 border-[#12B1D1] rounded-lg focus:ring-2 focus:ring-[#12B1D1] transition duration-300 ease-in-out"
+                        required
+                    />
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-5 py-3 border-2 border-[#12B1D1] rounded-lg focus:ring-2 focus:ring-[#12B1D1] transition duration-300 ease-in-out"
+                        required
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-5 py-3 border-2 border-[#12B1D1] rounded-lg focus:ring-2 focus:ring-[#12B1D1] transition duration-300 ease-in-out"
+                        required
+                    />
+                    <input
+                        type="password"
+                        placeholder="Confirm Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full px-5 py-3 border-2 border-[#12B1D1] rounded-lg focus:ring-2 focus:ring-[#12B1D1] transition duration-300 ease-in-out"
+                        required
+                    />
+                    <button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-[#12B1D1] to-[#70D8D4] text-white font-semibold py-3 rounded-lg shadow-md transition duration-200 ease-in-out hover:scale-105"
+                    >
+                        Register
+                    </button>
                 </form>
-                <div className="mt-4 text-center text-gray-500">
-                    Already have an account? <Link to="/login" className="text-blue-500">Login here</Link>
+                <div className="mt-6 text-center text-gray-600">
+                    <p>Already have an account? <Link to="/login" className="text-[#12B1D1] font-medium hover:text-[#12B1D1]">Login here</Link></p>
                 </div>
             </div>
         </div>

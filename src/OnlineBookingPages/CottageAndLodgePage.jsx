@@ -35,7 +35,6 @@ function BookingPage({ setBookingDetails }) {
     const [scrollProgress, setScrollProgress] = useState(0);
     const [filter, setFilter] = useState('cottage'); // Default to 'cottage'
     const [units, setUnits] = useState([]);
-    const [capacityFilter, setCapacityFilter] = useState(null);
     const [capacity, setCapacity] = useState(''); // Capacity filter
     const [filters, setFilters] = useState({ capacity: null, date: null });
     const [selectedDate, setSelectedDate] = useState(new Date()); // Default to today's date
@@ -257,12 +256,12 @@ function BookingPage({ setBookingDetails }) {
         <div className="min-h-screen flex flex-col bg-white parent">
             <Header />
             <div className="flex-grow">
-                <div className="w-full max-w-[1200px] m-auto mt-10 flex  sort-con items-center">
+                <div className="w-full max-w-[1200px] m-auto mt-10 flex items-center justify-between">
                     <div className="w-full max-w-sm mt-8 p-2 rounded-lg">
                         <label htmlFor="date-picker" className="block text-lg font-semibold text-gray-700 mb-3">
                             Select Date:
                         </label>
-                        
+
                         <div className="relative">
                             <DatePicker
                                 id="date-picker"
@@ -272,44 +271,44 @@ function BookingPage({ setBookingDetails }) {
                                 minDate={new Date()}
                                 placeholderText="Select a date"
                                 className="w-full p-3 text-gray-700 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ease-in-out"
-                                />
-                                <div className="absolute top-3 right-3 text-gray-400 pointer-events-none">
+                            />
+                            <div className="absolute top-3 right-3 text-gray-400 pointer-events-none">
                                 <i className="fa fa-calendar"></i>
                             </div>
                         </div>
 
-                            {/* Optional: Display a message if no date is selected */}
-                            {selectedDate ? (
-                                <p className="mt-2 text-sm text-gray-600">You selected: {selectedDate.toLocaleDateString()}</p>
-                            ) : (
-                                <p className="mt-2 text-sm text-gray-400">Please select a date</p>
-                            )}
-                        </div>
+                        {/* Optional: Display a message if no date is selected */}
+                        {selectedDate ? (
+                            <p className="mt-2 text-sm text-gray-600">You selected: {selectedDate.toLocaleDateString()}</p>
+                        ) : (
+                            <p className="mt-2 text-sm text-gray-400">Please select a date</p>
+                        )}
+                    </div>
 
-                        <div className="w-1/3 relative sort">
-                            <select 
-                                id="sort-by" 
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md pr-10 appearance-none"
-                                value={sortOption} 
-                                onChange={handleSortChange}
-                                style={{ paddingTop: '20px', paddingLeft: '10px' }}  
-                            >
-                                <option value="recommended">Recommended</option>
-                                <option value="price-low-high">Price: low to high</option>
-                                <option value="price-high-low">Price: high to low</option>
-                            </select>
+                    <div className="w-1/3 relative">
+                        <select
+                            id="sort-by"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md pr-10 appearance-none"
+                            value={sortOption}
+                            onChange={handleSortChange}
+                            style={{ paddingTop: '20px', paddingLeft: '10px' }}
+                        >
+                            <option value="recommended">Recommended</option>
+                            <option value="price-low-high">Price: low to high</option>
+                            <option value="price-high-low">Price: high to low</option>
+                        </select>
 
-                            <span className="absolute left-3 top-0 font-bold pt-1 text-gray-500 text-xs pointer-events-none">
-                                Sort by
-                            </span>
+                        <span className="absolute left-3 top-0 font-bold pt-1 text-gray-500 text-xs pointer-events-none">
+                            Sort by
+                        </span>
 
-                            <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                <img src="./src/assets/down.png" alt="Dropdown Icon" className="w-5 h-5 text-gray-500" />
-                            </span>
-                        </div>
+                        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                            <img src="./src/assets/down.png" alt="Dropdown Icon" className="w-5 h-5 text-gray-500" />
+                        </span>
+                    </div>
                 </div>
 
-                <div className="w-full max-w-[1200px] flex items-start mx-auto mt-5 space-x-4 con3">
+                <div className="w-full max-w-[1200px] flex items-start mx-auto mt-5 space-x-4">
                     {/* Sidebar Filter Section */}
                     <div className="w-full sm:w-1/4 p-6 bg-white rounded-lg shadow-lg border border-gray-200">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-6">Filter by</h3>
@@ -323,7 +322,8 @@ function BookingPage({ setBookingDetails }) {
                                         <select
                                             value={filter}
                                             onChange={handleFilterChange}
-                                            className="block w-full px-4 py-2 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            className="block w-full px-4 py-2 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        >
                                             <option value="cottage">Cottage</option>
                                             <option value="lodge">Lodge</option>
                                         </select>
@@ -342,7 +342,8 @@ function BookingPage({ setBookingDetails }) {
 
                                     <button
                                         onClick={handleFilterClick}
-                                        className="w-full mt-4 px-4 py-2 bg-[#12B1D1] hover:bg-[#3ebae7] text-white rounded-lg  focus:outline-none focus:ring-2">
+                                        className="w-full mt-4 px-4 py-2 bg-[#12B1D1] hover:bg-[#3ebae7] text-white rounded-lg focus:outline-none focus:ring-2"
+                                    >
                                         Apply Filter
                                     </button>
                                 </div>
@@ -399,60 +400,60 @@ function BookingPage({ setBookingDetails }) {
 
                     {/* Main Content Section */}
                     <div className="w-full sm:w-3/4 flex flex-col space-y-6">
-                    {units.map((unit) => {
-                        const isReserved = isDateFullyReserved(unit, selectedDate, reservedDates);
+                        {units.map((unit) => {
+                            const isReserved = isDateFullyReserved(unit, selectedDate, reservedDates);
 
-                        return (
-                            <div key={unit.id} className="bg-white rounded-xl shadow-lg p-6 flex items-center mx-auto border border-gray-200 transition-transform duration-300 hover:scale-105 w-full">
-                                {/* Image Section */}
-                                <div className="w-full sm:w-1/3">
-                                    <img
-                                        src={unit.image_url}
-                                        alt={unit.name}
-                                        className="w-full h-[200px] object-cover rounded-lg"
-                                    />
-                                </div>
-
-                                {/* Unit Details Section */}
-                                <div className="w-full sm:w-2/3 ml-6 mt-4 sm:mt-0">
-                                    <h3 className="text-2xl font-semibold text-gray-800 mb-2">{unit.name}</h3>
-                                    <p className="text-sm text-gray-600">Type: {unit.type}</p>
-                                    <p className="text-sm text-gray-600 mb-4">Capacity: {unit.capacity}</p>
-
-                                    <div className="text-lg font-semibold mb-4">
-                                        Prices:
-                                        {unit.custom_prices && Object.entries(unit.custom_prices).map(([time, price]) => (
-                                            <div key={time} className="flex items-center mb-2">
-                                                <span
-                                                    className={`mr-2 ${
-                                                        isTimeReserved(unit, time) ? "text-red-500 line-through" : "text-gray-700"
-                                                    }`}
-                                                >
-                                                    {time}: ₱{price} {isTimeReserved(unit, time) && "(Reserved)"}
-                                                </span>
-                                            </div>
-                                        ))}
+                            return (
+                                <div key={unit.id} className="bg-white rounded-xl shadow-lg p-6 flex items-center mx-auto border border-gray-200 transition-transform duration-300 hover:scale-100 w-full">
+                                    {/* Image Section */}
+                                    <div className="w-full sm:w-1/3">
+                                        <img
+                                            src={unit.image_url}
+                                            alt={unit.name}
+                                            className="w-full h-[200px] object-cover rounded-lg"
+                                        />
                                     </div>
 
-                                    {/* Action Buttons */}
-                                    <div className="flex space-x-4 mt-4">
-                                    <button
-                                        onClick={() => handleBookClick(unit)}
-                                        className="px-6 py-3 rounded-md font-semibold shadow-md transition-transform bg-[#12B1D1] hover:bg-[#3ebae7] text-white hover:scale-105"
-                                    >
-                                        Book Now
-                                    </button>
-                                        <button
-                                            onClick={() => handleCheckAvailability(unit)}
-                                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-md transition-colors font-semibold shadow-md transform hover:scale-105"
-                                        >
-                                            Check Availability
-                                        </button>
+                                    {/* Unit Details Section */}
+                                    <div className="w-full sm:w-2/3 ml-6 mt-4 sm:mt-0">
+                                        <h3 className="text-2xl font-semibold text-gray-800 mb-2">{unit.name}</h3>
+                                        <p className="text-sm text-gray-600">Type: {unit.type}</p>
+                                        <p className="text-sm text-gray-600 mb-4">Capacity: {unit.capacity}</p>
+
+                                        <div className="text-lg font-semibold mb-4">
+                                            Prices:
+                                            {unit.custom_prices && Object.entries(unit.custom_prices).map(([time, price]) => (
+                                                <div key={time} className="flex items-center mb-2">
+                                                    <span
+                                                        className={`mr-2 ${
+                                                            isTimeReserved(unit, time) ? "text-red-500 line-through" : "text-gray-700"
+                                                        }`}
+                                                    >
+                                                        {time}: ₱{price} {isTimeReserved(unit, time) && "(Reserved)"}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex space-x-4 mt-4">
+                                            <button
+                                                onClick={() => handleBookClick(unit)}
+                                                className="px-6 py-3 rounded-md font-semibold shadow-md transition-transform bg-[#12B1D1] hover:bg-[#3ebae7] text-white hover:scale-105"
+                                            >
+                                                Reserve Now
+                                            </button>
+                                            <button
+                                                onClick={() => handleCheckAvailability(unit)}
+                                                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-md transition-colors font-semibold shadow-md transform hover:scale-105"
+                                            >
+                                                Check Availability
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
                     </div>
 
                     {showScrollButton && (
@@ -477,6 +478,7 @@ function BookingPage({ setBookingDetails }) {
             </div>
             <Footer />
         </div>
+
     );
 }
 

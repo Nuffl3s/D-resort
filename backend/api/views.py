@@ -738,76 +738,79 @@ def reservations_view(request):
 
 from datetime import datetime
 
+from django.db.models import Count
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Reservation, Log
+from .serializers import ReservationSerializer
+
 class ReservationView(APIView):
-    permission_classes = [IsAuthenticated, AllUser]
+    permission_classes = [IsAuthenticated]  # Apply authentication permissions
 
     def get(self, request):
-        # Fetch reservations for the authenticated user
+        # Handle query parameters for filtering and sorting
+        unit_name = request.query_params.get('unit_name')
+        unit_type = request.query_params.get('unit_type')
+        sort_option = request.query_params.get('sort', 'recent')
+
+        # Filter reservations by customer account
         reservations = Reservation.objects.filter(customer=request.user.customer_account)
-        # Check for optional 'unit_name' query parameter
-        unit_name = request.query_params.get("unit_name")
+
         if unit_name:
             reservations = reservations.filter(unit_name=unit_name)
-        serializer = ReservationSerializer(reservations, many=True, context={"request": request})
+        if unit_type:
+            reservations = reservations.filter(unit_type__iexact=unit_type)
+
+        # Apply sorting
+        if sort_option == 'recent':
+            reservations = reservations.order_by('-date_of_reservation')
+        elif sort_option == 'most_reserved':
+            reservations = reservations.annotate(reservation_count=Count('id')).order_by('-reservation_count')
+
+        # Serialize and return the reservations
+        serializer = ReservationSerializer(reservations, many=True, context={'request': request})
         return Response(serializer.data, status=200)
-    
-    def get(self, request):
-        unit_name = request.query_params.get('unit_name', None)
-        reservations = Reservation.objects.all()
-        
-        if unit_name:
-            reservations = reservations.filter(unit_name=unit_name)
-        
-        serializer = ReservationSerializer(reservations, many=True)
-        return Response(serializer.data)
-    
+
     def post(self, request):
+        # Ensure the user has a customer account
         if not hasattr(request.user, 'customer_account'):
             return Response({"error": "Customer account not found for the user."}, status=400)
 
-        unit_type = request.data.get("unit_type")
-        unit_name = request.data.get("unit_name")
-        date_of_reservation = request.data.get("date_of_reservation")
+        # Validate required fields
+        required_fields = ['unit_type', 'unit_name', 'date_of_reservation']
+        for field in required_fields:
+            if not request.data.get(field):
+                return Response({"error": f"{field} is required."}, status=400)
 
-        if not date_of_reservation or not unit_type or not unit_name:
-            return Response({"error": "All fields are required: date_of_reservation, unit_type, unit_name."}, status=400)
-
+        # Prepare data for serialization
         data = {
             "customer": request.user.customer_account.id,
-            "unit_type": unit_type,
-            "unit_name": unit_name,
-            "date_of_reservation": date_of_reservation,
+            "unit_type": request.data.get("unit_type"),
+            "unit_name": request.data.get("unit_name"),
+            "date_of_reservation": request.data.get("date_of_reservation"),
             "time_of_use": request.data.get("time_of_use"),
             "total_price": request.data.get("total_price"),
         }
 
+        # Serialize and save the reservation
         serializer = ReservationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
-    
-    def delete(self, request, pk):
-        try:
-            reservation = Reservation.objects.get(pk=pk)
-            reservation.delete()
-            Log.objects.create(
-                username=request.user.username,
-                action=f"Deleted reservation for {reservation.customer.name}",
-                category="Reservation"
-            )
-            return Response({"message": "Reservation deleted successfully!"}, status=204)
-        except Reservation.DoesNotExist:
-            return Response({"error": "Reservation not found."}, status=404)
 
     def put(self, request, pk):
         try:
+            # Fetch the reservation by primary key
             reservation = Reservation.objects.get(pk=pk)
+
+            # Update the reservation with partial data
             serializer = ReservationSerializer(reservation, data=request.data, partial=True)
             if serializer.is_valid():
                 updated_reservation = serializer.save()
                 Log.objects.create(
-                    username=request.user.username,
+                    username=request.user.username if request.user.is_authenticated else "Guest",
                     action=f"Updated reservation for {updated_reservation.customer.name}",
                     category="Reservation"
                 )
@@ -815,20 +818,18 @@ class ReservationView(APIView):
             return Response(serializer.errors, status=400)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
-        
-    def put(self, request, pk):
+
+    def delete(self, request, pk):
         try:
+            # Fetch the reservation by primary key
             reservation = Reservation.objects.get(pk=pk)
-            serializer = ReservationSerializer(reservation, data=request.data, partial=True)
-            if serializer.is_valid():
-                updated_reservation = serializer.save()
-                Log.objects.create(
-                    username=request.user.username if request.user.is_authenticated else "Guest",
-                    action=f"Updated reservation for {updated_reservation.customer_name}",
-                    category="Reservation"
-                )
-                return Response(serializer.data, status=200)
-            return Response(serializer.errors, status=400)
+            reservation.delete()
+            Log.objects.create(
+                username=request.user.username if request.user.is_authenticated else "Guest",
+                action=f"Deleted reservation for {reservation.customer.name}",
+                category="Reservation"
+            )
+            return Response({"message": "Reservation deleted successfully!"}, status=204)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
 

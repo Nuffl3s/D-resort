@@ -21,18 +21,17 @@ const CalendarView = () => {
                 const response = await api.get('/reservations/', {
                     params: { unit_name: unitName }, // Filter by unit name
                 });
-    
+                
                 const reservations = response.data;
-    
-                const events = reservations.flatMap((res) =>
-                    res.dates.map((date) => ({
-                        title: `Reserved: ${res.time_of_use || "Unavailable"}`,
-                        start: date,
-                        backgroundColor: "#50b0d0",
-                        borderColor: "#50b0d0",
-                    }))
-                );
-    
+                
+                // Map the reservations to calendar events
+                const events = reservations.map((res) => ({
+                    title: `Reserved: ${res.time_of_use || "Unavailable"}`,
+                    start: res.date_of_reservation, // Use date_of_reservation directly
+                    backgroundColor: "#50b0d0",
+                    borderColor: "#50b0d0",
+                }));
+                
                 setEvents(events);
             } catch (error) {
                 console.error("Error fetching reservations:", error);
@@ -41,6 +40,7 @@ const CalendarView = () => {
     
         fetchCalendarEvents();
     }, [unitName]);
+    
     
 
     return (

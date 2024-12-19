@@ -208,12 +208,9 @@ function BookingPage({ setBookingDetails }) {
     };
     
 
-const handleBookClick = (unit) => {
-    if (!isDateReserved(unit)) {
+    const handleBookClick = (unit) => {
         navigate("/payment", { state: { unit, selectedDate } });
-    }
-};
-
+    };
 
     const handleCheckAvailability = (unit) => {
         navigate(`/calendar/${unit.name}`, { state: { unitName: unit.name } });
@@ -440,24 +437,10 @@ const handleBookClick = (unit) => {
                                     {/* Action Buttons */}
                                     <div className="flex space-x-4 mt-4">
                                     <button
-                                        onClick={() => {
-                                            if (!isReserved) {
-                                                handleBookClick(unit);
-                                            }
-                                        }}
-                                        className={`px-6 py-3 rounded-md font-semibold shadow-md transition-transform ${
-                                            isReserved
-                                                ? "bg-gray-400 text-gray-500 cursor-not-allowed line-through opacity-70"
-                                                : "bg-[#12B1D1] hover:bg-[#3ebae7] text-white hover:scale-105"
-                                        }`}
-                                        disabled={isReserved}
-                                        style={{
-                                            backgroundColor: isReserved ? "#d1d5db" : "", // Force light gray color for disabled
-                                            color: isReserved ? "#6b7280" : "",          // Force gray text color
-                                            textDecoration: isReserved ? "line-through" : "none", // Ensure line-through text
-                                        }}
+                                        onClick={() => handleBookClick(unit)}
+                                        className="px-6 py-3 rounded-md font-semibold shadow-md transition-transform bg-[#12B1D1] hover:bg-[#3ebae7] text-white hover:scale-105"
                                     >
-                                        {isReserved ? "Book Now (Unavailable)" : "Book Now"}
+                                        Book Now
                                     </button>
                                         <button
                                             onClick={() => handleCheckAvailability(unit)}

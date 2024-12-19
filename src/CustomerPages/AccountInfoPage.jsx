@@ -38,8 +38,10 @@ function AccountInfoPage() {
 
     // Group, filter, and sort logs
     useEffect(() => {
-        const filteredLogs = logs.filter(log => log.unit_type.toLowerCase() === unitType.toLowerCase());
-
+        const filteredLogs = logs.filter(
+            (log) => log.unit_type.toLowerCase() === unitType.toLowerCase()
+        );
+    
         const grouped = filteredLogs.reduce((acc, reservation) => {
             const key = reservation.unit_name;
             if (!acc[key]) {
@@ -49,18 +51,22 @@ function AccountInfoPage() {
             }
             return acc;
         }, {});
-
+    
         const sortedGroups = Object.values(grouped).sort((a, b) => {
-            if (sortOption === 'recent') {
-                return new Date(b.reservations[0].date_of_reservation) - new Date(a.reservations[0].date_of_reservation);
-            } else if (sortOption === 'most_reserved') {
+            if (sortOption === "recent") {
+                return (
+                    new Date(b.reservations[0].date_of_reservation) -
+                    new Date(a.reservations[0].date_of_reservation)
+                );
+            } else if (sortOption === "most_reserved") {
                 return b.reservations.length - a.reservations.length;
             }
             return 0;
         });
-
+    
         setGroupedLogs(sortedGroups);
     }, [logs, sortOption, unitType]);
+    
 
     const handleBookAgain = (reservation) => {
         const { unit_name, unit_type } = reservation;
@@ -101,7 +107,7 @@ function AccountInfoPage() {
                 alert("Failed to fetch unit details. Please try again.");
             });
     };
-    
+
     const handleSortChange = (e) => {
         setSortOption(e.target.value);
     };

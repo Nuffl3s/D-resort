@@ -75,10 +75,11 @@ function Payment() {
     };    
 
     const formatTimeRange = (timeRange) => {
+        if (!timeRange) return "Invalid Time";
         const [start, end] = timeRange.split("-");
         return `${formatTimeTo12Hour(start)} - ${formatTimeTo12Hour(end)}`;
     };
-
+    
     const handleDateClick = (info) => {
         const clickedDate = info.dateStr;
     

@@ -8,6 +8,7 @@ from django.db import models
 from datetime import timedelta
 from django.conf import settings
 from django.db.models import JSONField
+from decimal import Decimal
 
 image_storage = FileSystemStorage(
     # Define where to save the images

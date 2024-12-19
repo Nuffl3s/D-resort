@@ -233,18 +233,18 @@ function AdminAttendance() {
                             </thead>
 
                             <tbody>
-                                {currentItems.map((row) => {
+                                {currentItems.map((row, index) => {
                                     console.log('Row rendered:', row); // Log the row data to check for time_out
                                     return (
-                                    <tr key={row.uid}>
-                                        <td className="px-5 py-5 border-b border-r text-sm">{row.user}</td>
-                                        <td className="px-5 py-5 border-b border-r text-sm">{row.name}</td>
-                                        <td className="px-5 py-5 border-b border-r text-sm">{row.date}</td>
-                                        <td className="px-5 py-5 border-b border-r text-sm">{row.time_in}</td>
-                                        <td className={`px-5 py-5 border-b border-r text-sm ${row.time_out === null ? 'text-red-400' : ''}`}>
-                                        {row.time_out !== null ? row.time_out : 'No time out yet'}
-                                        </td>
-                                    </tr>
+                                        <tr key={`${row.user}-${row.date}-${index}`}>
+                                            <td className="px-5 py-5 border-b border-r text-sm">{row.user}</td>
+                                            <td className="px-5 py-5 border-b border-r text-sm">{row.name}</td>
+                                            <td className="px-5 py-5 border-b border-r text-sm">{row.date}</td>
+                                            <td className="px-5 py-5 border-b border-r text-sm">{row.time_in}</td>
+                                            <td className={`px-5 py-5 border-b border-r text-sm ${row.time_out === null ? 'text-red-400' : ''}`}>
+                                                {row.time_out !== null ? row.time_out : 'No time out yet'}
+                                            </td>
+                                        </tr>
                                     );
                                 })}
                             </tbody>

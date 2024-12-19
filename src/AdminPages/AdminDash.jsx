@@ -202,18 +202,18 @@ function AdminDash () {
                                         <table className="min-w-full shadow rounded-lg border-collapse">
                                             <thead className="sticky text-gray-600 top-0 bg-white dark:bg-[#1f2937] dark:text-[#e7e6e6]">
                                                 <tr className="text-center">
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Product Name</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Date</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Quantity</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Acquisition Cost</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Selling Price</th>
-                                                    <th className="px-5 py-3 text-sm font-bold  uppercase tracking-wider text-start">Total Profit</th>
+                                                    <th className="px-5 py-3 text-sm font-bold uppercase tracking-wider text-start">Product Name</th>
+                                                    <th className="px-5 py-3 text-sm font-bold uppercase tracking-wider text-start">Date</th>
+                                                    <th className="px-5 py-3 text-sm font-bold uppercase tracking-wider text-start">Quantity</th>
+                                                    <th className="px-5 py-3 text-sm font-bold uppercase tracking-wider text-start">Acquisition Cost</th>
+                                                    <th className="px-5 py-3 text-sm font-bold uppercase tracking-wider text-start">Selling Price</th>
+                                                    <th className="px-5 py-3 text-sm font-bold uppercase tracking-wider text-start">Total Profit</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="dark:text-[#e7e6e6]">
                                                 {products.length > 0 ? (
-                                                    products.map((product, index) => (
-                                                        <tr key={index}>
+                                                    products.map((product) => (
+                                                        <tr key={product.id}> {/* Use product.id instead of index */}
                                                             <td className="px-5 py-5 border-b border-gray-200 text-start">{product.name}</td>
                                                             <td className="px-5 py-5 border-b border-gray-200 text-start">{product.date_added}</td>
                                                             <td className="px-5 py-5 border-b border-gray-200 text-start">{product.quantity}</td>
@@ -224,7 +224,7 @@ function AdminDash () {
                                                     ))
                                                 ) : (
                                                     <tr>
-                                                        <td colSpan="5" className="px-5 py-5 text-center">No Products Available</td>
+                                                        <td colSpan="6" className="px-5 py-5 text-center">No Products Available</td> {/* Adjust colspan to match the number of columns */}
                                                     </tr>
                                                 )}
                                             </tbody>

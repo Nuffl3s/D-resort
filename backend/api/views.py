@@ -39,6 +39,7 @@ from .serializers import AttendanceSerializer, Account
 from .serializers import CreateAccountSerializer
 from datetime import date
 from django.contrib.auth import get_user_model
+from datetime import timedelta
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -389,21 +390,6 @@ class ProductAutocompleteView(APIView):
 class PayrollListCreate(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
 
-    def get(self, request):
-        try:
-            print("Fetching Payroll Data...")
-            employees = Employee.objects.all()
-            for employee in employees:
-                Payroll.objects.get_or_create(employee=employee, defaults={'status': 'Not yet'})
-            
-            payrolls = Payroll.objects.select_related('employee').all()
-            print("Payrolls fetched successfully")
-            serializer = PayrollSerializer(payrolls, many=True)
-            return Response(serializer.data, status=200)
-        except Exception as e:
-            print(f"Error fetching payroll data: {str(e)}")  # Log error details
-            return Response({"error": "Internal Server Error"}, status=500)
-
     def post(self, request):
         data = request.data  # Expecting a list of payroll entries
         if not isinstance(data, list):
@@ -416,13 +402,15 @@ class PayrollListCreate(APIView):
                     employee=employee,
                     defaults={
                         'net_pay': entry['net_pay'],
-                        'status': entry['status']  # Ensure status is updated to "Calculated"
+                        'status': entry['status'],
+                        'rate': entry['rate'],  # Ensure this is included
                     }
                 )
             except Employee.DoesNotExist:
                 return Response({"error": f"Employee '{entry['employee_name']}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response({"message": "Payroll entries processed successfully!"}, status=status.HTTP_201_CREATED)
+
 
 
 class PayrollDetail(APIView):
@@ -442,18 +430,19 @@ class PayrollDetail(APIView):
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
         
 class UpdatePayrollView(UpdateAPIView):
-    queryset = Payroll.objects.all()
-    serializer_class = PayrollSerializer
-    permission_classes = [IsAuthenticated]
+    def put(self, request, name):
+        try:
+            # Find the payroll by employee name
+            payroll = Payroll.objects.get(employee__name=name)
+        except Payroll.DoesNotExist:
+            return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()  # Triggers net pay calculation in the serializer
-        return Response(serializer.data, status=200)
-    
-
+        # Partial update of the payroll fields
+        serializer = PayrollSerializer(payroll, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
@@ -890,11 +879,25 @@ class AttendanceView(APIView):
         user_id = request.query_params.get('user', None)
         if user_id:
             attendances = Attendance.objects.filter(user_id=user_id)
+
+            # Calculate total hours for the last week
+            last_week = date.today() - timedelta(days=7)
+            attendances_this_week = attendances.filter(time_in__gte=last_week)
+
+            # Calculate total hours worked in the last week
+            total_hours = 0
+            for attendance in attendances_this_week:
+                if attendance.time_in and attendance.time_out:
+                    total_hours += (attendance.time_out - attendance.time_in).total_seconds() / 3600  # Convert seconds to hours
+
+            return Response({
+                "attendances": AttendanceSerializer(attendances_this_week, many=True).data,
+                "total_hours": total_hours,
+            }, status=status.HTTP_200_OK)
         else:
             attendances = Attendance.objects.all()
-
-        serializer = AttendanceSerializer(attendances, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = AttendanceSerializer(attendances, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk=None):
         user_id = request.data.get('user')
@@ -902,11 +905,8 @@ class AttendanceView(APIView):
             return Response({"detail": "'user' field is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get today's date
-        today = date.today()
-
-        # Try to get today's attendance record for the user
-        attendances = Attendance.objects.filter(user_id=user_id, date=today)
-
+        attendances = Attendance.objects.filter(user_id=user_id)
+ 
         if attendances.exists():
             # Check if the user already has both time_in and time_out set for today
             attendance = attendances.order_by('-time_in').first()
@@ -928,6 +928,7 @@ class AttendanceView(APIView):
         else:
             # If no attendance record found for today, create a new one
             return Response({'detail': 'Attendance record not found for today or already clocked out.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class CustomerAccountRegisterView(APIView):
     permission_classes = [AllowAny]

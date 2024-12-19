@@ -3,6 +3,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
 import DeductionModal from "../Modal/DeductionModal";
 import CashAdvanceModal from "../Modal/CashAdvanceModal";
+import PayrollFormModal from '../Modal/PayrollFormModal';
 import api from '../api';
 
 
@@ -38,6 +39,8 @@ function AdminPayroll() {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 9;
     const [currentPageSecondTable, setCurrentPageSecondTable] = useState(1);
+    const [selectedPayroll, setSelectedPayroll] = useState(null);
+    
     
     useEffect(() => {
         const fetchPayrollData = async () => {
@@ -45,26 +48,47 @@ function AdminPayroll() {
                 const payrollResponse = await api.get(`${BASE_URL}/payroll/`);
                 console.log('Payroll Data:', payrollResponse.data);
                 setFilteredData(payrollResponse.data);
-            }  catch (error) {
+            } catch (error) {
                 console.error("Error fetching payroll data!", error);
             }
-          };
-   
+        };
+    
         const fetchEmployeeData = async () => {
             try {
                 const employeeResponse = await api.get(`${BASE_URL}/employees/`);
                 console.log('Employee Data:', employeeResponse.data);
                 setEmployees(employeeResponse.data);
                 setFilteredData(employeeResponse.data);  // Add this line
+    
+                // Fetch total hours worked for each employee in the last week
+                const totalHoursPromises = employeeResponse.data.map(async (employee) => {
+                    try {
+                        const attendanceResponse = await api.get(`${BASE_URL}/attendance/`, {
+                            params: { user: employee.id },
+                        });
+                        console.log('Attendance Data:', attendanceResponse.data);
+    
+                        // Calculate total hours worked in the last week
+                        const totalHours = attendanceResponse.data.total_hours || 0; // default to 0 if not available
+                        return { ...employee, total_hours: totalHours }; // Add total_hours to employee data
+                    } catch (error) {
+                        console.error(`Error fetching attendance data for employee ${employee.id}:`, error);
+                        return { ...employee, total_hours: 0 }; // Handle error by setting total_hours to 0
+                    }
+                });
+    
+                const updatedEmployees = await Promise.all(totalHoursPromises);
+                setEmployees(updatedEmployees); // Update employees with total hours
             } catch (error) {
                 console.error("Error fetching employee data:", error);
                 alert("Failed to fetch employee data. Please try again later.");
             }
         };
-        
+    
         fetchPayrollData();
         fetchEmployeeData();
     }, []); // Fetch data only once when component mounts
+    
    
      // Calculate the data to display on the current page
     const indexOfLastItem = page * itemsPerPage;
@@ -154,77 +178,106 @@ function AdminPayroll() {
     };
     
     const handleEditClick = (id, payroll) => {
-        setEditingRow(id);
+        console.log("Editing payroll for employee:", payroll.name); // Debugging
+    
+        if (!payroll) {
+            console.error("Payroll object is undefined for ID:", id);
+            return;
+        }
+    
+        setEditingRow(id); // Use id as the identifier
         setEditValues({
-            employee: payroll.employee, // Make sure this is populated
-            rate: payroll.rate,
-            total_hours: payroll.total_hours,
-            deductions: payroll.deductions,
-            cash_advance: payroll.cash_advance,
-            net_pay: payroll.net_pay
+            employee: payroll.employee || "",
+            rate: payroll.rate || 0,
+            total_hours: payroll.total_hours || 0,
+            deductions: payroll.deductions || 0,
+            cash_advance: payroll.cash_advance || 0,
+            net_pay: payroll.net_pay || 0,
         });
     };
-    
-    const handleEditChange = (name, field, value) => {
-        setFilteredData((prevData) =>
-            prevData.map((row) =>
-                row.name === name ? { ...row, [field]: value } : row
-            )
-        );
-    };
-    
-    
 
-    const handleSave = (rowId) => {
-        setFilteredData((prevData) =>
-            prevData.map((row) =>
-                row.id === rowId ? { ...row, ...editValues } : row
-            )
-        );
+    const handleSave = async (name) => {
+        const updatedRow = {
+            ...currentData.find((row) => row.name === name), 
+            ...editValues, // Merge edited values
+        };
+    
+        try {
+            await api.put(`${BASE_URL}/payroll/${name}/update/`, updatedRow);
+            console.log("Payroll saved successfully!");
+        } catch (error) {
+            console.error("Failed to save payroll:", error);
+        }
+    
         setEditingRow(null); // Exit editing mode
     };
-
-    const handleDeductionSave = () => {
-        if (!modalData) return;
+   
     
-        // Update the deduction state with the modified modal data
-        setDeductions(prevDeductions => 
-            prevDeductions.map(deduction => 
-                deduction.id === modalData.id ? { ...deduction, ...modalData } : deduction
-            )
-        );
-    
-        setIsModalOpen(false);  // Close the modal after saving
+    const handleEditChange = (name, value) => {
+        setEditValues((prev) => ({
+            ...prev,
+            [name]: value, // Dynamically update the field in editValues
+        }));
     };
     
-    
-
+     
     const handleCancel = () => {
         setEditingRow(null); // Exit editing mode without saving
     };
 
 
     // This is for Deductions
-    const handleEditDeductionClick = (rowData) => {
-        const defaultData = {
-            descriptions: rowData.description || '',
-            amount: rowData.amount || ''
-        };
-        setModalData(defaultData);  // Set the modal data for the selected deduction
-        setIsModalOpen(true);  // Open the modal
+    const handleDeductionSave = () => {
+        setFilteredData((prevData) =>
+            prevData.map((item) =>
+                item.name === modalData.name  // Find the employee by name
+                    ? { 
+                        ...item, 
+                        deductions: modalData.descriptions, 
+                        amount: modalData.amount       
+                    }
+                    : item
+            )
+        );
+        setIsModalOpen(false); // Close the modal after saving
     };
-    
-    
 
-    const handleModalChange = (field, value) => {
-        setModalData(prevData => ({
+    const handleEditDeductionClick = (payroll) => {
+        const defaultData = {
+            descriptions: payroll.deductions || '',  // Use payroll.deductions if available
+            amount: payroll.amount || 0,  // Default to 0 if amount is not available
+        };
+        setModalData({
+            name: payroll.name,  // Save the employee's name to update data by name
+            descriptions: defaultData.descriptions,
+            amount: defaultData.amount
+        });
+        setIsModalOpen(true);  // Open the modal for editing
+    };
+
+    const handleDescriptionChange = (e) => {
+        setModalData((prevData) => ({
             ...prevData,
-            [field]: value  // Correctly update the field based on the dynamic key
+            descriptions: e.target.value
+        }));
+    };
+
+    const handleAmountChange = (e) => {
+        setModalData((prevData) => ({
+            ...prevData,
+            amount: e.target.value
         }));
     };
     
     
 
+    const handleModalChange = (field, value) => {
+        setModalData((prevData) => ({
+            ...prevData,
+            [field]: value, // Dynamically update the respective field (either descriptions or amount)
+        }));
+    };
+    
 
     const handleClose = () => {
         setIsModalOpen(false); // Close the modal without saving
@@ -248,16 +301,34 @@ function AdminPayroll() {
         setIsModalOpen(true); // Open the modal
     };
 
-    const handleRateChange = (employeeId, rate) => {
-        // Update the rate in the employee data
-        setEmployees(prevEmployees =>
-          prevEmployees.map(employee =>
-            employee.id === employeeId ? { ...employee, rate: rate } : employee
-          )
-        );
-        // Save to the backend or local storage
-        api.post(`${BASE_URL}/employees/${employeeId}`, { rate });
-      };
+    const handleRateChange = async (employeeId, rate) => {
+        try {
+            // Send updated rate to backend
+            await api.put(`${BASE_URL}/employees/${employeeId}/`, { rate });
+            // Update local state for UI responsiveness
+            setEmployees(prevEmployees =>
+                prevEmployees.map(employee =>
+                    employee.id === employeeId ? { ...employee, rate: rate } : employee
+                )
+            );
+        } catch (error) {
+            console.error("Error updating rate:", error);
+            alert("Failed to update rate. Please try again.");
+        }
+    };
+    
+
+    useEffect(() => {
+        localStorage.setItem('employees', JSON.stringify(employees));
+    }, [employees]); // Save whenever employees state changes
+    
+    useEffect(() => {
+        const savedEmployees = localStorage.getItem('employees');
+        if (savedEmployees) {
+            setEmployees(JSON.parse(savedEmployees));
+        }
+    }, []); // Load once on component mount
+    
     
     const handleDeductionChange = (payrollId, deduction) => {
     // Update the deduction in the payroll data
@@ -350,6 +421,12 @@ function AdminPayroll() {
             alert('Failed to save payroll data.');
         }
     };
+
+    const handleViewFormClick = (payroll) => {
+        setSelectedPayroll(payroll); // Set the selected payroll
+        setIsModalOpen(true); // Open the modal
+    };
+
     
 
     return (
@@ -428,72 +505,70 @@ function AdminPayroll() {
                                                 <th scope="col" className="px-4">Action</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            {currentData.map((payroll, index) => (
-                                                <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
-                                                    <td className="px-6 py-3">{index + 1 + (page - 1) * itemsPerPage}</td>
-                                                    {editingRow === payroll.id ? (
-                                                        <>
-                                                            {/* Name Field - Not Editable */}
-                                                            <td className="px-6 py-3">
-                                                                <input
-                                                                    type="text"
-                                                                    name="name"
-                                                                    value={payroll.name}
-                                                                    className="w-full p-1 border border-gray-300 rounded"
-                                                                    disabled // Name is not editable
-                                                                />
-                                                            </td>
-                                                            {/* Rate Field - Editable */}
-                                                            <td className="px-6 py-3">
-                                                                <input
-                                                                    type="number"
-                                                                    name="rate"
-                                                                    value={payroll.rate} // Value comes from the specific row
-                                                                    onChange={(e) =>
-                                                                        handleEditChange(payroll.name, "rate", e.target.value)
-                                                                    }
-                                                                    className="w-full p-1 border border-gray-300 rounded"
-                                                                />
-                                                            </td>
-                                                            {/* Action Buttons */}
-                                                            <td className="px-4 py-3 space-x-1">
-                                                                <button
-                                                                    className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md text-white font-medium"
-                                                                    onClick={handleSave}
-                                                                >
-                                                                    Save
-                                                                </button>
-                                                                <button
-                                                                    className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
-                                                                    onClick={handleCancel}
-                                                                >
-                                                                    Cancel
-                                                                </button>
-                                                            </td>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <td className="px-6 py-3">{payroll.name}</td>
-                                                            <td className="px-6 py-3">{payroll.rate}</td>
-                                                            <td className="px-4 py-3 space-x-1">
-                                                                <button
-                                                                    className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
-                                                                    onClick={() => handleEditClick(payroll.id)}
-                                                                >
-                                                                    Edit
-                                                                </button>
-                                                                <button
-                                                                    className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
-                                                                    onClick={() => handleDelete(payroll.id)}
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </td>
-                                                        </>
-                                                    )}
-                                                </tr>
-                                            ))}
+                                            <tbody>
+                                                {currentData.map((payroll, index) => (
+                                                    <tr key={payroll.name} className="border-b dark:text-[#e7e6e6]">
+                                                        <td className="px-6 py-3">{index + 1 + (page - 1) * itemsPerPage}</td>
+                                                        {editingRow === payroll.name ? (
+                                                            <>
+                                                                {/* Name Field - Not Editable */}
+                                                                <td className="px-6 py-3">
+                                                                    <input
+                                                                        type="text"
+                                                                        name="name"
+                                                                        value={payroll.name}
+                                                                        className="w-full p-1 border border-gray-300 rounded"
+                                                                        disabled // Name is not editable
+                                                                    />
+                                                                </td>
+                                                                {/* Rate Field - Editable */}
+                                                                <td className="px-6 py-3">
+                                                                    <input
+                                                                        type="number"
+                                                                        name="rate"
+                                                                        value={editValues.rate} // Comes from editValues, not payroll directly
+                                                                        onChange={(e) => handleEditChange("rate", e.target.value)}
+                                                                        className="w-full p-1 border border-gray-300 rounded"
+                                                                    />
+                                                                </td>
+                                                                {/* Action Buttons */}
+                                                                <td className="px-4 py-3 space-x-1">
+                                                                    <button
+                                                                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md text-white font-medium"
+                                                                        onClick={() => handleSave(payroll.name)} // Pass name to handleSave
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                    <button
+                                                                        className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
+                                                                        onClick={handleCancel}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </td>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <td className="px-6 py-3">{payroll.name}</td>
+                                                                <td className="px-6 py-3">{payroll.rate !== undefined ? payroll.rate : "N/A"}</td>
+                                                                <td className="px-4 py-3 space-x-1">
+                                                                    <button
+                                                                        className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
+                                                                        onClick={() => handleEditClick(payroll.name, payroll)} // Pass name to handleEditClick
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
+                                                                        onClick={() => handleDelete(payroll.name)} // Adjust delete logic to use name
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </td>
+                                                            </>
+                                                        )}
+                                                    </tr>
+                                                ))}
                                         </tbody>
                                     </table>
 
@@ -561,15 +636,16 @@ function AdminPayroll() {
                                                 <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
                                                     <td className="px-6 py-3">{index + 1 + indexOfFirstItem}</td>
                                                     <td className="px-6 py-3">{payroll.name}</td>
-                                                    <td className="px-6 py-3">{payroll.deductions}</td>
-                                                    <td className="px-6 py-3">{payroll.amount}</td>
+                                                    <td className="px-6 py-3">{payroll.deductions}</td> {/* Display description (deductions) */}
+                                                    <td className="px-6 py-3">{payroll.amount}</td>      {/* Display actual amount */}
                                                     <td className="px-4 py-3 space-x-1">
-                                                        <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
-                                                        onClick={() => {
-                                                            setModalData(payroll); // Pass the relevant data to the modal
-                                                            setIsModalOpen(true); // Open the modal
-                                                        }}>
-                                                            
+                                                        <button
+                                                            className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
+                                                            onClick={() => {
+                                                                setModalData(payroll); // Pass the relevant data to the modal
+                                                                setIsModalOpen(true); // Open the modal
+                                                            }}
+                                                        >
                                                             Edit
                                                         </button>
                                                         <button
@@ -732,56 +808,50 @@ function AdminPayroll() {
                                             {currentData3.map((payroll, index) => (
                                                 <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
                                                     <td className="px-6 py-3">{index + 1}</td>
-                                                        {editingRow === payroll.id ? (
-                                                            <>
-                                                                <td className="px-6 py-3">
-                                                                    {payroll.name}
-                                                                </td>
-                                                                <td className="px-2 py-3">12</td>
-                                                                <td className="px-2 py-3">
-                                                                    <input
-                                                                        type="number"
-                                                                        name="net_pay"
-                                                                        value={editValues.net_pay}
-                                                                        onChange={handleEditChange}
-                                                                        className="w-full p-1 border border-gray-300 rounded"
-                                                                    />
-                                                                </td>
-                                                                <td className="px-2 py-3">
-                                                                    <input
-                                                                        type="number"
-                                                                        name="net_pay"
-                                                                        value={editValues.net_pay}
-                                                                        onChange={handleEditChange}
-                                                                        className="w-full p-1 border border-gray-300 rounded"
-                                                                    />
-                                                                </td>
-                                                                <td className="px-2 py-3">235</td>
-
-
-
-                                                                
-                                                                <td className="px-4 py-3 space-x-1">
-                                                                    <button
-                                                                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md text-white font-medium"
-                                                                        onClick={() => handleSave(payroll.id)}
-                                                                    >
-                                                                        Save
-                                                                    </button>
-                                                                    <button
-                                                                        className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
-                                                                        onClick={handleCancel}
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                </td>
-                                                            </>
-                                                        ) : (
+                                                    {editingRow === payroll.id ? (
+                                                        <>
+                                                            <td className="px-6 py-3">{payroll.name}</td>
+                                                            <td className="px-2 py-3">12</td>
+                                                            <td className="px-2 py-3">
+                                                                <input
+                                                                    type="number"
+                                                                    name="net_pay"
+                                                                    value={editValues.net_pay}
+                                                                    onChange={handleEditChange}
+                                                                    className="w-full p-1 border border-gray-300 rounded"
+                                                                />
+                                                            </td>
+                                                            <td className="px-2 py-3">
+                                                                <input
+                                                                    type="number"
+                                                                    name="net_pay"
+                                                                    value={editValues.net_pay}
+                                                                    onChange={handleEditChange}
+                                                                    className="w-full p-1 border border-gray-300 rounded"
+                                                                />
+                                                            </td>
+                                                            <td className="px-2 py-3">235</td>
+                                                            <td className="px-4 py-3 space-x-1">
+                                                                <button
+                                                                    className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md text-white font-medium"
+                                                                    onClick={() => handleSave(payroll.id)}
+                                                                >
+                                                                    Save
+                                                                </button>
+                                                                <button
+                                                                    className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
+                                                                    onClick={handleCancel}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </td>
+                                                        </>
+                                                    ) : (
                                                         <>
                                                             <td className="px-6 py-3">{payroll.name}</td>
                                                             <td className="px-6 py-3">{payroll.total_hours}</td>
                                                             <td className="px-6 py-3">{payroll.rate}</td>
-                                                            <td className="px-6 py-3">{payroll.deductions}</td>
+                                                            <td className="px-6 py-3">{payroll.amount}</td> {/* Only display amount here */}
                                                             <td className="px-6 py-3">{payroll.net_pay}</td>
                                                             <td className="px-4 py-3 space-x-1 flex">
                                                                 <button
@@ -943,7 +1013,8 @@ function AdminPayroll() {
                                                 <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium">
                                                     Edit
                                                 </button>
-                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] px-4 py-2 rounded-md text-white font-medium">
+                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] px-4 py-2 rounded-md text-white font-medium"
+                                                onClick={() => handleViewFormClick(payroll)}>
                                                     View
                                                 </button>
                                                 <button className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"  onClick={() => handleDelete(payroll.id)}>
@@ -954,6 +1025,12 @@ function AdminPayroll() {
                                     ))}
                                 </tbody>
                             </table>
+
+                            <PayrollFormModal
+                                isOpen={isModalOpen}
+                                onClose={handleClose}
+                                payroll={selectedPayroll} // Pass selected payroll data to the modal
+                            />
                         </div>
                     </div>
                 </div>

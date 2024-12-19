@@ -21,19 +21,27 @@ const CalendarView = () => {
                 const response = await api.get('/reservations/', {
                     params: { unit_name: unitName }, // Filter by unit name
                 });
-                const reservations = response.data.map((res) => ({
-                    title: `Reserved: ${res.time_of_use || "Unavailable"}`,
-                    start: res.date_of_reservation,
-                    backgroundColor: "#50b0d0",
-                    borderColor: "##50b0d0",
-                }));
-                setEvents(reservations);
+    
+                const reservations = response.data;
+    
+                const events = reservations.flatMap((res) =>
+                    res.dates.map((date) => ({
+                        title: `Reserved: ${res.time_of_use || "Unavailable"}`,
+                        start: date,
+                        backgroundColor: "#50b0d0",
+                        borderColor: "#50b0d0",
+                    }))
+                );
+    
+                setEvents(events);
             } catch (error) {
                 console.error("Error fetching reservations:", error);
             }
         };
+    
         fetchCalendarEvents();
     }, [unitName]);
+    
 
     return (
         <div className="flex-row calendar-con">

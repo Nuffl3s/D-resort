@@ -765,44 +765,28 @@ class ReservationView(APIView):
         if not hasattr(request.user, 'customer_account'):
             return Response({"error": "Customer account not found for the user."}, status=400)
 
-        date_of_reservation = request.data.get("date_of_reservation")
-        try:
-            reservation_date = datetime.strptime(date_of_reservation, "%Y-%m-%d").date()
-        except (ValueError, TypeError):
-            return Response({"error": "Invalid or missing date format. Use YYYY-MM-DD."}, status=400)
-
         unit_type = request.data.get("unit_type")
         unit_name = request.data.get("unit_name")
-        if not unit_type or not unit_name:
-            return Response({"error": "Both 'unit_type' and 'unit_name' are required."}, status=400)
+        date_of_reservation = request.data.get("date_of_reservation")
 
-        try:
-            unit_model = Cottage if unit_type.lower() == "cottage" else Lodge
-            unit = unit_model.objects.get(name=unit_name)
-        except unit_model.DoesNotExist:
-            return Response({"error": f"{unit_type} '{unit_name}' does not exist."}, status=404)
+        if not date_of_reservation or not unit_type or not unit_name:
+            return Response({"error": "All fields are required: date_of_reservation, unit_type, unit_name."}, status=400)
 
         data = {
             "customer": request.user.customer_account.id,
             "unit_type": unit_type,
             "unit_name": unit_name,
-            "date_of_reservation": reservation_date,
+            "date_of_reservation": date_of_reservation,
             "time_of_use": request.data.get("time_of_use"),
             "total_price": request.data.get("total_price"),
         }
 
-        # Pass context with the request
         serializer = ReservationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
-            reservation = serializer.save()
-            Log.objects.create(
-                username=request.user.username,
-                action=f"Created reservation for {reservation.customer.name} on {reservation_date}.",
-                category="Reservation",
-            )
+            serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
-
+    
     def delete(self, request, pk):
         try:
             reservation = Reservation.objects.get(pk=pk)

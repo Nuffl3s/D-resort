@@ -64,7 +64,7 @@ const ViewModal = ({ isOpen, onClose, booking }) => {
                             </tr>
                             <tr className="border-b">
                                 <th className="bg-blue-500 text-blue-50 text-left px-4 py-2 font-semibold">Date of Reservation</th>
-                                <td className="px-4 py-2 text-gray-600">{booking.date_of_reservation || "N/A"}</td>
+                                <td className="px-4 py-2 text-gray-600">{booking.date_of_reservation || booking.date_range || "N/A"}</td>
                             </tr>
                             <tr className="border-b">
                                 <th className="bg-blue-500 text-blue-50 text-left px-4 py-2 font-semibold">Time of Use</th>

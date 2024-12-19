@@ -777,13 +777,8 @@ def reservations_view(request):
     return JsonResponse(response, safe=False)
 
 from datetime import datetime
-
 from django.db.models import Count
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import Reservation, Log
-from .serializers import ReservationSerializer
+
 
 class ReservationView(APIView):
     permission_classes = [IsAuthenticated]  # Apply authentication permissions
@@ -813,27 +808,25 @@ class ReservationView(APIView):
         return Response(serializer.data, status=200)
 
     def post(self, request):
-        # Ensure the user has a customer account
         if not hasattr(request.user, 'customer_account'):
             return Response({"error": "Customer account not found for the user."}, status=400)
 
-        # Validate required fields
-        required_fields = ['unit_type', 'unit_name', 'date_of_reservation']
-        for field in required_fields:
-            if not request.data.get(field):
-                return Response({"error": f"{field} is required."}, status=400)
+        date_range = request.data.get("date_range")
+        unit_type = request.data.get("unit_type")
+        unit_name = request.data.get("unit_name")
 
-        # Prepare data for serialization
+        if not date_range or not unit_type or not unit_name:
+            return Response({"error": "All fields are required: date_range, unit_type, unit_name."}, status=400)
+
         data = {
             "customer": request.user.customer_account.id,
-            "unit_type": request.data.get("unit_type"),
-            "unit_name": request.data.get("unit_name"),
-            "date_of_reservation": request.data.get("date_of_reservation"),
+            "unit_type": unit_type,
+            "unit_name": unit_name,
+            "date_range": date_range,  # Handle multiple dates
             "time_of_use": request.data.get("time_of_use"),
             "total_price": request.data.get("total_price"),
         }
 
-        # Serialize and save the reservation
         serializer = ReservationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             serializer.save()

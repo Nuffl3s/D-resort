@@ -208,6 +208,13 @@
         padding: 30px;
     }
 
+        .fc-day-today {
+        background-color: #ffeb3b !important; /* Bright yellow */
+        color: #000000 !important; /* Ensure text is visible */
+        font-weight: bold; /* Make the text bold for emphasis */
+        border: 2px solid #fbc02d !important; /* Add a border for extra visibility */
+    }
+
     .avail-text{
         width: 50px;
         font-size: 10px;

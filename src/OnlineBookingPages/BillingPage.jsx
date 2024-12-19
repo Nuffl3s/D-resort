@@ -40,47 +40,33 @@ function BillingPage() {
     }, []);
 
     const handleSaveReservation = async () => {
-        // Use billingData.selectedDates for multi-date selection; fallback to selectedDate
-        const selectedDates = billingData.selectedDates || [selectedDate]; 
+        const selectedDates = billingData.selectedDates || [selectedDate];
     
-        if (!selectedDates || selectedDates.length === 0) {
+        if (!selectedDates.length) {
             Swal.fire("Error", "No selected dates available.", "error");
             return;
         }
     
-        // Generate reservation data for all selected dates
-        const reservationData = selectedDates.flatMap((date) =>
-            units.flatMap((unit) =>
-                unit.timeAndPrice.map(({ time, price }) => {
-                    const unitType = unit.unit_type || unit.type || "cottage";
-    
-                    return {
-                        customer_name: userDetails.username || "Anonymous",
-                        unit_name: unit.name,
-                        unit_type: unitType,
-                        date_of_reservation: date, // Use valid selected date
-                        time_of_use: time,
-                        total_price: price,
-                    };
-                })
-            )
-        );
-    
-        console.log("Reservation Data Sent:", reservationData); // Debugging log
+        const reservationData = {
+            unit_name: units[0]?.name || "N/A",
+            unit_type: units[0]?.unit_type || "Cottage",
+            date_range: selectedDates, // Group multiple dates
+            time_of_use: units[0]?.timeAndPrice[0]?.time || "N/A",
+            total_price: totalPrice,
+        };
+        console.log("Reservation Data Sent:", reservationData);
     
         try {
-            // Send each reservation entry to the server
-            await Promise.all(
-                reservationData.map((data) => api.post("/reservations/", data))
-            );
+            const response = await api.post("/reservations/", reservationData);
             Swal.fire("Success!", "Reservation saved successfully.", "success");
-            navigate("/book"); // Navigate to booking page after success
+            navigate("/book");
         } catch (error) {
-            console.error("Error saving reservation:", error.response?.data || error.message);
+            console.error("Error saving reservation:", error);
             Swal.fire("Error", "Failed to save reservation. Please try again.", "error");
         }
-    };
+    };    
 
+    
     if (loading) {
         return <Loader />;
     }

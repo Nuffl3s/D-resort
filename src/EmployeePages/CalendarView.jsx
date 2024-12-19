@@ -19,25 +19,35 @@ const CalendarView = () => {
         const fetchCalendarEvents = async () => {
             try {
                 const response = await api.get('/reservations/', {
-                    params: { unit_name: unitName }, // Filter by unit name
+                    params: { unit_name: unitName },
                 });
-                
+        
                 const reservations = response.data;
-                
+        
                 // Map the reservations to calendar events
-                const events = reservations.map((res) => ({
-                    title: `Reserved: ${res.time_of_use || "Unavailable"}`,
-                    start: res.date_of_reservation, // Use date_of_reservation directly
-                    backgroundColor: "#50b0d0",
-                    borderColor: "#50b0d0",
-                }));
-                
+                const events = reservations.flatMap((res) => {
+                    if (res.date_range) {
+                        return res.date_range.map((date) => ({
+                            title: `Reserved: ${res.time_of_use || "Unavailable"}`,
+                            start: date,
+                            backgroundColor: "#50b0d0",
+                            borderColor: "#50b0d0",
+                        }));
+                    } else {
+                        return [{
+                            title: `Reserved: ${res.time_of_use || "Unavailable"}`,
+                            start: res.date_of_reservation,
+                            backgroundColor: "#50b0d0",
+                            borderColor: "#50b0d0",
+                        }];
+                    }
+                });
+        
                 setEvents(events);
             } catch (error) {
                 console.error("Error fetching reservations:", error);
             }
-        };
-    
+        };        
         fetchCalendarEvents();
     }, [unitName]);
     
@@ -51,18 +61,18 @@ const CalendarView = () => {
             <div className="flex flex-col h-screen p-16 calendar">
                 <h2 className="text-2xl font-semibold mb-4">Availability for {unitName}</h2>
                 <div className="flex-grow overflow-hidden">
-                    <FullCalendar
-                        plugins={[dayGridPlugin]}
-                        initialView="dayGridMonth"
-                        events={events}
-                        eventContent={(eventInfo) => (
-                            <div className="text-black text-base font-semibold" style={{ whiteSpace: 'normal', padding: '2px' }}>
-                                {eventInfo.event.title}
-                            </div>
-                        )}
-                        height="100%"
-                        headerToolbar={{ right: 'prev,next today' }}
-                    />
+                <FullCalendar
+    plugins={[dayGridPlugin]}
+    initialView="dayGridMonth"
+    events={events}
+    eventContent={(eventInfo) => (
+        <div className="text-black text-base font-semibold" style={{ whiteSpace: 'normal', padding: '2px' }}>
+            {eventInfo.event.title}
+        </div>
+    )}
+    height="100%"
+    headerToolbar={{ right: 'prev,next today' }}
+/>
                 </div>
             </div>
         </div>

@@ -68,11 +68,9 @@ function Header({ isMainPage }) {
                             <button onClick={handleAccount} className="shadow-sm border hover:bg-gray-100 hover:text-gray-600 text-white font-semibold px-4 py-2 rounded-lg">
                                 Account Details
                             </button>
-                            {isMainPage && (
                                 <button onClick={handleBook} className="shadow-sm border hover:bg-gray-100 hover:text-gray-600 text-white font-semibold px-4 py-2 rounded-lg">
                                     Reserve
                                 </button>
-                            )}
                         </div>
                     )}
                 </div>

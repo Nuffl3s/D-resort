@@ -3,6 +3,7 @@ import BookingModal from '../Modal/BookingModal';
 import ViewModal from '../Modal/ViewModal';
 import Sidebar from '../components/EmployeeSidebar';
 import CalendarEventModal from '../Modal/CalendarEventModal';
+import { formatDateRange } from '../Utils/deteUtils';
 import api from '../api';
 import EditReservationModal from '../Modal/EditReservationModal';
 
@@ -78,7 +79,6 @@ function EmployeeReservation () {
         const fetchReservations = async () => {
             try {
                 const response = await api.get("/reservations/");
-                console.log("Updated Reservations:", response.data);
                 setReservations(response.data);
             } catch (error) {
                 console.error("Error fetching reservations:", error);
@@ -86,13 +86,6 @@ function EmployeeReservation () {
         };
     
         fetchReservations();
-    
-        // Add an event listener to refetch reservations
-        window.addEventListener("reservationUpdated", fetchReservations);
-    
-        return () => {
-            window.removeEventListener("reservationUpdated", fetchReservations);
-        };
     }, []);
     
     // Filter bookings based on selected type
@@ -368,7 +361,8 @@ function EmployeeReservation () {
                                             <td className="px-6 py-4">{reservation.customer_name}</td>
                                             <td className="px-6 py-4">{reservation.unit_type} {reservation.unit_name}</td>
                                             <td className="px-6 py-4">{reservation.transaction_date}</td>
-                                            <td className="px-6 py-4">{reservation.date_of_reservation}</td>
+                                            <td className="px-6 py-4">{reservation.date_of_reservation || reservation.date_range}</td>
+                                            {/* <td className="px-6 py-4">{formatDateRange (reservation.date_of_reservation || reservation.date_range)}</td> */}
                                             <td className="px-6 py-4">{reservation.time_of_use}</td>
                                             <td className="px-6 py-4">{reservation.total_price}</td>
                                             <td className="px-6 py-4">

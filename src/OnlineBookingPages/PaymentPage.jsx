@@ -1,442 +1,413 @@
-import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
-import Loader from '../components/Loader';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
-import Modal from '../Modal/Modal';
-import 'react-datepicker/dist/react-datepicker.css';
-import api from '../api'; 
+import { useState, useEffect } from "react";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import { useLocation, useNavigate } from "react-router-dom";
+import Modal from "../Modal/Modal";
+import api from "../api";
+import Loader from "../components/Loader";
+import Header from "../components/Header";
 
-function Payment({ bookingDetails }) {
-const navigate = useNavigate();
-const location = useLocation();
-const [loading, setLoading] = useState(true);
-const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    mobile: '',
-    });
-    
-const { unit = {}, selectedDate } = location.state || {};
-const { image_url: imgSrc, name: title, capacity: persons, custom_prices, description } = unit;
-const [selectedPrices, setSelectedPrices] = useState([]);
-const totalPrice = selectedPrices.reduce((total, price) => total + parseFloat(price), 0);
-const [selectedUnits, setSelectedUnits] = useState(() => {
-    return [location.state?.unit ? { ...location.state.unit, selectedPrices: [] } : {}];
-});
-const [isModalOpen, setModalOpen] = useState(false);
-const [currentUnitIndex, setCurrentUnitIndex] = useState(0);
-const currentUnit = selectedUnits[currentUnitIndex];
-const [reservedDates, setReservedDates] = useState([]); // State to store reserved dates and times
+function Payment() {
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const handleRemoveUnit = (index) => {
-        setSelectedUnits((prevUnits) => {
-            const updatedUnits = prevUnits.filter((_, unitIndex) => unitIndex !== index);
-            // Update the currentUnitIndex
-            if (updatedUnits.length > 0) {
-                setCurrentUnitIndex((prevIndex) =>
-                    prevIndex >= updatedUnits.length ? updatedUnits.length - 1 : prevIndex
-                );
-            } else {
-                setCurrentUnitIndex(0); // Reset index if no units left
-            }
-            return updatedUnits;
-        });
-    };
-    
+    const [loading, setLoading] = useState(true);
+    const [events, setEvents] = useState([]);
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [selectedDateEvent, setSelectedDateEvent] = useState(null);
+    const [units, setUnits] = useState(location.state?.unit ? [{ ...location.state.unit, selectedPrices: [] }] : []);
+    const [currentUnitIndex, setCurrentUnitIndex] = useState(0);
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [isMultiDateMode, setIsMultiDateMode] = useState(false);
+    const [multiSelectedDates, setMultiSelectedDates] = useState([]);
+    const [reservedEvents, setReservedEvents] = useState([]);
+    const [confirmedDates, setConfirmedDates] = useState([]);
+    const [reservedTimesByDate, setReservedTimesByDate] = useState({});
+
+
     useEffect(() => {
         const fetchReservedDates = async () => {
             try {
-                const response = await api.get("/reservations/");
+                const response = await api.get("/reservations/", {
+                    params: { unit_name: location.state?.unit?.name },
+                });
+    
                 const reservations = response.data;
     
-                // Map reservations to include times safely
-                const formattedReservations = reservations.map((res) => ({
-                    unitName: res.unit_name,
-                    reservedDate: res.date_of_reservation, // e.g., "2024-06-10"
-                    reservedTimes: typeof res.time_of_use === "string" 
-                        ? res.time_of_use.split(", ")  // Split only if time_of_use is a string
-                        : [], // Default to empty array
+                const reservedByDate = {};
+    
+                reservations.forEach((res) => {
+                    if (!reservedByDate[res.date_of_reservation]) {
+                        reservedByDate[res.date_of_reservation] = [];
+                    }
+                    reservedByDate[res.date_of_reservation].push(res.time_of_use);
+                });
+    
+                setReservedTimesByDate(reservedByDate);
+    
+                // Map reservation data to events
+                const eventsData = reservations.map((res) => ({
+                    title: res.time_of_use
+                        ? `Reserved: ${formatTimeRange(res.time_of_use)}`
+                        : "Reserved",
+                    start: res.date_of_reservation,
+                    backgroundColor: "#50b0d0",
+                    borderColor: "#50b0d0",
                 }));
     
-                setReservedDates(formattedReservations);
+                setReservedEvents(eventsData);
+                setEvents(eventsData);
             } catch (error) {
-                console.error("Error fetching reserved dates:", error);
+                console.error("Error fetching reservations:", error);
+            } finally {
+                setLoading(false);
             }
         };
-    
         fetchReservedDates();
-    }, []);
+    }, [location.state?.unit?.name]);
     
+    const formatTimeTo12Hour = (time24) => {
+        const [hour, minute] = time24.split(":");
+        const period = +hour >= 12 ? "PM" : "AM";
+        const hour12 = +hour % 12 || 12; // Convert to 12-hour format
+        return `${hour12}:${minute} ${period}`;
+    };    
 
-    const handleAddUnit = (unit) => {
-        setSelectedUnits((prevUnits) => [...prevUnits, unit]); // Add the selected unit
-        setCurrentUnitIndex(selectedUnits.length); // Set the index to the newly added unit
+    const formatTimeRange = (timeRange) => {
+        const [start, end] = timeRange.split("-");
+        return `${formatTimeTo12Hour(start)} - ${formatTimeTo12Hour(end)}`;
     };
 
-    const nextUnit = () => {
-        setCurrentUnitIndex((prevIndex) =>
-            prevIndex + 1 < selectedUnits.length ? prevIndex + 1 : 0
-        );
-    };
-
-    const prevUnit = () => {
-        setCurrentUnitIndex((prevIndex) =>
-            prevIndex - 1 >= 0 ? prevIndex - 1 : selectedUnits.length - 1
-        );
-    };
-
-    const handlePriceChange = (price, isChecked) => {
-        if (isChecked) {
-            setSelectedPrices([...selectedPrices, price]);
+    const handleDateClick = (info) => {
+        const clickedDate = info.dateStr;
+    
+        if (isMultiDateMode) {
+            setMultiSelectedDates((prevDates) => {
+                const alreadySelected = prevDates.includes(clickedDate);
+    
+                // Toggle date in selection
+                const updatedDates = alreadySelected
+                    ? prevDates.filter((date) => date !== clickedDate)
+                    : [...prevDates, clickedDate];
+    
+                // Update events: add/remove "Selected" markers while keeping reserved ones
+                const selectedEvents = updatedDates.map((date) => ({
+                    title: "Selected",
+                    start: date,
+                    backgroundColor: "#37bc4e",
+                    borderColor: "#37bc4e",
+                }));
+    
+                setEvents([...reservedEvents, ...selectedEvents]);
+                return updatedDates;
+            });
         } else {
-            setSelectedPrices(selectedPrices.filter((p) => p !== price));
+            // Default single date selection
+            setSelectedDate(clickedDate);
+            setEvents([...reservedEvents, { title: "Selected", start: clickedDate, backgroundColor: "#37bc4e" }]);
         }
     };
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    const toggleMultiDateMode = () => {
+        setIsMultiDateMode((prev) => !prev);
+        setMultiSelectedDates([]); // Reset multi-date selection
+        setEvents(reservedEvents); // Reset events to only reserved ones
     };
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, []);
-
-    if (loading) {
-        return <Loader />;
-    }
-
-    const isTimeReserved = (time) => {
-        const formattedDate = selectedDate?.toISOString().split("T")[0];
     
-        return reservedDates.some(
-            (res) =>
-                res.unit_name === unit.name &&
-                res.date_of_reservation === formattedDate &&
-                res.time_of_use?.includes(time) // Reserved times check
-        );
+    const handleConfirmDates = () => {
+        if (multiSelectedDates.length === 0) {
+            alert("No dates selected.");
+            return;
+        }
+    
+        console.log("Confirmed dates:", multiSelectedDates);
+        alert(`Confirmed dates: ${multiSelectedDates.join(", ")}`);
+    
+        // Save confirmed dates and reset multi-date mode
+        setConfirmedDates(multiSelectedDates);
+    
+        // Update the events state with confirmed dates
+        const selectedEvents = multiSelectedDates.map((date) => ({
+            title: "Selected",
+            start: date,
+            backgroundColor: "#37bc4e",
+            borderColor: "#37bc4e",
+        }));
+    
+        setEvents([...reservedEvents, ...selectedEvents]); // Merge reserved events with confirmed dates
+        setIsMultiDateMode(false);
     };
 
-    const formatDate = (date) => {
-        return date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
-    };
-
-    const handleCheckboxChange = (time) => {
-        setSelectedUnits((prevUnits) =>
-            prevUnits.map((unit, index) => {
-                if (index === currentUnitIndex) {
-                    const updatedSelectedPrices = unit.selectedPrices
-                        ? unit.selectedPrices.includes(time)
-                            ? unit.selectedPrices.filter((t) => t !== time) // Remove time
-                            : [...unit.selectedPrices, time] // Add time
-                        : [time]; // Initialize if undefined
-    
-                    return { ...unit, selectedPrices: updatedSelectedPrices }; // Immutably update the unit
-                }
-                return unit; // Leave other units unchanged
-            })
-        );
-    };
-    
-    
-    const handleConfirm = () => {
-        const billingData = {
-            customerInfo: {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                email: formData.email,
-                mobile: formData.mobile,
+    const handleAddUnit = (unit) => {
+        setUnits((prevUnits) => [
+            ...prevUnits,
+            {
+                ...unit,
+                selectedPrices: [],
+                unit_type: unit.unit_type || "Unit", // Add unit_type fallback
             },
-            units: selectedUnits.map((unit) => ({
-                type: unit.type,
-                name: unit.name,
-                timeAndPrice: (unit.selectedPrices || []).map((time) => ({
+        ]);
+    };
+
+    const handleRemoveUnit = (index) => {
+        setUnits((prevUnits) => prevUnits.filter((_, i) => i !== index));
+        setCurrentUnitIndex((prevIndex) =>
+            prevIndex >= units.length - 1 ? units.length - 2 : prevIndex
+        );
+    };
+
+    const handlePriceChange = (time, isChecked) => {
+        setUnits((prevUnits) =>
+            prevUnits.map((unit, index) =>
+                index === currentUnitIndex
+                    ? {
+                          ...unit,
+                          selectedPrices: isChecked
+                              ? [...(unit.selectedPrices || []), time]
+                              : (unit.selectedPrices || []).filter((t) => t !== time),
+                      }
+                    : unit
+            )
+        );
+    };
+
+    const nextUnit = () => {
+        setCurrentUnitIndex((prevIndex) => (prevIndex + 1) % units.length);
+    };
+
+    const prevUnit = () => {
+        setCurrentUnitIndex((prevIndex) => (prevIndex - 1 + units.length) % units.length);
+    };
+
+    const handleGoToBilling = () => {
+        const selectedDates = confirmedDates.length > 0 ? confirmedDates : selectedDate ? [selectedDate] : [];
+    
+        if (!selectedDates.length || units.length === 0) {
+            Swal.fire("Error", "Please select a date and at least one unit.", "error");
+            return;
+        }
+    
+        const state = {
+            selectedDates, // Pass selected confirmed dates
+            units: units.map((unit) => ({
+                ...unit,
+                timeAndPrice: unit.selectedPrices.map((time) => ({
                     time,
-                    price: unit.custom_prices[time], // Get the price for the selected time
+                    price: unit.custom_prices[time],
                 })),
             })),
-            selectedDate, 
         };
     
-        console.log("Billing Data to Pass:", billingData); // Debugging
-        navigate("/billing", { state: billingData });
+        navigate("/billing", { state });
     };
-    ;
+
+    const calculateTotalPrice = (unit) =>
+        unit.selectedPrices.reduce(
+            (total, time) => total + parseFloat(unit.custom_prices[time] || 0),
+            0
+        );
+
+    if (loading) return <Loader />;
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
-            <header className="bg-gradient-to-r from-[#1089D3] to-[#12B1D1] w-full h-full shadow-md">
-                <div className="max-w-7xl mx-auto flex justify-between items-center p-3 px-8">
-                    <div className="flex items-center space-x-3">
-                        <img src="./src/assets/logo.png" alt="logo" className="w-16 h-16" />
-                        <h1 className="bg-clip-text text-transparent bg-white text-[35px] font-bold font-lemon cursor-pointer">
-                            <Link to="/booking">D.Yasay Resort</Link>
-                        </h1>
-                    </div> 
-                </div>
-            </header>
+            <Header />
             <div className="flex-grow flex justify-center mt-10">
-                <div className="w-full max-w-[1200px] flex con4">
-                    <div className="w-2/3 p-4 sub-con4">
-                        <div className="border rounded-md p-4">
-                            <h2 className="text-2xl font-bold mb-4">Personal Information</h2>
-                            <form className="space-y-4">
-                                {/* Existing form fields for personal information */}
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700" htmlFor="firstName">First Name</label>
-                                    <p className="text-sm py-1 text-gray-500">Please give us the name of one of the people staying at this property.</p>
-                                    <input
-                                        type="text"
-                                        name="firstName"
-                                        id="firstName"
-                                        value={formData.firstName}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                                        required
-                                    />
+                <div className="w-full max-w-[1200px] flex space-x-6">
+                    {/* Left: Calendar */}
+                    <div className="w-2/3">
+                        <FullCalendar
+                            plugins={[dayGridPlugin, interactionPlugin]}
+                            initialView="dayGridMonth"
+                            events={events}
+                            height="600px"
+                            dateClick={handleDateClick}
+                            eventContent={(eventInfo) => (
+                                <div
+                                    style={{
+                                        whiteSpace: "normal",
+                                        wordWrap: "break-word",
+                                        fontSize: "12px",
+                                        lineHeight: "1.2",
+                                        padding: "4px",
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    {eventInfo.event.title}
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 py-2" htmlFor="lastName">Last Name</label>
-                                    <input
-                                        type="text"
-                                        name="lastName"
-                                        id="lastName"
-                                        value={formData.lastName}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700" htmlFor="email">Email Address</label>
-                                    <p className="text-sm py-1 text-gray-500">Your confirmation email goes here</p>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        id="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700" htmlFor="mobile">Mobile Number</label>
-                                    <p className="text-sm py-1 text-gray-500">Please provide your contact phone number</p>
-                                    <input
-                                        type="tel"
-                                        name="mobile"
-                                        id="mobile"
-                                        value={formData.mobile}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                                        required
-                                    />
-                                </div>
-                            </form>
+                            )}
+                        />
+                        <div className="mt-4">
+                            <h3 className="text-md font-semibold">Selected Date:</h3>
+                            <p>
+                                {isMultiDateMode
+                                    ? multiSelectedDates.length > 0
+                                        ? multiSelectedDates.join(", ")
+                                        : "No dates selected"
+                                    : selectedDate || "No date selected"}
+                            </p>
                         </div>
-
-                        {/* Cancellation Policy */}
-                        <div className="mt-4 p-4 border rounded-md">
-                            <h3 className="text-lg font-semibold">Cancellation Policy</h3>
-                            <p className="text-sm font-bold">Non-refundable rate</p>
-                            <p className="text-sm">If you change or cancel your booking you will not get a refund or credit to use for a future stay.</p>
-                        </div>
-
-                        {/* Terms of Booking */}
-                        <div className="mt-4 p-4 border rounded-md">
-                            <h3 className="text-lg font-semibold">Terms of Booking</h3>
-                            <div className="flex items-center text-sm">
-                                <input
-                                    type="checkbox"
-                                    id="termsCheckbox"
-                                    className="mr-2"
-                                />
-                                <label htmlFor="termsCheckbox" className="cursor-pointer">
-                                    Agree to the <span className="text-[#7bbfff] font-semibold hover:underline">TERMS AND CONDITIONS</span> of this resort.
-                                </label>
-                            </div>
-
-                            {/* Book Button */}
-                            <div className="mt-6 flex justify-end">
-                                <button onClick={handleConfirm} className="bg-[#12B1D1] text-white px-6 py-2 rounded-md hover:bg-[#3ebae7] transition duration-200">
-                                    Confirm
+                        <div className="flex space-x-4 mb-4">
+                            <button
+                                onClick={toggleMultiDateMode}
+                                className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600"
+                            >
+                                {isMultiDateMode ? "Disable Multi-Date Selection" : "Enable Multi-Date Selection"}
+                            </button>
+                            {isMultiDateMode && (
+                                <button
+                                    onClick={handleConfirmDates}
+                                    className="px-4 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600"
+                                >
+                                    Confirm Selected Dates
                                 </button>
-                            </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Accommodation Details on the Right */}
-                    <div className="flex">
-                        <div className="w-[400px] p-4 flex flex-col accom-con">
-                        <div className="w-full border p-4 rounded-md">
-                            {/* Check if there are selected units */}
-                            {selectedUnits.length > 0 ? (
-                                <>
-                                    {/* Image of the Accommodation */}
-                                    <div>
-                                        <img
-                                            src={selectedUnits[currentUnitIndex].image_url}
-                                            className="w-full h-[250px] rounded-md mb-4"
-                                            alt={selectedUnits[currentUnitIndex].name}
-                                        />
-                                    </div>
+                    {/* Right: Unit Details */}
+                    <div className="w-1/3 space-y-4">
+                    <div className="border rounded-md p-4 shadow-sm">
+                            <h3 className="text-lg font-bold mb-4">Selected Date</h3>
+                            <p>
+                                {isMultiDateMode
+                                    ? multiSelectedDates.length > 0
+                                        ? multiSelectedDates.join(", ")
+                                        : "No dates selected"
+                                    : selectedDate || "No date selected"}
+                            </p>
+                    </div>
+                    {units.length > 0 && units[currentUnitIndex] && (
+                        <div className="border rounded-md p-4 shadow-sm">
+                            <img
+                                src={units[currentUnitIndex]?.image_url || ""}
+                                alt={units[currentUnitIndex]?.name || "Unit"}
+                                className="w-full h-32 object-cover rounded-lg mb-4"
+                            />
+                            <h3 className="text-lg font-bold">
+                                {units[currentUnitIndex]?.name || "Unnamed Unit"}
+                            </h3>
+                            <p className="text-md">Capacity: {units[currentUnitIndex]?.capacity || "N/A"} persons</p>
+                            <div className="mt-4">
+                                <h4 className="font-semibold">Select Time and Price</h4>
+                                {units[currentUnitIndex]?.custom_prices &&
+                                    Object.entries(units[currentUnitIndex].custom_prices).map(([time, price]) => {
+                                        const isTimeReserved =
+                                            reservedTimesByDate[selectedDate]?.includes(time) ?? false;
 
-                                    {/* Main Details Block */}
-                                    <div className="border p-4 rounded-md shadow-sm">
-                                        <h3 className="text-xl font-bold mb-2">{selectedUnits[currentUnitIndex].name}</h3>
-                                        <p className="text-sm text-gray-500">
-                                            {selectedUnits[currentUnitIndex].description || "No description available"}
-                                        </p>
-
-                                        {/* Number of persons */}
-                                        <div className="mt-4">
-                                            <p className="text-md mb-2">
-                                                Number of persons:{" "}
-                                                <span className="font-semibold">
-                                                    {selectedUnits[currentUnitIndex].capacity}
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                   {/* Price Selection Section */}
-                                   <div className="border mt-4 p-4 rounded-md shadow-sm">
-                                        <h3 className="text-lg font-bold mb-2">Select Time and Price</h3>
-                                        {selectedUnits[currentUnitIndex]?.custom_prices &&
-                                            Object.entries(selectedUnits[currentUnitIndex].custom_prices).map(([time, price]) => (
-                                                <div key={time} className="flex items-center mb-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        id={`${currentUnitIndex}-${time}`}
-                                                        value={time}
-                                                        checked={
-                                                            selectedUnits[currentUnitIndex]?.selectedPrices?.includes(time) || false
-                                                        }
-                                                        disabled={isTimeReserved(time)} // Disable reserved times
-                                                        onChange={() => handleCheckboxChange(time)}
-                                                    />
-                                                    <label
-                                                        htmlFor={`${currentUnitIndex}-${time}`}
-                                                        className={`ml-2 ${isTimeReserved(time) ? "text-red-500 line-through" : ""}`}
-                                                    >
-                                                        {time}: ₱{price} {isTimeReserved(time) && "(Reserved)"}
-                                                    </label>
-                                                </div>
-                                            ))}
-                                    </div>
-
-                                    {/* Navigation Buttons */}
-                                    <div className="flex justify-between items-center mt-4">
-                                        <div>
-                                            <button
-                                                onClick={prevUnit}
-                                                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md mr-2"
-                                            >
-                                                &lt;
-                                            </button>
-                                            <button
-                                                onClick={nextUnit}
-                                                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md"
-                                            >
-                                                &gt;
-                                            </button>
-                                        </div>
-                                        
-
-                                        <div className="flex">
-                                            <button
-                                                onClick={() => {
-                                                    const updatedUnits = selectedUnits.filter(
-                                                        (_, index) => index !== currentUnitIndex
-                                                    );
-                                                    setSelectedUnits(updatedUnits);
-                                                    setCurrentUnitIndex((prevIndex) =>
-                                                        prevIndex > 0 ? prevIndex - 1 : 0
-                                                    );
-                                                }}
-                                                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition"
-                                            >
-                                            Delete
-                                    </button>
-                                </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <p>No units selected. Please add one using the "Book More" button.</p>
-                            )}
+                                        return (
+                                            <div key={time} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    disabled={isTimeReserved} // Disable if time is reserved
+                                                    checked={
+                                                        !isTimeReserved &&
+                                                        units[currentUnitIndex]?.selectedPrices?.includes(time)
+                                                    }
+                                                    onChange={(e) => handlePriceChange(time, e.target.checked)}
+                                                />
+                                                <label
+                                                    className={`${
+                                                        isTimeReserved ? "text-gray-400 line-through" : ""
+                                                    }`}
+                                                >
+                                                    {time}: ₱{price} {isTimeReserved ? "(Unavailable)" : ""}
+                                                </label>
+                                            </div>
+                                        );
+                                    })}
                             </div>
-                                
-                                {/* Breakdown Section */}
-                                <div className="border mt-4 p-4 rounded-md shadow-sm">
-                                    <h3 className="text-lg font-bold mb-2">Breakdown</h3>
-                                    <p>
-                                        Date Selected:{' '}
-                                        {bookingDetails?.date
-                                        ? new Date(bookingDetails.date).toLocaleDateString()
-                                        : 'Not selected'}
-                                    </p>
-                                    <div className="flex justify-between text-sm">
-                                        <span>Selected Prices:</span>
-                                        <span>
-                                            ₱
-                                            {selectedUnits.reduce((total, unit) => {
-                                                const unitTotal = (unit.selectedPrices || []).reduce(
-                                                    (unitSum, priceKey) =>
-                                                        unitSum + parseFloat(unit.custom_prices[priceKey] || 0),
-                                                    0
-                                                );
-                                                return total + unitTotal;
-                                            }, 0).toFixed(2)}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between text-lg font-semibold mt-4 border-t pt-2">
-                                        <span>Total Price:</span>
-                                        <span>
-                                            ₱
-                                            {selectedUnits.reduce((total, unit) => {
-                                                const unitTotal = (unit.selectedPrices || []).reduce(
-                                                    (unitSum, priceKey) =>
-                                                        unitSum + parseFloat(unit.custom_prices[priceKey] || 0),
-                                                    0
-                                                );
-                                                return total + unitTotal;
-                                            }, 0).toFixed(2)}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Book More Button */}
-                                <button
-                                    className="bg-[#12B1D1] text-white font-medium px-4 py-2 mt-4 rounded"
-                                    onClick={() => setModalOpen(true)}
-                                >
-                                    Book More
-                                </button>
+                           {/* Breakdown Section */}
+                            <div className="border rounded-md p-4 shadow-sm mt-6">
+                                <h4 className="text-lg font-bold mb-4">Reservation Breakdown</h4>
+                                <ul className="text-sm space-y-2">
+                                {units.map((unit, index) => (
+                                    <li key={index} className="border-b pb-2">
+                                        <h5 className="font-semibold text-md">
+                                            {unit.unit_type || "Unit"}: {unit.name || `Unit ${index + 1}`}
+                                        </h5>
+                                        {unit.selectedPrices.length > 0 ? (
+                                            <ul className="ml-4">
+                                                {unit.selectedPrices.map((time) => (
+                                                    <li key={time}>
+                                                        {time}: ₱{unit.custom_prices[time]}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-gray-500 ml-4">No time selected</p>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                                {/* Grand Total */}
+                                <p className="text-lg font-bold mt-4">
+                                    Grand Total: ₱
+                                    {units.reduce(
+                                        (grandTotal, unit) =>
+                                            grandTotal +
+                                            unit.selectedPrices.reduce(
+                                                (total, time) => total + parseFloat(unit.custom_prices[time] || 0),
+                                                0
+                                            ),
+                                        0
+                                    )}
+                                </p>
                             </div>
-                            {isModalOpen && (
-                                <Modal
-                                    onClose={() => setModalOpen(false)}
-                                    onAddUnit={handleAddUnit}
-                                    selectedUnits={selectedUnits} // Pass the state correctly
-                                    onRemoveUnit={handleRemoveUnit}
-                                />
-                            )}
                         </div>
+                    )}
+
+                        {/* Navigation Buttons */}
+                        <div className="flex justify-between">
+                            <button
+                                onClick={prevUnit}
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
+                            >
+                                Prev Unit
+                            </button>
+                            <button
+                                onClick={nextUnit}
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
+                            >
+                                Next Unit
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setModalOpen(true)}
+                            className="w-full bg-blue-500 text-white px-4 py-2 rounded-md"
+                        >
+                            Add More Units
+                        </button>
+                        <button
+                            onClick={handleGoToBilling}
+                            disabled={
+                                confirmedDates.length === 0 && !selectedDate || units.length === 0
+                            }
+                            className={`w-full px-4 py-2 rounded-md ${
+                                (confirmedDates.length > 0 || selectedDate) && units.length > 0
+                                    ? "bg-green-500 text-white hover:bg-green-600"
+                                    : "bg-gray-400 text-gray-500 cursor-not-allowed"
+                            }`}
+                        >
+                            Go to Billing Page
+                        </button>
                     </div>
                 </div>
             </div>
+
+            {isModalOpen && (
+                <Modal
+                    onClose={() => setModalOpen(false)}
+                    onAddUnit={handleAddUnit}
+                    selectedUnits={units}
+                    onRemoveUnit={handleRemoveUnit}
+                />
+            )}
+        </div>
     );
 }
-
-// PropTypes validation
-Payment.propTypes = {
-    startDate: PropTypes.instanceOf(Date).isRequired,
-    endDate: PropTypes.instanceOf(Date).isRequired,
-};
 
 export default Payment;

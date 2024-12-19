@@ -1,3 +1,4 @@
+
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.contenttypes.models import ContentType
@@ -6,7 +7,6 @@ from rest_framework import serializers
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation, CustomerAccount
 from .models import Attendance
 from .models import Account 
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -20,13 +20,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["password"] = make_password(validated_data["password"])
         return super().create(validated_data)
-    
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        data['user_type'] = self.user.user_type
-        return data
-    
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
@@ -107,7 +101,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class PayrollSerializer(serializers.ModelSerializer):
-    employee = serializers.CharField(source='employee.name', read_only=True)
+    employee = serializers.CharField(source='employee.name')  # Display employee name instead of ID
 
     class Meta:
         model = Payroll
@@ -209,30 +203,24 @@ class UnitDetailsSerializer(serializers.Serializer):
 
 class ReservationSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    customer_name = serializers.CharField(source='customer.name', read_only=True)
+    customer_email = serializers.EmailField(source='customer.email', read_only=True)
+    customer_phone = serializers.CharField(source='customer.phone_number', read_only=True)
+    
     class Meta:
         model = Reservation
         fields = [
-            'id',
-            'customer',  # ForeignKey reference to CustomerAccount
-            'unit_type',
-            'unit_name',
-            'transaction_date',
-            'date_of_reservation',
-            'time_of_use',
-            'total_price',
-            'image_url',
+            'id', 'customer_name', 'customer_email', 'customer_phone',
+            'unit_type', 'unit_name', 'transaction_date',
+            'date_of_reservation', 'date_range', 'time_of_use', 'total_price', 'image_url'
         ]
-        extra_kwargs = {
-            'customer': {'required': False},  # Make customer optional (will assign automatically)
-        }
 
     def create(self, validated_data):
-        user = self.context['request'].user  # Get the currently authenticated user
-        if hasattr(user, 'customer_account'):  # Ensure user has a CustomerAccount
+        user = self.context['request'].user
+        if hasattr(user, 'customer_account'):
             validated_data['customer'] = user.customer_account
         else:
             raise serializers.ValidationError("Customer account not found for the user.")
-        
         return super().create(validated_data)
     
     def get_image_url(self, obj):
@@ -264,4 +252,3 @@ class CustomerAccountSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
-

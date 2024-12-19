@@ -44,7 +44,7 @@ function BookingPage({ setBookingDetails }) {
     useEffect(() => {
         const timer = setTimeout(() => {
             setLoading(false);
-        }, 1000); 
+        }, 100); 
         return () => clearTimeout(timer);
     }, []);
 
@@ -216,7 +216,7 @@ const handleBookClick = (unit) => {
 
 
     const handleCheckAvailability = (unit) => {
-        navigate(`/calendar/${unit.name}`);
+        navigate(`/calendar/${unit.name}`, { state: { unitName: unit.name } });
     };
 
     const scrollToTop = () => {

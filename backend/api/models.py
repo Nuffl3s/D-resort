@@ -7,7 +7,7 @@ from django.db.models import JSONField
 from django.db import models
 from datetime import timedelta
 from django.conf import settings
-from decimal import Decimal
+from django.db.models import JSONField
 
 image_storage = FileSystemStorage(
     # Define where to save the images
@@ -193,17 +193,17 @@ class Lodge(models.Model):
         return f"{self.type} - {self.name}"
     
 class Reservation(models.Model):
-    customer = models.ForeignKey('CustomerAccount', on_delete=models.CASCADE)  # Use a string reference
+    customer = models.ForeignKey('CustomerAccount', on_delete=models.CASCADE)
     unit_type = models.CharField(max_length=50)
     unit_name = models.CharField(max_length=255)
     transaction_date = models.DateField(auto_now_add=True)
-    date_of_reservation = models.DateField()
+    date_of_reservation = models.DateField(null=True, blank=True)  # Keep single date for compatibility
+    date_range = JSONField(null=True, blank=True)  # Add this field for multiple dates
     time_of_use = models.CharField(max_length=50, null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
         return f"Reservation for {self.customer.name} - {self.unit_name}"
-
 
 class CustomerAccountManager(BaseUserManager):
     def create_user(self, username, email, password=None):

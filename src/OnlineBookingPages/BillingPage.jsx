@@ -4,6 +4,7 @@ import Loader from "../components/Loader";
 import Swal from "sweetalert2";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from '../api';
+import Header from "../components/Header";
 
 function BillingPage() {
     const [showModal, setShowModal] = useState(false);
@@ -12,11 +13,15 @@ function BillingPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const billingData = location.state || {};
-    const { customerInfo, units, selectedDate } = location.state || {};
+    const { customerInfo = {}, units = [], selectedDate = null } = location.state || {};
 
     const totalPrice = units?.reduce((total, unit) => {
-        return total + unit.timeAndPrice.reduce((sum, { price }) => sum + parseFloat(price), 0);
-    }, 0);
+        const unitTotal = unit.timeAndPrice?.reduce(
+            (sum, { price }) => sum + parseFloat(price || 0),
+            0
+        ) || 0;
+        return total + unitTotal;
+    }, 0) || 0;
 
     // Fetch user details
     useEffect(() => {
@@ -35,31 +40,44 @@ function BillingPage() {
     }, []);
 
     const handleSaveReservation = async () => {
-        const selectedDateObject = new Date(selectedDate); // Use selectedDate passed from location.state
-        const localDate = new Date(selectedDateObject.getTime() - selectedDateObject.getTimezoneOffset() * 60000)
-            .toISOString()
-            .split("T")[0]; // Format date as YYYY-MM-DD
+        // Use billingData.selectedDates for multi-date selection; fallback to selectedDate
+        const selectedDates = billingData.selectedDates || [selectedDate]; 
     
-        const reservationData = units.flatMap((unit) =>
-            unit.timeAndPrice.map(({ time, price }) => ({
-                customer_name: userDetails.username, // Get from userDetails state
-                unit_name: unit.name,
-                unit_type: unit.type.toLowerCase(), // Include unit type here (e.g., "cottage", "lodge")
-                date_of_reservation: localDate, // Send corrected date
-                time_of_use: time,
-                total_price: price,
-            }))
+        if (!selectedDates || selectedDates.length === 0) {
+            Swal.fire("Error", "No selected dates available.", "error");
+            return;
+        }
+    
+        // Generate reservation data for all selected dates
+        const reservationData = selectedDates.flatMap((date) =>
+            units.flatMap((unit) =>
+                unit.timeAndPrice.map(({ time, price }) => {
+                    const unitType = unit.unit_type || unit.type || "cottage";
+    
+                    return {
+                        customer_name: userDetails.username || "Anonymous",
+                        unit_name: unit.name,
+                        unit_type: unitType,
+                        date_of_reservation: date, // Use valid selected date
+                        time_of_use: time,
+                        total_price: price,
+                    };
+                })
+            )
         );
     
+        console.log("Reservation Data Sent:", reservationData); // Debugging log
+    
         try {
+            // Send each reservation entry to the server
             await Promise.all(
                 reservationData.map((data) => api.post("/reservations/", data))
             );
             Swal.fire("Success!", "Reservation saved successfully.", "success");
-            navigate("/book");
+            navigate("/book"); // Navigate to booking page after success
         } catch (error) {
             console.error("Error saving reservation:", error.response?.data || error.message);
-            Swal.fire("Error", "Failed to save reservation.", "error");
+            Swal.fire("Error", "Failed to save reservation. Please try again.", "error");
         }
     };
 
@@ -69,6 +87,7 @@ function BillingPage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
+            <Header />
             <div className="w-[90%] mx-auto mt-10">
                 <h1 className="text-[30px] font-bold uppercase mb-6">Billing Details</h1>
                 <div className="mb-4 space-y-2">
@@ -94,7 +113,11 @@ function BillingPage() {
                                 unit.timeAndPrice?.map(({ time, price }, idx) => (
                                     <tr key={`${index}-${idx}`} className="bg-white border-b">
                                         <td className="px-6 py-4 font-medium text-gray-900">{unit.name} ({unit.type})</td>
-                                        <td className="px-6 py-4">{selectedDate ? new Date(selectedDate).toLocaleDateString() : "N/A"}</td>
+                                        <td className="px-6 py-4">
+                                            {billingData.selectedDates
+                                                ? billingData.selectedDates.join(", ")
+                                                : "N/A"}
+                                        </td>
                                         <td className="px-6 py-4">{time}</td>
                                         <td className="px-6 py-4">₱{price}</td>
                                     </tr>

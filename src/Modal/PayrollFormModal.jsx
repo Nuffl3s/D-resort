@@ -1,4 +1,3 @@
-import React from "react";
 import PropTypes from "prop-types"; // Import PropTypes
 
 const PayrollFormModal = ({ isOpen, onClose, payroll }) => {
@@ -6,6 +5,7 @@ const PayrollFormModal = ({ isOpen, onClose, payroll }) => {
 
     // Function to print the payslip
     const printPayslip = () => {
+        // eslint-disable-next-line no-unused-vars
         const printContent = document.getElementById("payslip-content").innerHTML;
         const printWindow = window.open("", "_blank");
         printWindow.document.write(`

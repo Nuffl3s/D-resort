@@ -40,6 +40,7 @@ from .serializers import CreateAccountSerializer
 from datetime import date
 from django.contrib.auth import get_user_model
 from datetime import timedelta
+import logging
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -390,6 +391,12 @@ class ProductAutocompleteView(APIView):
 class PayrollListCreate(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
 
+    def get(self, request):
+        # Fetch all payroll entries
+        payrolls = Payroll.objects.all()
+        serializer = PayrollSerializer(payrolls, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def post(self, request):
         data = request.data  # Expecting a list of payroll entries
         if not isinstance(data, list):
@@ -428,21 +435,54 @@ class PayrollDetail(APIView):
             return Response({"message": "Payroll entry deleted successfully!"}, status=status.HTTP_204_NO_CONTENT)
         except Payroll.DoesNotExist:
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-class UpdatePayrollView(UpdateAPIView):
+
+logger = logging.getLogger(__name__)    
+class UpdatePayrollView(APIView):
     def put(self, request, name):
         try:
-            # Find the payroll by employee name
-            payroll = Payroll.objects.get(employee__name=name)
-        except Payroll.DoesNotExist:
-            return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
+            # Fetch the employee by name
+            employee = Employee.objects.get(name=name)
+        except Employee.DoesNotExist:
+            return Response({"error": f"Employee '{name}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Partial update of the payroll fields
-        serializer = PayrollSerializer(payroll, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # Fetch the payroll entry for this employee
+            payroll = Payroll.objects.get(employee=employee)
+        except Payroll.DoesNotExist:
+            # If no payroll entry exists, create one
+            logger.info(f"Creating new payroll entry for employee '{name}'")
+            payroll = Payroll.objects.create(
+                employee=employee,
+                rate=request.data.get('rate', 0),
+                total_hours=request.data.get('total_hours', 0),
+                deductions=request.data.get('deductions', 0),  # Default deductions to 0
+                cash_advance=request.data.get('cash_advance', 0),
+                status=request.data.get('status', 'Not yet')
+            )
+            logger.info(f"New payroll entry created: {payroll}")
+
+        # Update fields if provided in the request
+        if 'rate' in request.data:
+            payroll.rate = request.data['rate']
+
+        # Update deductions with the 'amount' from the frontend
+        if 'deductions' in request.data:
+            payroll.deductions = request.data['deductions']
+
+        if 'cash_advance' in request.data:
+            payroll.cash_advance = request.data['cash_advance']
+
+        # Recalculate net pay based on updated fields
+        payroll.calculate_net_pay()
+
+        # Save the payroll entry
+        payroll.save()
+
+        # Return the updated payroll data
+        logger.info(f"Returning updated payroll data: {payroll}")
+        serializer = PayrollSerializer(payroll)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class LogView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]

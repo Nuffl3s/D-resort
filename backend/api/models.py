@@ -1,3 +1,4 @@
+from venv import logger
 from django.contrib.auth.models import AbstractUser, Group, Permission, AbstractBaseUser, BaseUserManager
 from django.core.files.storage import FileSystemStorage
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -6,6 +7,7 @@ from django.db.models import JSONField
 from django.db import models
 from datetime import timedelta
 from django.conf import settings
+from decimal import Decimal
 
 image_storage = FileSystemStorage(
     # Define where to save the images
@@ -128,14 +130,28 @@ class Payroll(models.Model):
 
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Add this field
-    total_hours = models.DecimalField(max_digits=10, decimal_places=2)
-    deductions = models.DecimalField(max_digits=10, decimal_places=2)
-    cash_advance = models.DecimalField(max_digits=10, decimal_places=2)
+    total_hours = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    deductions = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cash_advance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     net_pay = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
     status = models.CharField(max_length=50)
 
     def calculate_net_pay(self):
-        self.net_pay = self.total_hours * self.rate - self.deductions - self.cash_advance
+        # Ensure that the values are treated as Decimals or floats
+        try:
+            rate = Decimal(self.rate or 0)  # Default to 0 if rate is None
+            total_hours = Decimal(self.total_hours or 0)  # Default to 0 if total_hours is None
+            deductions = Decimal(self.deductions or 0)  # Default to 0 if deductions is None
+            cash_advance = Decimal(self.cash_advance or 0)  # Default to 0 if cash_advance is None
+            
+            # Calculate net pay
+            self.net_pay = (total_hours * rate) - deductions - cash_advance
+        except Exception as e:
+            # Log the exception if there is an error in the calculation
+            logger.error(f"Error calculating net_pay: {str(e)}")
+            self.net_pay = Decimal(0)  # Fallback to 0 if there's any error
+
+
 
 class Log(models.Model):
     CATEGORY_CHOICES = [

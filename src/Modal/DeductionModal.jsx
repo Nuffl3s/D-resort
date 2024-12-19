@@ -31,7 +31,7 @@ const DeductionModal = ({ isOpen, data, onChange, onClose, onSave }) => {
                     <input
                         type="number"
                         name="amount"
-                        value={data.amount || ""}  // Use the modal data for amount
+                        value={data.amount || ""}
                         onChange={handleAmountChange}
                         className="block w-full p-2 border border-gray-300 rounded-md"
                         placeholder="Enter amount"

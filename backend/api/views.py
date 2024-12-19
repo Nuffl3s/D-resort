@@ -807,6 +807,11 @@ class ReservationView(APIView):
         serializer = ReservationSerializer(reservations, many=True, context={'request': request})
         return Response(serializer.data, status=200)
 
+    def get(self, request):
+        reservations = Reservation.objects.all()
+        serializer = ReservationSerializer(reservations, many=True)
+        return Response(serializer.data)
+    
     def post(self, request):
         if not hasattr(request.user, 'customer_account'):
             return Response({"error": "Customer account not found for the user."}, status=400)

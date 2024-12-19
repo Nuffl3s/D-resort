@@ -25,20 +25,35 @@ function Payment() {
     const [confirmedDates, setConfirmedDates] = useState([]);
     const [reservedTimesByDate, setReservedTimesByDate] = useState({});
 
-
     useEffect(() => {
         const fetchReservedDates = async () => {
             try {
+                const unitName = location.state?.unit?.name; // Get the selected unit name
+                console.log("Fetching reserved dates for unit:", unitName);
+    
                 const response = await api.get("/reservations/", {
-                    params: { unit_name: location.state?.unit?.name },
+                    params: { unit_name: unitName }, // Fetch data for the selected unit only
                 });
+    
+                if (!response || !response.data) {
+                    console.error("Invalid API response:", response);
+                    setReservedTimesByDate({});
+                    setReservedEvents([]);
+                    setEvents([]);
+                    return;
+                }
     
                 const reservations = response.data;
     
-                const reservedByDate = {};
+                // Filter reservations for the selected unit
+                const filteredReservations = reservations.filter(
+                    (res) => res.unit_name === unitName
+                );
     
-                const eventsData = reservations.flatMap((res) => {
-                    // Populate reservedByDate for each date
+                console.log("Filtered Reservations:", filteredReservations);
+    
+                const reservedByDate = {};
+                const eventsData = filteredReservations.flatMap((res) => {
                     if (res.date_range) {
                         res.date_range.forEach((date) => {
                             if (!reservedByDate[date]) {
@@ -88,7 +103,7 @@ function Payment() {
         };
     
         fetchReservedDates();
-    }, [location.state?.unit?.name]);
+    }, [location.state?.unit?.name]);    
     
     const formatTimeTo12Hour = (time24) => {
         if (!time24) return "Invalid Time"; // Handle undefined or null values

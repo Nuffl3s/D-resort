@@ -15,42 +15,55 @@ const CalendarView = () => {
 
     const handleGoBack = () => navigate(-1);
 
+    const [loading, setLoading] = useState(false);
+
     useEffect(() => {
         const fetchCalendarEvents = async () => {
             try {
+                console.log("Selected Unit Name:", unitName); // Debug unitName
                 const response = await api.get('/reservations/', {
                     params: { unit_name: unitName },
                 });
-        
+    
+                if (!response || !response.data) {
+                    console.error("Invalid response structure:", response);
+                    setEvents([]);
+                    return;
+                }
+    
                 const reservations = response.data;
-        
-                // Map the reservations to calendar events
+                console.log("API Response:", reservations); // Debug response data
+    
                 const events = reservations.flatMap((res) => {
-                    if (res.date_range) {
-                        return res.date_range.map((date) => ({
-                            title: `Reserved: ${res.time_of_use || "Unavailable"}`,
-                            start: date,
-                            backgroundColor: "#50b0d0",
-                            borderColor: "#50b0d0",
-                        }));
-                    } else {
-                        return [{
-                            title: `Reserved: ${res.time_of_use || "Unavailable"}`,
-                            start: res.date_of_reservation,
-                            backgroundColor: "#50b0d0",
-                            borderColor: "#50b0d0",
-                        }];
+                    if (res.unit_name === unitName) { // Ensure filtering by unit
+                        if (res.date_range && Array.isArray(res.date_range)) {
+                            return res.date_range.map((date) => ({
+                                title: `Reserved: ${res.time_of_use || "Unavailable"}`,
+                                start: date,
+                                backgroundColor: "#50b0d0",
+                                borderColor: "#50b0d0",
+                            }));
+                        } else if (res.date_of_reservation) {
+                            return [{
+                                title: `Reserved: ${res.time_of_use || "Unavailable"}`,
+                                start: res.date_of_reservation,
+                                backgroundColor: "#50b0d0",
+                                borderColor: "#50b0d0",
+                            }];
+                        }
                     }
+                    return [];
                 });
-        
+    
                 setEvents(events);
             } catch (error) {
                 console.error("Error fetching reservations:", error);
+                setEvents([]);
             }
-        };        
+        };
+    
         fetchCalendarEvents();
     }, [unitName]);
-    
     
 
     return (

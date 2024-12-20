@@ -807,7 +807,7 @@ class ReservationView(APIView):
         serializer = ReservationSerializer(reservations, many=True, context={'request': request})
         return Response(serializer.data, status=200)
 
-    def get(self, request):
+    def get(self, request): #important
         reservations = Reservation.objects.all()
         serializer = ReservationSerializer(reservations, many=True)
         return Response(serializer.data)
@@ -870,6 +870,33 @@ class ReservationView(APIView):
             return Response({"message": "Reservation deleted successfully!"}, status=204)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
+
+class UserReservationLogsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Filter reservations by the logged-in user's account
+        reservations = Reservation.objects.filter(customer=request.user.customer_account)
+
+        # Optional query parameters for filtering
+        unit_name = request.query_params.get('unit_name')
+        unit_type = request.query_params.get('unit_type')
+        sort_option = request.query_params.get('sort', 'recent')
+
+        if unit_name:
+            reservations = reservations.filter(unit_name=unit_name)
+        if unit_type:
+            reservations = reservations.filter(unit_type__iexact=unit_type)
+
+        # Apply sorting
+        if sort_option == 'recent':
+            reservations = reservations.order_by('-date_of_reservation')
+        elif sort_option == 'most_reserved':
+            reservations = reservations.annotate(reservation_count=Count('id')).order_by('-reservation_count')
+
+        # Serialize and return the reservations
+        serializer = ReservationSerializer(reservations, many=True, context={'request': request})
+        return Response(serializer.data, status=200)
 
 class ReservationDetailView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()

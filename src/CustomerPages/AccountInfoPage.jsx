@@ -26,8 +26,9 @@ function AccountInfoPage() {
                     email: accountRes.data.email,
                     phoneNumber: accountRes.data.phone_number,
                 });
-
-                const reservationRes = await api.get("/reservations/");
+    
+                // Fetch only the logged-in user's reservations using the new endpoint
+                const reservationRes = await api.get("/user-reservations/");
                 setLogs(reservationRes.data);
             } catch (error) {
                 console.error("Error fetching account or reservation data:", error);
@@ -35,6 +36,8 @@ function AccountInfoPage() {
         };
         fetchData();
     }, []);
+    
+    
 
     // Group, filter, and sort logs
     useEffect(() => {

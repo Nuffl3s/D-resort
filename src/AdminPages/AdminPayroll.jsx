@@ -49,7 +49,6 @@ function AdminPayroll() {
             }
         };
         
-    
         // Fetch employee data and merge with payroll data
         const fetchEmployeeData = async () => {
             try {
@@ -201,33 +200,33 @@ function AdminPayroll() {
     const handleSave = async (id) => {
         const updatedRow = {
             ...currentData.find((row) => row.name === id),
-            ...editValues,
+            ...editValues, // Merge edits
         };
     
         try {
             const response = await api.put(`${BASE_URL}/payroll/${id}/`, updatedRow);
             console.log("Saved Payroll:", response.data);
     
-            // Update the specific row in the currentData array
             const updatedData = currentData.map((row) =>
                 row.name === id ? { ...row, ...response.data } : row
             );
     
-            setFilteredData(updatedData); // Update the table with the latest data
-            setEditingRow(null); // Exit editing mode
+            setFilteredData(updatedData); // Update UI
+            setEditingRow(null);
         } catch (error) {
             console.error("Error saving payroll data:", error);
         }
     };
     
+    
     const handlePayrollSave = async (id) => {
         const updatedRow = {
             ...currentData3.find((row) => row.id === id), // Find the row by `id`
-            ...editValues[id], // Only apply the edited values for this employee
+            ...editValues, // Merge with the `editValues` state
         };
     
         try {
-            // Send the updated data for the specific employee
+            // Assuming `name` is available in the payroll object
             const response = await api.put(`${BASE_URL}/payroll/${updatedRow.name}/`, updatedRow);
             console.log("Saved Payroll:", response.data);
     
@@ -242,6 +241,8 @@ function AdminPayroll() {
             console.error("Error saving payroll data:", error);
         }
     };
+    
+    
     
     const handleEditChange = (field, value) => {
         setEditValues((prevValues) => ({
@@ -367,37 +368,6 @@ function AdminPayroll() {
     const handleSaveCashAdvance = (newEntry) => {
         setEntries((prevEntries) => [...prevEntries, newEntry]);
     };
-
-
-    const handlePost = async (payrollId) => {
-        // Calculate net pay (just as an example, adjust according to your needs)
-        const payroll = currentData3.find((payroll) => payroll.id === payrollId);
-        
-        // Example calculation for net pay
-        const netPay = (payroll.total_hours * payroll.rate) - payroll.deductions - payroll.cash_advance;
-    
-        // Update payroll data with net pay and status
-        const updatedPayroll = {
-            ...payroll,
-            net_pay: netPay,
-            status: 'Calculated', // Set status to 'Calculated'
-        };
-    
-        try {
-            // Send the updated data to the backend (if necessary)
-            const response = await api.put(`${BASE_URL}/payroll/${payroll.name}/`, updatedPayroll);
-    
-            // Update local data to reflect the changes
-            const updatedData = currentData3.map((row) =>
-                row.id === payrollId ? { ...row, ...response.data, status: 'Calculated' } : row
-            );
-            
-           setFilteredData(updatedData);  // Make sure filteredData is also updated
-        } catch (error) {
-            console.error("Error posting payroll data:", error);
-        }
-    };
-    
 
     return (
         <div className="flex h-screen overflow-hidden dark:bg-[#111827] bg-gray-100">
@@ -543,7 +513,6 @@ function AdminPayroll() {
                                                 </tr>
                                             ))}
                                         </tbody>
-
                                     </table>
 
                                     <div className="flex space-x-2 mt-5 justify-end">
@@ -853,7 +822,6 @@ function AdminPayroll() {
                                                             <td className="px-4 py-3 space-x-1 flex">
                                                                 <button
                                                                     className="bg-green-500 hover:bg-green-600 px-3 py-2 rounded-md text-white font-medium"
-                                                                    onClick={() => handlePost(payroll.id)}
                                                                 >
                                                                     Post
                                                                 </button>
@@ -999,30 +967,22 @@ function AdminPayroll() {
                                     {filteredData.map((payroll, index) => (
                                         <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
                                             <td className="px-6 py-3">{index + 1}</td>
-                                            <td className="px-6 py-3">{payroll.name}</td>
-                                            <td className="px-6 py-3">{payroll.net_pay ?? 0}</td> {/* Show net_pay */}
+                                            <td className="px-6 py-3">{payroll.name}</td> {/* Employee name */}
+                                            <td className="px-6 py-3"></td>
                                             <td className="px-6 py-3">
                                                 <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 'text-[#FF6767]'} py-2 rounded`}>
                                                     {payroll.status}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 space-x-1">
-                                                <button
-                                                    className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium"
-                                                    onClick={() => handleEditClick(payroll.id)}
-                                                >
+                                                <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] px-4 py-2 rounded-md text-white font-medium">
                                                     Edit
                                                 </button>
-                                                <button
-                                                    className="bg-[#FFC470] hover:bg-[#f8b961] px-4 py-2 rounded-md text-white font-medium"
-                                                    onClick={() => handleViewFormClick(payroll)}
-                                                >
+                                                <button className="bg-[#FFC470] hover:bg-[#f8b961] px-4 py-2 rounded-md text-white font-medium"
+                                                onClick={() => handleViewFormClick(payroll)}>
                                                     View
                                                 </button>
-                                                <button
-                                                    className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"
-                                                    onClick={() => handleDelete(payroll.id)}
-                                                >
+                                                <button className="bg-[#FF6767] hover:bg-[#f35656] px-4 py-2 rounded-md text-white font-medium"  onClick={() => handleDelete(payroll.id)}>
                                                     Delete
                                                 </button>
                                             </td>

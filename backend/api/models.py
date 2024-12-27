@@ -122,6 +122,13 @@ class Product(models.Model):
 #         if self.should_reset():
 #             self.status = "Not yet"
 #             self.save()
+class PayrollList(models.Model):
+    employee = models.OneToOneField('Employee', on_delete=models.CASCADE)
+    net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, default='Not yet')  # Status can be 'Calculated' or 'Not yet'
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.status}"
 
 class Payroll(models.Model):
     STATUS_CHOICES = [
@@ -129,13 +136,13 @@ class Payroll(models.Model):
         ('Not yet', 'Not yet'),
     ]
 
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Add this field
-    total_hours = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    deductions = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    cash_advance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    net_pay = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-    status = models.CharField(max_length=50)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    deductions = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cash_advance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status = models.CharField(max_length=50, default='Not yet')
 
     def calculate_net_pay(self):
         """Ensure that the values are treated as Decimals or floats."""

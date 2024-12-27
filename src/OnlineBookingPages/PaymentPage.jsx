@@ -25,37 +25,74 @@ function Payment() {
     const [confirmedDates, setConfirmedDates] = useState([]);
     const [reservedTimesByDate, setReservedTimesByDate] = useState({});
 
-
     useEffect(() => {
         const fetchReservedDates = async () => {
             try {
+                const unitName = location.state?.unit?.name; // Get the selected unit name
+                console.log("Fetching reserved dates for unit:", unitName);
+    
                 const response = await api.get("/reservations/", {
-                    params: { unit_name: location.state?.unit?.name },
+                    params: { unit_name: unitName }, // Fetch data for the selected unit only
                 });
+    
+                if (!response || !response.data) {
+                    console.error("Invalid API response:", response);
+                    setReservedTimesByDate({});
+                    setReservedEvents([]);
+                    setEvents([]);
+                    return;
+                }
     
                 const reservations = response.data;
     
-                const reservedByDate = {};
+                // Filter reservations for the selected unit
+                const filteredReservations = reservations.filter(
+                    (res) => res.unit_name === unitName
+                );
     
-                reservations.forEach((res) => {
-                    if (!reservedByDate[res.date_of_reservation]) {
-                        reservedByDate[res.date_of_reservation] = [];
+                console.log("Filtered Reservations:", filteredReservations);
+    
+                const reservedByDate = {};
+                const eventsData = filteredReservations.flatMap((res) => {
+                    if (res.date_range) {
+                        res.date_range.forEach((date) => {
+                            if (!reservedByDate[date]) {
+                                reservedByDate[date] = [];
+                            }
+                            if (res.time_of_use) {
+                                reservedByDate[date].push(res.time_of_use);
+                            }
+                        });
+    
+                        return res.date_range.map((date) => ({
+                            title: res.time_of_use
+                                ? `Reserved: ${formatTimeRange(res.time_of_use)}`
+                                : "Reserved",
+                            start: date,
+                            backgroundColor: "#50b0d0",
+                            borderColor: "#50b0d0",
+                        }));
+                    } else if (res.date_of_reservation) {
+                        if (!reservedByDate[res.date_of_reservation]) {
+                            reservedByDate[res.date_of_reservation] = [];
+                        }
+                        if (res.time_of_use) {
+                            reservedByDate[res.date_of_reservation].push(res.time_of_use);
+                        }
+    
+                        return {
+                            title: res.time_of_use
+                                ? `Reserved: ${formatTimeRange(res.time_of_use)}`
+                                : "Reserved",
+                            start: res.date_of_reservation,
+                            backgroundColor: "#50b0d0",
+                            borderColor: "#50b0d0",
+                        };
                     }
-                    reservedByDate[res.date_of_reservation].push(res.time_of_use);
+                    return [];
                 });
     
-                setReservedTimesByDate(reservedByDate);
-    
-                // Map reservation data to events
-                const eventsData = reservations.map((res) => ({
-                    title: res.time_of_use
-                        ? `Reserved: ${formatTimeRange(res.time_of_use)}`
-                        : "Reserved",
-                    start: res.date_of_reservation,
-                    backgroundColor: "#50b0d0",
-                    borderColor: "#50b0d0",
-                }));
-    
+                setReservedTimesByDate(reservedByDate); // Update reserved times by date state
                 setReservedEvents(eventsData);
                 setEvents(eventsData);
             } catch (error) {
@@ -64,21 +101,24 @@ function Payment() {
                 setLoading(false);
             }
         };
+    
         fetchReservedDates();
-    }, [location.state?.unit?.name]);
+    }, [location.state?.unit?.name]);    
     
     const formatTimeTo12Hour = (time24) => {
+        if (!time24) return "Invalid Time"; // Handle undefined or null values
         const [hour, minute] = time24.split(":");
         const period = +hour >= 12 ? "PM" : "AM";
         const hour12 = +hour % 12 || 12; // Convert to 12-hour format
         return `${hour12}:${minute} ${period}`;
-    };    
+    };  
 
     const formatTimeRange = (timeRange) => {
-        if (!timeRange) return "Invalid Time";
+        if (!timeRange || !timeRange.includes("-")) return "Invalid Time"; // Handle undefined or invalid formats
         const [start, end] = timeRange.split("-");
         return `${formatTimeTo12Hour(start)} - ${formatTimeTo12Hour(end)}`;
     };
+    
     
     const handleDateClick = (info) => {
         const clickedDate = info.dateStr;
@@ -183,26 +223,27 @@ function Payment() {
     };
 
     const handleGoToBilling = () => {
-        const selectedDates = confirmedDates.length > 0 ? confirmedDates : selectedDate ? [selectedDate] : [];
-    
-        if (!selectedDates.length || units.length === 0) {
-            Swal.fire("Error", "Please select a date and at least one unit.", "error");
-            return;
-        }
-    
-        const state = {
-            selectedDates, // Pass selected confirmed dates
-            units: units.map((unit) => ({
-                ...unit,
-                timeAndPrice: unit.selectedPrices.map((time) => ({
-                    time,
-                    price: unit.custom_prices[time],
-                })),
+    const selectedDates = confirmedDates.length > 0 ? confirmedDates : selectedDate ? [selectedDate] : [];
+
+    if (!selectedDates.length || units.length === 0) {
+        Swal.fire("Error", "Please select a date and at least one unit.", "error");
+        return;
+    }
+
+    const state = {
+        selectedDates, // Pass selected confirmed dates
+        units: units.map((unit) => ({
+            ...unit,
+            timeAndPrice: unit.selectedPrices.map((time) => ({
+                time,
+                price: unit.custom_prices[time],
             })),
-        };
-    
-        navigate("/billing", { state });
+        })),
     };
+
+    navigate("/billing", { state });
+};
+
 
     const calculateTotalPrice = (unit) =>
         unit.selectedPrices.reduce(
@@ -225,6 +266,9 @@ function Payment() {
                             events={events}
                             height="600px"
                             dateClick={handleDateClick}
+                            validRange={{
+                                start: new Date().toISOString().split("T")[0], // Prevent dates before today
+                            }}
                             eventContent={(eventInfo) => (
                                 <div
                                     style={{

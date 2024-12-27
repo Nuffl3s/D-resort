@@ -826,6 +826,8 @@ def reservations_view(request):
     return JsonResponse(response, safe=False)
 
 from datetime import datetime
+from django.db.models import Count
+
 
 class ReservationView(APIView):
     permission_classes = [IsAuthenticated, AllUser]
@@ -834,47 +836,33 @@ class ReservationView(APIView):
         reservations = Reservation.objects.filter(customer=request.user.customer_account)
         serializer = ReservationSerializer(reservations, many=True, context={"request": request})
         return Response(serializer.data, status=200)
+
+    def get(self, request): #important
+        reservations = Reservation.objects.all()
+        serializer = ReservationSerializer(reservations, many=True)
+        return Response(serializer.data)
     
     def post(self, request):
-        # Validate if 'customer_account' is linked
         if not hasattr(request.user, 'customer_account'):
             return Response({"error": "Customer account not found for the user."}, status=400)
 
-        # Extract and validate the date
-        date_of_reservation = request.data.get("date_of_reservation")
-        if date_of_reservation:
-            try:
-                reservation_date = datetime.strptime(date_of_reservation, "%Y-%m-%d").date()
-            except ValueError:
-                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
-        else:
-            return Response({"error": "Date of reservation is required."}, status=400)
+        date_range = request.data.get("date_range")
+        unit_type = request.data.get("unit_type")
+        unit_name = request.data.get("unit_name")
 
-        # Prepare the data for saving
+        if not date_range or not unit_type or not unit_name:
+            return Response({"error": "All fields are required: date_range, unit_type, unit_name."}, status=400)
+
         data = {
-            "customer_name": request.data.get("customer_name"),
-            "unit_name": request.data.get("unit_name"),
-            "date_of_reservation": reservation_date,
+            "customer": request.user.customer_account.id,
+            "unit_type": unit_type,
+            "unit_name": unit_name,
+            "date_range": date_range,  # Handle multiple dates
             "time_of_use": request.data.get("time_of_use"),
             "total_price": request.data.get("total_price"),
         }
 
-        # Validate unit_type and unit_name
-        unit_type = request.data.get("unit_type", "").lower()
-        unit_name = request.data.get("unit_name")
-        if unit_type and unit_name:
-            try:
-                if unit_type == "cottage":
-                    unit = Cottage.objects.get(name=unit_name)
-                elif unit_type == "lodge":
-                    unit = Lodge.objects.get(name=unit_name)
-                else:
-                    return Response({"error": "Invalid unit type."}, status=400)
-            except (Cottage.DoesNotExist, Lodge.DoesNotExist):
-                return Response({"error": f"Unit '{unit_name}' not found."}, status=400)
-
-        # Serialize and save the reservation
-        serializer = ReservationSerializer(data=data)
+        serializer = ReservationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             reservation = serializer.save()
             Log.objects.create(
@@ -930,6 +918,32 @@ class ReservationView(APIView):
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
 
+class UserReservationLogsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Filter reservations by the logged-in user's account
+        reservations = Reservation.objects.filter(customer=request.user.customer_account)
+
+        # Optional query parameters for filtering
+        unit_name = request.query_params.get('unit_name')
+        unit_type = request.query_params.get('unit_type')
+        sort_option = request.query_params.get('sort', 'recent')
+
+        if unit_name:
+            reservations = reservations.filter(unit_name=unit_name)
+        if unit_type:
+            reservations = reservations.filter(unit_type__iexact=unit_type)
+
+        # Apply sorting
+        if sort_option == 'recent':
+            reservations = reservations.order_by('-date_of_reservation')
+        elif sort_option == 'most_reserved':
+            reservations = reservations.annotate(reservation_count=Count('id')).order_by('-reservation_count')
+
+        # Serialize and return the reservations
+        serializer = ReservationSerializer(reservations, many=True, context={'request': request})
+        return Response(serializer.data, status=200)
 
 class ReservationDetailView(generics.RetrieveAPIView):
     queryset = Reservation.objects.all()

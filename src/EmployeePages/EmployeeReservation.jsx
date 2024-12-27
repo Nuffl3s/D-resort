@@ -79,12 +79,14 @@ function EmployeeReservation () {
         const fetchReservations = async () => {
             try {
                 const response = await api.get("/reservations/");
-                setReservations(response.data);
+                if (response.data) {
+                    setReservations(response.data);
+                }
             } catch (error) {
                 console.error("Error fetching reservations:", error);
+                alert("Failed to load reservations. Please try again.");
             }
         };
-    
         fetchReservations();
     }, []);
     
@@ -361,8 +363,8 @@ function EmployeeReservation () {
                                             <td className="px-6 py-4">{reservation.customer_name}</td>
                                             <td className="px-6 py-4">{reservation.unit_type} {reservation.unit_name}</td>
                                             <td className="px-6 py-4">{reservation.transaction_date}</td>
-                                            <td className="px-6 py-4">{reservation.date_of_reservation || reservation.date_range}</td>
-                                            {/* <td className="px-6 py-4">{formatDateRange (reservation.date_of_reservation || reservation.date_range)}</td> */}
+                                            {/* <td className="px-6 py-4">{reservation.date_of_reservation || reservation.date_range}</td> */}
+                                            <td className="px-6 py-4">{formatDateRange (reservation.date_of_reservation || reservation.date_range)}</td>
                                             <td className="px-6 py-4">{reservation.time_of_use}</td>
                                             <td className="px-6 py-4">{reservation.total_price}</td>
                                             <td className="px-6 py-4">

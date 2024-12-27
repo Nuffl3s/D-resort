@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Loader from '../components/Loader';
+import Swal from 'sweetalert2'; // Import SweetAlert
 import api from "../api";
 
 function RegisterForm() {
@@ -16,7 +17,7 @@ function RegisterForm() {
     const handleRegister = async (e) => {
         e.preventDefault();
         if (password !== confirmPassword) {
-            alert("Passwords do not match!");
+            Swal.fire("Error", "Passwords do not match!", "error");
             return;
         }
 
@@ -30,9 +31,16 @@ function RegisterForm() {
                 email,
                 password,
             });
-            navigate('/signin');
+            Swal.fire("Success", "Account created successfully!", "success").then(() => {
+                navigate('/signin');
+            });
         } catch (error) {
-            alert("Registration failed. Please try again.");
+            console.error("Registration error details:", error.response?.data || error);
+            if (error.response?.data?.email) {
+                Swal.fire("Error", `Email Error: ${error.response.data.email.join(", ")}`, "error");
+            } else {
+                Swal.fire("Error", "Registration failed. Please try again.", "error");
+            }
         } finally {
             setLoading(false);
         }

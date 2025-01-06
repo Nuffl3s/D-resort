@@ -1,38 +1,49 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
 
 const CalendarEventModal = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
-    const [cottages, setCottages] = useState([]);
-    const [lodges, setLodges] = useState([]);
 
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const fetchUnits = async () => {
-            try {
-                const [cottagesResponse, lodgesResponse] = await Promise.all([
-                    api.get('/cottages/'),
-                    api.get('/lodges/')
-                ]);
-
-                setCottages(cottagesResponse.data);
-                setLodges(lodgesResponse.data);
-            } catch (error) {
-                console.error('Error fetching units:', error);
-            }
-        };
-
-        fetchUnits();
-    }, [isOpen]);
-
-    const checkAvailability = (unitName) => {
-        navigate(`/calendar/${unitName}`, { state: { unitName } });
-    };
-
+    // Early return if modal is not open
     if (!isOpen) return null;
+
+    const cottages = [
+        { number: 1, type: 'Cottage A - Function Hall' },
+        { number: 2, type: 'Cottage B' },
+        { number: 3, type: 'Cottage C' },
+        { number: 4, type: 'Cottage D' },
+        { number: 5, type: 'Cottage E' },
+        { number: 6, type: 'Cottage F' },
+        { number: 7, type: 'Cottage G' },
+        { number: 8, type: 'Cottage H' },
+        { number: 9, type: 'Cottage I' },
+        { number: 10, type: 'Cottage J' },
+        { number: 11, type: 'Cottage K' },
+        { number: 12, type: 'Cottage L' },
+        { number: 13, type: 'Cottage M' },
+        { number: 14, type: 'Cottage N' },
+        { number: 15, type: 'Cottage O' },
+        { number: 16, type: 'Cottage P' },
+        { number: 17, type: 'Cottage Q' },
+        { number: 18, type: 'Cottage R' },
+        { number: 19, type: 'Cottage S' },
+        { number: 20, type: 'Cottage T' },
+        { number: 21, type: 'Cottage U' },
+        { number: 22, type: 'Cottage V' },
+        { number: 23, type: 'Cottage W - SOCIAL HALL' },
+    ];
+
+    const lodges = [
+        { number: 1, type: 'Lodge A' },
+        { number: 2, type: 'Lodge B' },
+        { number: 3, type: 'Lodge C' },
+        { number: 4, type: 'Lodge D' },
+        { number: 5, type: 'Lodge E' },
+    ];
+
+    const checkAvailability = (type) => {
+        navigate(`/calendar/${type}`); // Navigate to calendar page with type
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -42,7 +53,11 @@ const CalendarEventModal = ({ isOpen, onClose }) => {
                 <div className="flex justify-between">
                     {/* Cottages Table */}
                     <div className="w-1/2 mr-2">
-                        <h3 className="text-md font-semibold mb-2">Cottages</h3>
+                        <div className="mb-2">
+                            <h3 className="text-md font-semibold mb-2">Cottages</h3>
+                        </div>
+
+                        {/* Cottages Scrollable Table */}
                         <div className="w-full text-sm text-center text-gray-500 max-h-[500px] overflow-y-auto">
                             <table className="min-w-full border-collapse text-gray-700 uppercase bg-white table-fixed">
                                 <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10">
@@ -53,13 +68,13 @@ const CalendarEventModal = ({ isOpen, onClose }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {cottages.map((cottage, index) => (
-                                        <tr key={cottage.id}>
-                                            <td className="border py-4 text-center">{index + 1}</td>
-                                            <td className="border py-4 text-center">{cottage.name}</td>
+                                    {cottages.map((cottage) => (
+                                        <tr key={cottage.number}>
+                                            <td className="border py-4 text-center">{cottage.number}</td>
+                                            <td className="border py-4 text-center">{cottage.type}</td>
                                             <td className="border py-4 text-center">
                                                 <button 
-                                                    onClick={() => checkAvailability(cottage.name)}
+                                                    onClick={() => checkAvailability(cottage.type)}
                                                     className="bg-green-500 hover:bg-green-400 text-white px-3 py-1 rounded">
                                                     Check
                                                 </button>
@@ -73,7 +88,11 @@ const CalendarEventModal = ({ isOpen, onClose }) => {
 
                     {/* Lodges Table */}
                     <div className="w-1/2 ml-2">
-                        <h3 className="text-md font-semibold mb-2">Lodges</h3>
+                        <div className="mb-2">
+                            <h3 className="text-md font-semibold mb-2">Lodges</h3>
+                        </div>
+
+                        {/* Lodges Scrollable Table */}
                         <div className="w-full text-sm text-center text-gray-500">
                             <table className="min-w-full border-collapse">
                                 <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10">
@@ -84,13 +103,13 @@ const CalendarEventModal = ({ isOpen, onClose }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {lodges.map((lodge, index) => (
-                                        <tr key={lodge.id}>
-                                            <td className="border py-4 text-center">{index + 1}</td>
-                                            <td className="border py-4 text-center">{lodge.name}</td>
+                                    {lodges.map((lodge) => (
+                                        <tr key={lodge.number}>
+                                            <td className="border py-4 text-center">{lodge.number}</td>
+                                            <td className="border py-4 text-center">{lodge.type}</td>
                                             <td className="border py-4 text-center">
                                                 <button 
-                                                    onClick={() => checkAvailability(lodge.name)}
+                                                    onClick={() => checkAvailability(lodge.type)}
                                                     className="bg-green-500 hover:bg-green-400 text-white px-3 py-1 rounded">
                                                     Check
                                                 </button>

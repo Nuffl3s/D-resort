@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.http import JsonResponse
-from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer, ReservationSerializer, CustomerAccountSerializer
+from .serializers import EmployeeSerializer, ProductSerializer, PayrollSerializer, CustomUserSerializer, UserSerializer, LogSerializer, WeeklyScheduleSerializer, CottageSerializer, LodgeSerializer, ReservationSerializer, CustomerAccountSerializer, PayrollListSerializer
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation, CustomerAccount
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
@@ -41,6 +41,7 @@ from datetime import date
 from django.contrib.auth import get_user_model
 from datetime import timedelta
 import logging
+from .models import PayrollList
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -418,6 +419,33 @@ class PayrollListCreate(APIView):
 
         return Response({"message": "Payroll entries processed successfully!"}, status=status.HTTP_201_CREATED)
 
+# This view fetches the payroll list
+class PayrollListView(APIView):
+    def get(self, request):
+        payroll_list = PayrollList.objects.all()
+        serializer = PayrollListSerializer(payroll_list, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # This view is for posting payroll data
+    def post(self, request):
+        employee_name = request.data.get('employee_name')
+        
+        # Fetch the employee based on the name
+        try:
+            employee = Employee.objects.get(name=employee_name)
+        except Employee.DoesNotExist:
+            return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create payroll data with the status 'Not yet' and default net_pay
+        payroll_list = PayrollList.objects.create(
+            employee=employee,
+            status='Not yet',  # Initially set status to 'Not yet'
+            net_pay=0,  # Default net_pay
+        )
+        
+        # Return the created payroll data
+        serializer = PayrollListSerializer(payroll_list)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class PayrollDetail(APIView):
@@ -437,53 +465,74 @@ class PayrollDetail(APIView):
             return Response({"error": "Payroll entry not found."}, status=status.HTTP_404_NOT_FOUND)
 
 logger = logging.getLogger(__name__)    
+# views.py
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Employee, Payroll, PayrollList
+from .serializers import PayrollSerializer, PayrollListSerializer
+
 class UpdatePayrollView(APIView):
     def put(self, request, name):
         try:
-            # Fetch the employee by name
             employee = Employee.objects.get(name=name)
         except Employee.DoesNotExist:
             return Response({"error": f"Employee '{name}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            # Fetch the payroll entry for this employee
             payroll = Payroll.objects.get(employee=employee)
         except Payroll.DoesNotExist:
-            # If no payroll entry exists, create one
-            logger.info(f"Creating new payroll entry for employee '{name}'")
             payroll = Payroll.objects.create(
                 employee=employee,
                 rate=request.data.get('rate', 0),
                 total_hours=request.data.get('total_hours', 0),
-                deductions=request.data.get('deductions', 0),  # Default deductions to 0
+                deductions=request.data.get('deductions', 0),
                 cash_advance=request.data.get('cash_advance', 0),
                 status=request.data.get('status', 'Not yet')
             )
-            logger.info(f"New payroll entry created: {payroll}")
 
-        # Update fields if provided in the request
+        # Update payroll fields from request data
         if 'rate' in request.data:
             payroll.rate = request.data['rate']
-
-        # Update deductions with the 'amount' from the frontend
+        
+        if 'total_hours' in request.data:
+            payroll.total_hours = request.data['total_hours']
+        
         if 'deductions' in request.data:
             payroll.deductions = request.data['deductions']
-
+        
         if 'cash_advance' in request.data:
             payroll.cash_advance = request.data['cash_advance']
 
-        # Recalculate net pay based on updated fields
-        payroll.calculate_net_pay()
+        # Automatically set status to 'Calculated' if rate and total_hours are provided
+        if payroll.rate and payroll.total_hours:
+            payroll.status = 'Calculated'
+        
+        # If there are deductions or cash advance, calculate net pay
+        if payroll.deductions or payroll.cash_advance:
+            payroll.calculate_net_pay()
 
-        # Save the payroll entry
         payroll.save()
 
-        # Return the updated payroll data
-        logger.info(f"Returning updated payroll data: {payroll}")
+        # Create or update the payroll entry in the PayrollList
+        payroll_list_data = {
+            "employee": employee,  # Pass the actual Employee instance here
+            "net_pay": payroll.net_pay,
+            "status": payroll.status
+        }
+        
+        # Check if the employee already exists in the PayrollList
+        payroll_list, created = PayrollList.objects.update_or_create(
+            employee=employee,  # This ensures we update the existing payroll list entry
+            defaults=payroll_list_data
+        )
+
+        # Return the updated payroll details
         serializer = PayrollSerializer(payroll)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+    
 class LogView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOnly]
     
@@ -781,30 +830,11 @@ from django.db.models import Count
 
 
 class ReservationView(APIView):
-    permission_classes = [IsAuthenticated]  # Apply authentication permissions
+    permission_classes = [IsAuthenticated, AllUser]
 
     def get(self, request):
-        # Handle query parameters for filtering and sorting
-        unit_name = request.query_params.get('unit_name')
-        unit_type = request.query_params.get('unit_type')
-        sort_option = request.query_params.get('sort', 'recent')
-
-        # Filter reservations by customer account
         reservations = Reservation.objects.filter(customer=request.user.customer_account)
-
-        if unit_name:
-            reservations = reservations.filter(unit_name=unit_name)
-        if unit_type:
-            reservations = reservations.filter(unit_type__iexact=unit_type)
-
-        # Apply sorting
-        if sort_option == 'recent':
-            reservations = reservations.order_by('-date_of_reservation')
-        elif sort_option == 'most_reserved':
-            reservations = reservations.annotate(reservation_count=Count('id')).order_by('-reservation_count')
-
-        # Serialize and return the reservations
-        serializer = ReservationSerializer(reservations, many=True, context={'request': request})
+        serializer = ReservationSerializer(reservations, many=True, context={"request": request})
         return Response(serializer.data, status=200)
 
     def get(self, request): #important
@@ -834,21 +864,36 @@ class ReservationView(APIView):
 
         serializer = ReservationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
-            serializer.save()
+            reservation = serializer.save()
+            Log.objects.create(
+                username=request.user.username,
+                action=f"Created reservation for {reservation.customer_name} on {reservation_date}",
+                category="Reservation"
+            )
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+    def delete(self, request, pk):
+        try:
+            reservation = Reservation.objects.get(pk=pk)
+            reservation.delete()
+            Log.objects.create(
+                username=request.user.username,
+                action=f"Deleted reservation for {reservation.customer.name}",
+                category="Reservation"
+            )
+            return Response({"message": "Reservation deleted successfully!"}, status=204)
+        except Reservation.DoesNotExist:
+            return Response({"error": "Reservation not found."}, status=404)
+
     def put(self, request, pk):
         try:
-            # Fetch the reservation by primary key
             reservation = Reservation.objects.get(pk=pk)
-
-            # Update the reservation with partial data
             serializer = ReservationSerializer(reservation, data=request.data, partial=True)
             if serializer.is_valid():
                 updated_reservation = serializer.save()
                 Log.objects.create(
-                    username=request.user.username if request.user.is_authenticated else "Guest",
+                    username=request.user.username,
                     action=f"Updated reservation for {updated_reservation.customer.name}",
                     category="Reservation"
                 )
@@ -856,18 +901,20 @@ class ReservationView(APIView):
             return Response(serializer.errors, status=400)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
-
-    def delete(self, request, pk):
+        
+    def put(self, request, pk):
         try:
-            # Fetch the reservation by primary key
             reservation = Reservation.objects.get(pk=pk)
-            reservation.delete()
-            Log.objects.create(
-                username=request.user.username if request.user.is_authenticated else "Guest",
-                action=f"Deleted reservation for {reservation.customer.name}",
-                category="Reservation"
-            )
-            return Response({"message": "Reservation deleted successfully!"}, status=204)
+            serializer = ReservationSerializer(reservation, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_reservation = serializer.save()
+                Log.objects.create(
+                    username=request.user.username if request.user.is_authenticated else "Guest",
+                    action=f"Updated reservation for {updated_reservation.customer_name}",
+                    category="Reservation"
+                )
+                return Response(serializer.data, status=200)
+            return Response(serializer.errors, status=400)
         except Reservation.DoesNotExist:
             return Response({"error": "Reservation not found."}, status=404)
 
@@ -929,25 +976,11 @@ class AttendanceView(APIView):
         user_id = request.query_params.get('user', None)
         if user_id:
             attendances = Attendance.objects.filter(user_id=user_id)
-
-            # Calculate total hours for the last week
-            last_week = date.today() - timedelta(days=7)
-            attendances_this_week = attendances.filter(time_in__gte=last_week)
-
-            # Calculate total hours worked in the last week
-            total_hours = 0
-            for attendance in attendances_this_week:
-                if attendance.time_in and attendance.time_out:
-                    total_hours += (attendance.time_out - attendance.time_in).total_seconds() / 3600  # Convert seconds to hours
-
-            return Response({
-                "attendances": AttendanceSerializer(attendances_this_week, many=True).data,
-                "total_hours": total_hours,
-            }, status=status.HTTP_200_OK)
         else:
             attendances = Attendance.objects.all()
-            serializer = AttendanceSerializer(attendances, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        serializer = AttendanceSerializer(attendances, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk=None):
         user_id = request.data.get('user')
@@ -955,7 +988,11 @@ class AttendanceView(APIView):
             return Response({"detail": "'user' field is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get today's date
-        attendances = Attendance.objects.filter(user_id=user_id)
+        # today = date.today()
+
+        # Try to get today's attendance record for the user
+        attendances = Attendance.objects.filter(user_id=user_id) 
+        # date=today
  
         if attendances.exists():
             # Check if the user already has both time_in and time_out set for today
@@ -978,6 +1015,7 @@ class AttendanceView(APIView):
         else:
             # If no attendance record found for today, create a new one
             return Response({'detail': 'Attendance record not found for today or already clocked out.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class CustomerAccountRegisterView(APIView):
@@ -1012,6 +1050,7 @@ class CustomerAccountRegisterView(APIView):
             }, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CustomerLoginView(APIView):
     permission_classes = [AllowAny]
@@ -1078,23 +1117,4 @@ class ChangePasswordView(APIView):
         customer.save()
 
         return Response({"message": "Password updated successfully!"}, status=status.HTTP_200_OK)
-
-class CalendarView(APIView):
-    permission_classes = [IsAuthenticated, AllUser]
-
-    def get(self, request):
-        unit_name = request.query_params.get("unit_name")
-        if not unit_name:
-            return Response({"error": "unit_name is required."}, status=400)
-        try:
-            reservations = Reservation.objects.filter(unit_name=unit_name)
-            data = [
-                {
-                    "date": res.date_of_reservation,
-                    "times": res.time_of_use.split(",") if res.time_of_use else [],
-                }
-                for res in reservations
-            ]
-            return Response(data, status=200)
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+  

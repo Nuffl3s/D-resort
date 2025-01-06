@@ -36,6 +36,7 @@ function AdminPayroll() {
     const [currentPageSecondTable, setCurrentPageSecondTable] = useState(1);
     const [selectedPayroll, setSelectedPayroll] = useState(null);
     const [entries, setEntries] = useState([]);
+    const [payrollListData, setPayrollListData] = useState([]); // Start with empty data
 
     useEffect(() => {
         // Fetch payroll data
@@ -43,13 +44,13 @@ function AdminPayroll() {
             try {
                 const response = await api.get(`${BASE_URL}/payroll/`);
                 console.log("Fetched Payroll Data:", response.data);
-                setFilteredData(response.data); // Update table with the latest data
+                // If there is no saved data in localStorage, set it to filteredData
+                setFilteredData(response.data);
             } catch (error) {
                 console.error("Error fetching payroll data:", error);
             }
         };
         
-        // Fetch employee data and merge with payroll data
         const fetchEmployeeData = async () => {
             try {
                 const employeeResponse = await api.get(`${BASE_URL}/employees/`);
@@ -64,12 +65,13 @@ function AdminPayroll() {
         
                             console.log(`Payroll Data for Employee ${employee.id}:`, payrollResponse.data);
         
-                            const rate = payrollResponse.data?.rate || 0;  // Default to 0 if no rate
+                            const rate = payrollResponse.data?.rate || 0; // Default to 0 if no rate
         
                             // Merge employee data with payroll data (including rate)
                             return {
                                 ...employee,
                                 rate: rate,
+                                
                             };
                         } catch (error) {
                             console.error(`Error fetching payroll data for employee ${employee.id}:`, error);
@@ -78,7 +80,7 @@ function AdminPayroll() {
                     })
                 );
                 console.log('Merged Payroll and Employee Data:', payrollWithEmployeeNames);
-        
+                
                 setFilteredData(payrollWithEmployeeNames);
             } catch (error) {
                 console.error("Error fetching employee data:", error);
@@ -89,7 +91,8 @@ function AdminPayroll() {
     
         fetchPayrollData();
         fetchEmployeeData();
-    }, []);
+    }, []);  // Empty dependency array to run once on mount
+    
     
     
      // Calculate the data to display on the current page
@@ -168,6 +171,7 @@ function AdminPayroll() {
                     alert('Failed to delete payroll entry.');
                 });
         }
+        
     };
 
     useEffect(() => {
@@ -180,7 +184,7 @@ function AdminPayroll() {
     };
     
     const handleEditClick = (id, payroll) => {
-        console.log("Editing payroll for employee:", payroll.name); // Debugging
+        console.log("Editing payroll for employee:", payroll.name);
     
         if (!payroll) {
             console.error("Payroll object is undefined for ID:", id);
@@ -191,51 +195,34 @@ function AdminPayroll() {
         setEditValues({
             rate: payroll.rate,
             total_hours: payroll.total_hours,
+            temp_total_hours: payroll.temp_total_hours ?? payroll.total_hours,  // Allow temporary hours edit
             deductions: payroll.deductions,
             cash_advance: payroll.cash_advance,
-            net_pay: payroll.net_pay, // You can compute this if needed here or inside the inputs
+            net_pay: payroll.net_pay,
         });
     };
 
     const handleSave = async (id) => {
         const updatedRow = {
             ...currentData.find((row) => row.name === id),
-            ...editValues, // Merge edits
+            ...editValues,
         };
     
         try {
             const response = await api.put(`${BASE_URL}/payroll/${id}/`, updatedRow);
             console.log("Saved Payroll:", response.data);
     
+            // Update the specific row in the currentData array
             const updatedData = currentData.map((row) =>
                 row.name === id ? { ...row, ...response.data } : row
             );
     
-            setFilteredData(updatedData); // Update UI
-            setEditingRow(null);
-        } catch (error) {
-            console.error("Error saving payroll data:", error);
-        }
-    };
+            // Update the state with the updated data
+            setFilteredData(updatedData);
     
+            // Save the updated data to localStorage
+            localStorage.setItem('payrollData', JSON.stringify(updatedData));
     
-    const handlePayrollSave = async (id) => {
-        const updatedRow = {
-            ...currentData3.find((row) => row.id === id), // Find the row by `id`
-            ...editValues, // Merge with the `editValues` state
-        };
-    
-        try {
-            // Assuming `name` is available in the payroll object
-            const response = await api.put(`${BASE_URL}/payroll/${updatedRow.name}/`, updatedRow);
-            console.log("Saved Payroll:", response.data);
-    
-            // Update the specific row in the currentData3 array with the updated data
-            const updatedData = currentData3.map((row) =>
-                row.id === id ? { ...row, ...response.data } : row
-            );
-    
-            setFilteredData(updatedData); // Update the table with the latest data
             setEditingRow(null); // Exit editing mode
         } catch (error) {
             console.error("Error saving payroll data:", error);
@@ -244,37 +231,55 @@ function AdminPayroll() {
     
     
     
-    const handleEditChange = (field, value) => {
-        setEditValues((prevValues) => ({
-            ...prevValues,
-            [field]: value, // Set the specific field (rate, in this case)
-        }));
+    const handlePayrollSave = async (name) => {
+        // Create the updated row by merging the current row with the edited values
+        const updatedRow = {
+            ...currentData3.find((row) => row.name === name), // Find the row by name
+            ...editValues, // Merge with the new edit values
+        };
+    
+        try {
+            // Send the PUT request to update the payroll using the employee's name
+            const response = await api.put(`/payroll/${name}/`, updatedRow);  // Use the name in the URL
+    
+            console.log("Payroll saved:", response.data);
+    
+            // Update the specific row in the currentData array with the new data from the response
+            const updatedData = currentData3.map((row) =>
+                row.name === name ? { ...row, ...response.data } : row
+            );
+    
+            // Update the state with the updated data
+            setFilteredData(updatedData);
+    
+            // Optionally, save the updated data to localStorage
+            localStorage.setItem('payrollData', JSON.stringify(updatedData));
+    
+            // Exit the editing mode
+            setEditingRow(null);
+        } catch (error) {
+            console.error("Error saving payroll data:", error);
+        }
     };
+    
+    
+    
+    
+    const handleEditChange = (field, value) => {
+        setEditValues({
+            ...editValues,
+            [field]: value,
+        });
+    };
+    
     
 
     const handleEditPayroll = (field, value) => {
-        const updatedValue = field === "rate" || field === "total_hours" || field === "deductions" || field === "cash_advance"
-        ? parseFloat(value) || 0  // Ensure the value is a number or fallback to 0
-        : value;
-
-    setEditValues((prevValues) => {
-        const newValues = { ...prevValues, [field]: updatedValue };
-
-        // Calculate net pay based on current values
-        const totalHours = newValues.total_hours || 0;
-        const rate = newValues.rate || 0;
-        const deductions = newValues.deductions || 0;
-        const cashAdvance = newValues.cash_advance || 0;
-
-        // Compute net pay
-        const netPay = (totalHours * rate) - deductions - cashAdvance;
-
-        return {
-            ...newValues,
-            net_pay: netPay, // Set computed net pay
-        };
-    });
-};
+        setEditValues({
+            ...editValues,
+            [field]: value,
+        });
+    };
     
      
     const handleCancel = () => {
@@ -369,6 +374,44 @@ function AdminPayroll() {
         setEntries((prevEntries) => [...prevEntries, newEntry]);
     };
 
+    
+    
+    const handlePost = async (name) => {
+        try {
+            const updatedRow = {
+                ...currentData3.find((row) => row.id === name),
+                status: 'Calculated', // Set the status for the specific employee to 'Calculated'
+            };
+    
+            // Make API call to add the payroll data to the PayrollList
+            const response = await api.post('/payroll-list/', updatedRow); // Ensure the correct endpoint for payroll list
+            
+            // After successfully posting, fetch the updated payroll list
+            fetchPayrollList(); // A function to fetch the updated payroll list
+    
+            console.log('Payroll posted:', response.data);
+        } catch (error) {
+            console.error('Error posting payroll:', error);
+        }
+    };
+    
+    // Function to fetch the updated payroll list
+    const fetchPayrollList = async () => {
+        try {
+            const response = await api.get('/payroll-list/'); // Ensure this matches your backend endpoint
+            setPayrollListData(response.data); // Update the table data
+        } catch (error) {
+            console.error('Error fetching payroll list:', error);
+        }
+    };
+    
+    // Fetch the payroll list when the component mounts (or when needed)
+    useEffect(() => {
+        fetchPayrollList();
+    }, []);
+
+    
+    
     return (
         <div className="flex h-screen overflow-hidden dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
@@ -466,7 +509,7 @@ function AdminPayroll() {
                                                                 <input
                                                                     type="number"
                                                                     name="rate"
-                                                                    value={editValues.rate || ''} // Ensure the rate is controlled and initialized
+                                                                    value={editValues.rate || payroll.rate || ''} // Ensure the rate is controlled
                                                                     onChange={(e) => handleEditChange("rate", e.target.value)} // Update rate field
                                                                     className="w-full p-1 border border-gray-300 rounded"
                                                                 />
@@ -513,6 +556,7 @@ function AdminPayroll() {
                                                 </tr>
                                             ))}
                                         </tbody>
+
                                     </table>
 
                                     <div className="flex space-x-2 mt-5 justify-end">
@@ -730,6 +774,7 @@ function AdminPayroll() {
                                         <div>
                                             <button
                                                 className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded-md text-white font-medium"
+                                            
                                             >
                                                 Post All
                                             </button>
@@ -799,7 +844,7 @@ function AdminPayroll() {
                                                             <td className="px-4 py-3 space-x-1 flex">
                                                                 <button
                                                                     className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md text-white font-medium"
-                                                                    onClick={() => handlePayrollSave(payroll.id)}
+                                                                    onClick={() => handlePayrollSave(payroll.name)}
                                                                 >
                                                                     Save
                                                                 </button>
@@ -822,6 +867,7 @@ function AdminPayroll() {
                                                             <td className="px-4 py-3 space-x-1 flex">
                                                                 <button
                                                                     className="bg-green-500 hover:bg-green-600 px-3 py-2 rounded-md text-white font-medium"
+                                                                    onClick={() => handlePost(payroll.id)} // Post for a specific employee
                                                                 >
                                                                     Post
                                                                 </button>
@@ -843,6 +889,7 @@ function AdminPayroll() {
                                                 </tr>
                                             ))}
                                         </tbody>
+
                                     </table>
 
                                     <div className="flex space-x-2 mt-5 justify-between">
@@ -964,11 +1011,11 @@ function AdminPayroll() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredData.map((payroll, index) => (
+                                    {payrollListData.map((payroll, index) => (
                                         <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
                                             <td className="px-6 py-3">{index + 1}</td>
                                             <td className="px-6 py-3">{payroll.name}</td> {/* Employee name */}
-                                            <td className="px-6 py-3"></td>
+                                            <td className="px-6 py-3">{payroll.net_pay}</td>
                                             <td className="px-6 py-3">
                                                 <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 'text-[#FF6767]'} py-2 rounded`}>
                                                     {payroll.status}
@@ -990,13 +1037,14 @@ function AdminPayroll() {
                                     ))}
                                 </tbody>
                             </table>
-
                             <PayrollFormModal
                                 isOpen={isModalOpen2}
                                 onClose={handleClose2}
                                 payroll={selectedPayroll} // Pass selected payroll data to the modal
                             />
                         </div>
+
+
                     </div>
                 </div>
             </div>

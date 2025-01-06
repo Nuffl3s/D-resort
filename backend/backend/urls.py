@@ -12,6 +12,7 @@ from api.views import AttendanceView
 from api.views import CreateAccountView
 from api.views import CheckUsernameView
 from api.views import CreateAdminView
+from api.views import PayrollListView
 
 
 urlpatterns = [
@@ -33,7 +34,8 @@ urlpatterns = [
     path('api/product-autocomplete/', ProductAutocompleteView.as_view(), name='product-autocomplete'),
     path('api/payroll/', PayrollListCreate.as_view(), name='payroll-list-create'),
     path('api/payroll/<int:pk>/', PayrollDetail.as_view(), name='payroll-detail'),
-    path('api/payroll/<str:name>/', UpdatePayrollView.as_view(), name='update-payroll'),    
+    path('api/payroll/<str:name>/', UpdatePayrollView.as_view(), name='update-payroll'),
+    path('api/payroll-list/', PayrollListView.as_view(), name='payroll-list'),
     path("api/logs/", LogView.as_view(), name="logs"),
     path('api/cottages/', CottageListView.as_view(), name='cottage-list'),
     path('api/lodges/', LodgeListView.as_view(), name='lodge-list'),

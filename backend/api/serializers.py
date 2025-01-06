@@ -6,7 +6,8 @@ from .models import Account
 from rest_framework import serializers
 from .models import Employee, Product, Payroll, CustomUser, Log, WeeklySchedule, Cottage, Lodge, Reservation, CustomerAccount
 from .models import Attendance
-from .models import Account 
+from .models import Account
+from .models import PayrollList
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -99,6 +100,10 @@ class ProductSerializer(serializers.ModelSerializer):
         return instance
 
 
+class PayrollListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollList
+        fields = ['id', 'employee', 'net_pay', 'status']
 
 class PayrollSerializer(serializers.ModelSerializer):
     employee = serializers.CharField(source='employee.name')  # Display employee name instead of ID

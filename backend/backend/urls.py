@@ -5,7 +5,7 @@ from django.urls import path, include
 from api.views import RegisterUserView, CustomLoginView, RegisterEmployeeView, EmployeeListCreateView, UploadProductView, ProductListView, ProductAutocompleteView, PayrollListCreate, PayrollDetail, UserDetailsView, LogView, WeeklyScheduleView
 from api.views import EditEmployeeView, DeleteEmployeeView, CottageListView, LodgeListView, AddUnitView, DeleteCottageView, DeleteLodgeView, TotalUnitsView, FilterUnitsView, UpdateCottageView, UpdateLodgeView
 from api.views import UpdatePayrollView, TotalUnitsView, ReservationView, AdminAccountsView, CustomerAccountRegisterView, CustomerLoginView, CustomerDetailsView, ChangePasswordView
-from api.views import CalendarView, UserReservationLogsView
+from api.views import CalendarView, UserReservationLogsView, CustomerAccountListView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import EmployeeCreateView
 from api.views import AttendanceView
@@ -62,4 +62,5 @@ urlpatterns = [
     path('api/customer/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path("api/calendar/", CalendarView.as_view(), name="calendar"),
     path('api/user-reservations/', UserReservationLogsView.as_view(), name='user-reservations'),
+    path('api/customer-accounts/', CustomerAccountListView.as_view(), name='customer-accounts'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

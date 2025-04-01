@@ -13,6 +13,7 @@ const BookingModal = ({ isOpen, onClose }) => {
     const [units, setUnits] = useState([]);
     const [selectedUnit, setSelectedUnit] = useState(null);
     const [confirmedUnits, setConfirmedUnits] = useState([]);
+    const [customers, setCustomers] = useState([]);
 
     // Fetch units dynamically
     useEffect(() => {
@@ -27,6 +28,18 @@ const BookingModal = ({ isOpen, onClose }) => {
         };
         fetchUnits();
     }, [bookingType]);
+
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                const response = await api.get("/customer-accounts/");
+                setCustomers(response.data);
+            } catch (error) {
+                console.error("Error fetching customers:", error);
+            }
+        };
+        if (isOpen) fetchCustomers();
+    }, [isOpen]);
 
     // Handle input changes for customer info
     const handleInputChange = (e) => {
@@ -53,6 +66,11 @@ const BookingModal = ({ isOpen, onClose }) => {
         }));
     };
 
+    // Add this function to handle removal
+    const handleRemoveUnit = (unitId) => {
+        setConfirmedUnits(prev => prev.filter(unit => unit.id !== unitId));
+    };
+
     // Confirm selection and move to confirmed units list
     const handleAddUnit = () => {
         if (selectedUnit && selectedUnit.selectedTime && selectedUnit.selectedPrice) {
@@ -76,29 +94,33 @@ const BookingModal = ({ isOpen, onClose }) => {
     };
 
     const handleConfirmReservation = async () => {
-        const reservationData = confirmedUnits.map((unit) => ({
-            customer_name: customerInfo.name,
-            customer_email: customerInfo.email,
-            customer_mobile: customerInfo.mobile,
+        if (!customerInfo.id) {
+            alert("Please select a customer first");
+            return;
+        }
+    
+        const reservationData = {
+            customer: customerInfo.id,
             unit_type: bookingType,
-            unit_name: unit.name,
+            unit_name: confirmedUnits[0].name,
             transaction_date: new Date().toISOString().split("T")[0],
-            date_of_reservation: dateOfReservation.toISOString().split("T")[0],
-            time_of_use: unit.selectedTime,
-            total_price: unit.selectedPrice,
-        }));
+            date_range: `[${dateOfReservation.toISOString().split("T")[0]}]`, // Format for date_range
+            date_of_reservation: dateOfReservation.toISOString().split("T")[0], // Keep both for compatibility
+            time_of_use: confirmedUnits[0].selectedTime,
+            total_price: confirmedUnits[0].selectedPrice,
+          };
     
         try {
-            await Promise.all(
-                reservationData.map((data) => api.post("/reservations/", data))
-            );
+            await api.post("/reservations/", reservationData);
             alert("Reservation confirmed successfully!");
-            window.dispatchEvent(new Event("reservationUpdated"));  // Trigger the update event
+            window.dispatchEvent(new Event("reservationUpdated"));
             onClose();
             setConfirmedUnits([]);
         } catch (error) {
-            console.error("Error confirming reservation:", error.response?.data || error.message);
-            alert("Failed to confirm reservation.");
+            console.error("Full error response:", error.response); // Add this line
+            const errorMessage = error.response?.data?.non_field_errors?.[0] 
+                || "Failed to confirm reservation.";
+            alert(`Error: ${errorMessage}`);
         }
     };
     
@@ -114,14 +136,28 @@ const BookingModal = ({ isOpen, onClose }) => {
                 <h2 className="text-2xl font-bold mb-4">Book a Reservation</h2>
 
                 {/* Customer Info */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <input
-                        name="name"
-                        placeholder="Customer Name"
-                        value={customerInfo.name}
-                        onChange={handleInputChange}
-                        className="border rounded p-2"
-                    />
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <select
+                        name="customer"
+                        value={customerInfo.id || ""}
+                        onChange={(e) => {
+                            const selectedId = parseInt(e.target.value);
+                            const selectedCustomer = customers.find(c => c.id === selectedId);
+                            setCustomerInfo({
+                                id: selectedId,
+                                name: selectedCustomer?.name || "",
+                                email: selectedCustomer?.email || "",
+                                mobile: selectedCustomer?.phone_number || "",
+                            });
+                        }}
+                    >
+                        <option value="">Select Customer</option>
+                        {customers.map(customer => (
+                            <option key={customer.id} value={customer.id}>
+                                {customer.name} ({customer.email})
+                            </option>
+                        ))}
+                    </select>
                     <input
                         name="email"
                         placeholder="Email"
@@ -244,16 +280,23 @@ const BookingModal = ({ isOpen, onClose }) => {
                         <div className="overflow-x-auto">
                             <div className="relative">
                                 <div className="max-h-[180px] overflow-y-auto table-scrollbar">
-                                    {confirmedUnits.map((unit, idx) => (
-                                        <div
-                                            key={idx}
-                                            onClick={() => handleSelectConfirmedUnit(unit)}
-                                            className="flex justify-between border-b py-2 cursor-pointer hover:bg-gray-100 p-2"
+                                {confirmedUnits.map((unit, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="flex justify-between border-b py-2 cursor-pointer hover:bg-gray-100 p-2"
+                                    >
+                                        <span>{unit.name} - Time: {unit.selectedTime}</span>
+                                        <div className="flex items-center gap-2">
+                                        <span>₱{unit.selectedPrice}</span>
+                                        <button 
+                                            onClick={() => handleRemoveUnit(unit.id)}
+                                            className="text-red-500 hover:text-red-700"
                                         >
-                                            <span>{unit.name} - Time: {unit.selectedTime}</span>
-                                            <span>₱{unit.selectedPrice}</span>
+                                            ×
+                                        </button>
                                         </div>
-                                        ))}
+                                    </div>
+                                    ))}
                                     </div>            
                                 </div>
                             </div>

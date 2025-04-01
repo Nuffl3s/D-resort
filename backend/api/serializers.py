@@ -211,21 +211,30 @@ class ReservationSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='customer.name', read_only=True)
     customer_email = serializers.EmailField(source='customer.email', read_only=True)
     customer_phone = serializers.CharField(source='customer.phone_number', read_only=True)
+    customer = serializers.PrimaryKeyRelatedField(
+        queryset=CustomerAccount.objects.all(),
+        required=False  # Not required for authenticated customers
+    )
     
     class Meta:
         model = Reservation
         fields = [
-            'id', 'customer_name', 'customer_email', 'customer_phone',
-            'unit_type', 'unit_name', 'transaction_date',
-            'date_of_reservation', 'date_range', 'time_of_use', 'total_price', 'image_url'
+            'id', 'customer', 'customer_name', 'customer_email', 'customer_phone',
+            'unit_type', 'unit_name', 'transaction_date', 'date_of_reservation',
+            'date_range', 'time_of_use', 'total_price', 'image_url'
         ]
+        extra_kwargs = {
+            'customer': {'required': False}
+        }
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        if hasattr(user, 'customer_account'):
-            validated_data['customer'] = user.customer_account
-        else:
-            raise serializers.ValidationError("Customer account not found for the user.")
+        # Allow staff users to specify customer, else use logged-in user
+        if 'customer' not in validated_data:
+            if hasattr(self.context['request'].user, 'customer_account'):
+                validated_data['customer'] = self.context['request'].user.customer_account
+            else:
+                raise serializers.ValidationError("Customer account required.")
+        
         return super().create(validated_data)
     
     def get_image_url(self, obj):
@@ -245,8 +254,7 @@ class ReservationSerializer(serializers.ModelSerializer):
             except Lodge.DoesNotExist:
                 return None
         return None
-
-
+    
 class CustomerAccountSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
@@ -257,3 +265,8 @@ class CustomerAccountSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
+    
+class CustomerAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerAccount
+        fields = ['id', 'username', 'name', 'phone_number', 'email']

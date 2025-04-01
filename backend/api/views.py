@@ -39,6 +39,7 @@ from .serializers import AttendanceSerializer, Account
 from .serializers import CreateAccountSerializer
 from datetime import date, timezone
 from django.contrib.auth import get_user_model
+from django.utils.timezone import now
 from datetime import timedelta
 import logging
 from .models import PayrollList
@@ -836,33 +837,35 @@ class ReservationView(APIView):
         return Response(serializer.data)
     
     def post(self, request):
-        if not hasattr(request.user, 'customer_account'):
-            return Response({"error": "Customer account not found for the user."}, status=400)
+        # Allow list input
+        if isinstance(request.data, list):
+            serializer = ReservationSerializer(data=request.data, many=True)
+        else:
+            serializer = ReservationSerializer(data=request.data)
 
-        date_range = request.data.get("date_range")
-        unit_type = request.data.get("unit_type")
-        unit_name = request.data.get("unit_name")
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    
+    def post(self, request):
+        # Allow staff to specify customer in request data
+        if request.user.is_staff:
+            serializer = ReservationSerializer(data=request.data, context={'request': request})
+        else:
+            # For regular users, force customer to be themselves
+            data = request.data.copy()
+            data['customer'] = request.user.customer_account.id
+            serializer = ReservationSerializer(data=data, context={'request': request})
 
-        if not date_range or not unit_type or not unit_name:
-            return Response({"error": "All fields are required: date_range, unit_type, unit_name."}, status=400)
-
-        data = {
-            "customer": request.user.customer_account.id,
-            "unit_type": unit_type,
-            "unit_name": unit_name,
-            "date_range": date_range,  # Handle multiple dates
-            "time_of_use": request.data.get("time_of_use"),
-            "total_price": request.data.get("total_price"),
-        }
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
         serializer = ReservationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             reservation = serializer.save()
-            Log.objects.create(
-                username=request.user.username,
-                action=f"Created reservation for {reservation.customer_name} on {reservation_date}",
-                category="Reservation"
-            )
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -1132,4 +1135,28 @@ class ChangePasswordView(APIView):
         customer.save()
 
         return Response({"message": "Password updated successfully!"}, status=status.HTTP_200_OK)
-  
+
+class CalendarView(APIView):
+    permission_classes = [IsAuthenticated, AllUser]
+
+    def get(self, request):
+        unit_name = request.query_params.get("unit_name")
+        if not unit_name:
+            return Response({"error": "unit_name is required."}, status=400)
+        try:
+            reservations = Reservation.objects.filter(unit_name=unit_name)
+            data = [
+                {
+                    "date": res.date_of_reservation,
+                    "times": res.time_of_use.split(",") if res.time_of_use else [],
+                }
+                for res in reservations
+            ]
+            return Response(data, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+        
+class CustomerAccountListView(generics.ListAPIView):
+    queryset = CustomerAccount.objects.all()
+    serializer_class = CustomerAccountSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrEmployee]

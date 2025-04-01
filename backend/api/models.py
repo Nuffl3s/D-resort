@@ -173,14 +173,26 @@ class Lodge(models.Model):
         return f"{self.type} - {self.name}"
     
 class Reservation(models.Model):
+    PENDING = 'Pending'
+    CONFIRMED = 'Confirmed'
+    WAITING_FOR_PAYMENT = 'Waiting for Payment'
+
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (CONFIRMED, 'Confirmed'),
+        (WAITING_FOR_PAYMENT, 'Waiting for Payment'),
+    ]
+
     customer = models.ForeignKey('CustomerAccount', on_delete=models.CASCADE)
     unit_type = models.CharField(max_length=50)
     unit_name = models.CharField(max_length=255)
     transaction_date = models.DateField(auto_now_add=True)
-    date_of_reservation = models.DateField(null=True, blank=True)  # Keep single date for compatibility
-    date_range = JSONField(null=True, blank=True)  # Add this field for multiple dates
+    date_of_reservation = models.DateField(null=True, blank=True)
+    date_range = JSONField(null=True, blank=True)
     time_of_use = models.CharField(max_length=50, null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default=PENDING)
+    payment_deadline = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Reservation for {self.customer.name} - {self.unit_name}"

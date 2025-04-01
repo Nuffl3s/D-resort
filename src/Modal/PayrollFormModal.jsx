@@ -103,7 +103,7 @@ const PayrollFormModal = ({ isOpen, onClose, payroll }) => {
                     <div className="grid grid-cols-2 gap-x-4 border-t border-gray-300 pt-4">
                         <div className="flex justify-between">
                             <span className="text-sm font-medium">Net Pay:</span>
-                            <span className="text-lg font-semibold">${payroll.net_pay || 0}</span>
+                            <span className="text-lg font-semibold">{payroll.net_pay || 0}</span>
                         </div>
                     </div>
                 </div>

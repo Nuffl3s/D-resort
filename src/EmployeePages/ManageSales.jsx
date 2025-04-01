@@ -85,7 +85,7 @@ function ManageProduct() {
         <div className="flex bg-gray-100">
             <Sidebar />
             <div className="p-7 pl-10 flex-1 h-screen overflow-y-auto">
-                <h1 className="text-4xl font-bold mb-4 uppercase">MANAGE SALES</h1>
+                <h1 className="text-4xl font-bold mb-4 uppercase">SALES</h1>
 
                 <div className="flex-col mt-10">
                     <div className="relative">

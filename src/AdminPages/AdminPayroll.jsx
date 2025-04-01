@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
 import { applyTheme } from '../components/themeHandlers';
 import DeductionModal from "../Modal/DeductionModal";
-import CashAdvanceModal from "../Modal/CashAdvanceModal";
 import PayrollFormModal from '../Modal/PayrollFormModal';
 import api from '../api';
 
@@ -35,66 +34,69 @@ function AdminPayroll() {
     const pageSize = 9;
     const [currentPageSecondTable, setCurrentPageSecondTable] = useState(1);
     const [selectedPayroll, setSelectedPayroll] = useState(null);
-    const [entries, setEntries] = useState([]);
     const [payrollListData, setPayrollListData] = useState([]); // Start with empty data
-
+  
     useEffect(() => {
-        // Fetch payroll data
-        const fetchPayrollData = async () => {
+        const fetchAndMergeData = async () => {
             try {
-                const response = await api.get(`${BASE_URL}/payroll/`);
-                console.log("Fetched Payroll Data:", response.data);
-                // If there is no saved data in localStorage, set it to filteredData
-                setFilteredData(response.data);
-            } catch (error) {
-                console.error("Error fetching payroll data:", error);
-            }
-        };
-        
-        const fetchEmployeeData = async () => {
-            try {
+                // Fetch employee data
                 const employeeResponse = await api.get(`${BASE_URL}/employees/`);
-                console.log('Employee Data:', employeeResponse.data);
-        
+                console.log("Employee Data:", employeeResponse.data);
+    
+                // Merge payroll data with employee data
                 const payrollWithEmployeeNames = await Promise.all(
                     employeeResponse.data.map(async (employee) => {
                         try {
                             const payrollResponse = await api.get(`${BASE_URL}/payroll/`, {
                                 params: { employee_id: employee.id },
                             });
-        
+    
                             console.log(`Payroll Data for Employee ${employee.id}:`, payrollResponse.data);
-        
-                            const rate = payrollResponse.data?.rate || 0; // Default to 0 if no rate
-        
-                            // Merge employee data with payroll data (including rate)
+    
+                            const rate = payrollResponse.data?.rate || 0;
+    
                             return {
                                 ...employee,
                                 rate: rate,
-                                
                             };
                         } catch (error) {
                             console.error(`Error fetching payroll data for employee ${employee.id}:`, error);
-                            return { ...employee, rate: 0 }; // Default to 0 if error
+                            return { ...employee, rate: 0 };
                         }
                     })
                 );
-                console.log('Merged Payroll and Employee Data:', payrollWithEmployeeNames);
-                
+    
+                console.log("Merged Payroll and Employee Data:", payrollWithEmployeeNames);
+    
+                // Save the fetched data to localStorage
+                localStorage.setItem("payrollData", JSON.stringify(payrollWithEmployeeNames));
+    
+                // Update the state with the fetched data
                 setFilteredData(payrollWithEmployeeNames);
             } catch (error) {
-                console.error("Error fetching employee data:", error);
-                alert("Failed to fetch employee data.");
+                console.error("Error fetching data:", error);
             }
         };
-        
     
-        fetchPayrollData();
-        fetchEmployeeData();
-    }, []);  // Empty dependency array to run once on mount
+        const initializeData = () => {
+            // Check if data exists in localStorage
+            const storedData = localStorage.getItem("payrollData");
+    
+            if (storedData) {
+                console.log("Using data from localStorage");
+                setFilteredData(JSON.parse(storedData)); // Use data from localStorage
+            } else {
+                console.log("No data in localStorage, fetching from backend...");
+                fetchAndMergeData(); // Fallback to backend fetch
+            }
+        };
+    
+        initializeData();
+    }, []); // Empty dependency array to ensure it only runs once on mount
     
     
     
+      
      // Calculate the data to display on the current page
     const indexOfLastItem = page * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -183,21 +185,20 @@ function AdminPayroll() {
         setActiveButton(buttonIndex); // Update the active button
     };
     
-    const handleEditClick = (id, payroll) => {
+    const handleEditClick = (name, payroll) => {
         console.log("Editing payroll for employee:", payroll.name);
     
         if (!payroll) {
-            console.error("Payroll object is undefined for ID:", id);
+            console.error("Payroll object is undefined for ID:", name);
             return;
         }
     
-        setEditingRow(id);  // Set the row being edited
+        setEditingRow(name);  // Set the row being edited
         setEditValues({
             rate: payroll.rate,
             total_hours: payroll.total_hours,
             temp_total_hours: payroll.temp_total_hours ?? payroll.total_hours,  // Allow temporary hours edit
             deductions: payroll.deductions,
-            cash_advance: payroll.cash_advance,
             net_pay: payroll.net_pay,
         });
     };
@@ -205,25 +206,27 @@ function AdminPayroll() {
     const handleSave = async (id) => {
         const updatedRow = {
             ...currentData.find((row) => row.name === id),
-            ...editValues,
+            ...editValues, // Apply the edited values from editValues
         };
     
         try {
+            // Send the updated row to the backend
             const response = await api.put(`${BASE_URL}/payroll/${id}/`, updatedRow);
-            console.log("Saved Payroll:", response.data);
     
-            // Update the specific row in the currentData array
+            // Update the currentData with the updated row
             const updatedData = currentData.map((row) =>
-                row.name === id ? { ...row, ...response.data } : row
+                row.name === id ? { ...row, rate: response.data.rate } : row
             );
     
-            // Update the state with the updated data
+            // Update the UI with the modified data
             setFilteredData(updatedData);
     
-            // Save the updated data to localStorage
-            localStorage.setItem('payrollData', JSON.stringify(updatedData));
+            // Persist the updated data to localStorage
+            localStorage.setItem("payrollData", JSON.stringify(updatedData));
     
-            setEditingRow(null); // Exit editing mode
+            // Exit editing mode
+            setEditingRow(null);
+    
         } catch (error) {
             console.error("Error saving payroll data:", error);
         }
@@ -266,14 +269,10 @@ function AdminPayroll() {
     
     
     const handleEditChange = (field, value) => {
-        setEditValues({
-            ...editValues,
-            [field]: value,
-        });
+        setEditValues((prev) => ({ ...prev, [field]: value }));
     };
     
     
-
     const handleEditPayroll = (field, value) => {
         setEditValues({
             ...editValues,
@@ -295,35 +294,39 @@ function AdminPayroll() {
             return;
         }
     
-        setFilteredData((prevData) =>
-            prevData.map((item) =>
-                item.name === modalData.name
-                    ? { 
-                        ...item, 
-                        deductions: deductionAmount, // Save amount as deductions
-                        description: modalData.descriptions // Save description for display
-                    }
-                    : item
-            )
+        // Update filtered data in state
+        const updatedData = filteredData.map((item) =>
+            item.name === modalData.name
+                ? {
+                      ...item,
+                      deductions: deductionAmount,
+                      description: modalData.descriptions,
+                  }
+                : item
         );
     
-        const updatedData = {
-            deductions: deductionAmount,  // Save the amount as deductions
-            description: modalData.descriptions,  // Save the description
-        };
+        setFilteredData(updatedData);
+    
+        // Save the updated data to localStorage
+        localStorage.setItem('payrollData', JSON.stringify(updatedData));
     
         // Send updated data to the backend
-        api.put(`http://localhost:8000/api/payroll/${modalData.name}/`, updatedData)
+        api.put(`http://localhost:8000/api/payroll/${modalData.name}/`, {
+            deductions: deductionAmount,
+            description: modalData.descriptions,
+        })
             .then((response) => {
                 console.log('Payroll updated:', response.data);
-                setIsModalOpen(false); // Close modal after saving
             })
             .catch((error) => {
                 console.error('Error updating payroll:', error);
+            })
+            .finally(() => {
+                setIsModalOpen(false); // Ensure modal closes
             });
     };
     
-
+    
     const handleModalChange = (field, value) => {
         setModalData((prevData) => ({
             ...prevData,
@@ -335,17 +338,6 @@ function AdminPayroll() {
     const handleClose = () => {
         setIsModalOpen(false); // Close the modal without saving
     };
-
-
-    // This is for Cash Advance
-    const handleNewButtonClick = () => {
-        setIsModalOpen(true);
-    };
-
-    const handleCashClose = () => {
-        setIsModalOpen(false);
-    };
-
 
  
     useEffect(() => {
@@ -370,11 +362,7 @@ function AdminPayroll() {
         setIsModalOpen2(false); // Close the modal without saving
     };
     
-    const handleSaveCashAdvance = (newEntry) => {
-        setEntries((prevEntries) => [...prevEntries, newEntry]);
-    };
 
-    
     
     const handlePost = async (name) => {
         try {
@@ -410,8 +398,7 @@ function AdminPayroll() {
         fetchPayrollList();
     }, []);
 
-    
-    
+
     return (
         <div className="flex h-screen overflow-hidden dark:bg-[#111827] bg-gray-100">
             <AdminSidebar />
@@ -437,18 +424,10 @@ function AdminPayroll() {
                                 Deductions
                             </button>
                             <button
-                                className={`w-full py-2 px-5 border border-gray-100 text-[15px] font-medium ${
+                                className={`w-full py-2 px-5 border border-gray-100 text-[15px] font-medium rounded-r-md ${
                                     activeButton === 3 ? "bg-[#70b8d3] text-white" : "bg-gray-200 text-gray-600"
                                 }`}
                                 onClick={() => handleButtonClick(3)}
-                            >
-                                Cash Advance
-                            </button>
-                            <button
-                                className={`w-full py-2 px-5 border border-gray-100 text-[15px] font-medium rounded-r-md ${
-                                    activeButton === 4 ? "bg-[#70b8d3] text-white" : "bg-gray-200 text-gray-600"
-                                }`}
-                                onClick={() => handleButtonClick(4)}
                             >
                                 Payroll Section
                             </button>
@@ -490,7 +469,7 @@ function AdminPayroll() {
                                         </thead>
                                         <tbody>
                                             {currentData.map((payroll, index) => (
-                                                <tr key={payroll.name} className="border-b dark:text-[#e7e6e6]">
+                                                <tr key={payroll.id || payroll.name} className="border-b dark:text-[#e7e6e6]">
                                                     <td className="px-6 py-3">{index + 1 + (page - 1) * itemsPerPage}</td>
                                                     {editingRow === payroll.name ? (
                                                         <>
@@ -509,11 +488,12 @@ function AdminPayroll() {
                                                                 <input
                                                                     type="number"
                                                                     name="rate"
-                                                                    value={editValues.rate || payroll.rate || ''} // Ensure the rate is controlled
-                                                                    onChange={(e) => handleEditChange("rate", e.target.value)} // Update rate field
+                                                                    value={editingRow === payroll.name ? editValues.rate : payroll.rate} // Isolate input binding
+                                                                    onChange={(e) => handleEditChange("rate", e.target.value)} // Handle changes independently
                                                                     className="w-full p-1 border border-gray-300 rounded"
                                                                 />
                                                             </td>
+
                                                             {/* Action Buttons */}
                                                             <td className="px-4 py-3 space-x-1">
                                                                 <button
@@ -556,7 +536,6 @@ function AdminPayroll() {
                                                 </tr>
                                             ))}
                                         </tbody>
-
                                     </table>
 
                                     <div className="flex space-x-2 mt-5 justify-end">
@@ -689,66 +668,10 @@ function AdminPayroll() {
                                     />
                                 </div>
                             )}
-
-                            {/* CASH ADVANCE */}
-                            {activeButton === 3 && (
-                                <div>
-                                    <div>
-                                        <button className="bg-[#70b8d3] hover:bg-[#3d9fdb] text-white py-1 px-3 rounded mb-2 flex items-center font-medium"
-                                        onClick={handleNewButtonClick}
-                                        ><img src="src/assets/plus.png" alt="" className="w-5 h-5 invert" />New</button>
-                                    </div>
-                                    <table className="w-full text-sm text-left text-gray-500">
-                                        <thead className="sticky top-0 text-xs text-gray-700 uppercase bg-gray-100 z-10 dark:bg-[#1f2937] dark:text-[#e7e6e6]">
-                                            <tr>
-                                                <th scope="col" className="p-4">Date</th>
-                                                <th scope="col" className="px-4">Name</th>
-                                                <th scope="col" className="px-4">Amount</th>
-                                                <th scope="col" className="px-4">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {entries.map((entry, index) => (
-                                                <tr key={index} className="border-b dark:text-[#e7e6e6]">
-                                                    <td className="px-6 py-3">{entry.date}</td>
-                                                    <td className="px-6 py-3">{entry.name}</td>
-                                                    <td className="px-6 py-3">{entry.amount}</td>
-                                                    <td className="px-6 py-3">
-                                                        <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md">
-                                                            Delete
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-
-                                      {/* Pagination */}
-                                    <div className="flex space-x-2 mt-5 justify-end">
-                                        <button
-                                            className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-l"
-                                        >
-                                            Prev
-                                        </button>
-                                        <button
-                                            
-                                            className="text-sm text-indigo-50 transition duration-150 bg-[#70b8d3] hover:bg-[#3d9fdb] font-semibold py-2 px-4 rounded-r"
-                                        >
-                                            Next
-                                        </button>
-                                    </div>
-
-                                    <CashAdvanceModal
-                                        isOpen={isModalOpen}
-                                        onClose={handleCashClose}
-                                        employeeData={employees}
-                                        onSaveCashAdvance={handleSaveCashAdvance}
-                                    />
-                                </div>
-                            )}
+                          
 
                             {/* PAYROLL SECTION */}
-                            {activeButton === 4 && (
+                            {activeButton === 3 && (
                                 <div>
                                     <div className="flex relative mb-2 justify-between items-center">
                                         <div className="absolute inset-y-0 left-0 flex items-center ps-3 pointer-events-none">
@@ -789,7 +712,6 @@ function AdminPayroll() {
                                                 <th scope="col" className="px-4">Total Hours</th>
                                                 <th scope="col" className="px-4">Rate</th>
                                                 <th scope="col" className="px-4">Deductions</th>
-                                                <th scope="col" className="px-4">Cash Advance</th>
                                                 <th scope="col" className="px-4">Net Pay</th>
                                                 <th scope="col" className="px-4">Action</th>
                                             </tr>
@@ -828,15 +750,6 @@ function AdminPayroll() {
                                                                     className="w-full p-1 border border-gray-300 rounded"
                                                                 />
                                                             </td>
-                                                            <td className="px-2 py-3">
-                                                                <input
-                                                                    type="number"
-                                                                    name="cash_advance"
-                                                                    value={editValues.cash_advance ?? payroll.cash_advance ?? 0} // Default to 0 if undefined
-                                                                    onChange={(e) => handleEditPayroll('cash_advance', e.target.value)}
-                                                                    className="w-full p-1 border border-gray-300 rounded"
-                                                                />
-                                                            </td>
                                                             <td className="px-6 py-3">
                                                                 {/* Automatically computed net pay */}
                                                                 {editValues.net_pay ?? 0}
@@ -862,7 +775,6 @@ function AdminPayroll() {
                                                             <td className="px-6 py-3">{payroll.total_hours ?? 0}</td>
                                                             <td className="px-6 py-3">{payroll.rate ?? 0}</td>
                                                             <td className="px-6 py-3">{payroll.deductions ?? 0}</td>
-                                                            <td className="px-6 py-3">{payroll.cash_advance ?? 0}</td>
                                                             <td className="px-6 py-3">{payroll.net_pay ?? 0}</td>
                                                             <td className="px-4 py-3 space-x-1 flex">
                                                                 <button
@@ -889,7 +801,6 @@ function AdminPayroll() {
                                                 </tr>
                                             ))}
                                         </tbody>
-
                                     </table>
 
                                     <div className="flex space-x-2 mt-5 justify-between">
@@ -1014,7 +925,7 @@ function AdminPayroll() {
                                     {payrollListData.map((payroll, index) => (
                                         <tr key={payroll.id} className="border-b dark:text-[#e7e6e6]">
                                             <td className="px-6 py-3">{index + 1}</td>
-                                            <td className="px-6 py-3">{payroll.name}</td> {/* Employee name */}
+                                            <td className="px-6 py-3">{payroll.employee}</td> {/* Employee name */}
                                             <td className="px-6 py-3">{payroll.net_pay}</td>
                                             <td className="px-6 py-3">
                                                 <span className={`${payroll.status === 'Calculated' ? 'text-[#53db60]' : 'text-[#FF6767]'} py-2 rounded`}>
@@ -1043,8 +954,6 @@ function AdminPayroll() {
                                 payroll={selectedPayroll} // Pass selected payroll data to the modal
                             />
                         </div>
-
-
                     </div>
                 </div>
             </div>

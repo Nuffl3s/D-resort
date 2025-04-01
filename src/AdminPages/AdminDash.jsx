@@ -135,53 +135,58 @@ function AdminDash () {
                 <div className="flex justify-between">
                     <div className="flex-row w-full mr-5">
                         <div className="flex space-x-10 h-[200px]">
-                            <div className="bg-gradient-to-r from-[#1089D3] to-[#12B1D1] rounded-lg shadow-xl w-[470px] relative">
-                                <div className="p-4">
-                                    <h1 className="text-lg font-semibold mb-2 text-white">COTTAGE</h1>
-                                    <p className="text-sm mb-4 text-white">
-                                        Number of Cottages: {totals.total_cottages}
-                                        <br />
-                                        Number Booked: 
-                                        <br />
-                                        Availability: 
-                                    </p>
-                                    <button
-                                        onClick={() => setCottageModalOpen(true)}
-                                        className="absolute bottom-4 right-4 duration-300 bg-black/0 hover:bg-black/25 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        View More
-                                    </button>
-
-                                    <CottageModal 
-                                        isOpen={cottageModalOpen} // Modal open state
-                                        onClose={() => setCottageModalOpen(false)} // Close modal function
-                                    />
+                            <div 
+                                className="relative rounded-lg shadow-xl w-[470px] cursor-pointer"
+                                style={{ backgroundImage: "url('./src/assets/sample1.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#000] to-[#12B1D1] opacity-50 rounded-lg"></div>
+                                <div className="relative flex h-full items-center gap-2 p-4">
+                                    <div className="flex flex-col p-2">
+                                        <h1 className="text-white font-bold text-[20px]">Cottage</h1>
+                                        <p className="text-white font-semibold line-clamp-3">Total of Cottage: {totals.total_cottages}</p>
+                                        <p className="text-white font-semibold line-clamp-3">Availability:</p>
+                                        <p className="text-white font-semibold line-clamp-3">Booked:</p>
+                                    </div>
                                 </div>
+                                <button
+                                    onClick={() => setCottageModalOpen(true)}
+                                    className="absolute bottom-4 right-4 duration-300 bg-black/0 hover:bg-black/25 text-white font-bold py-2 px-4 rounded"
+                                >
+                                    View More
+                                </button>
+
+                                <CottageModal 
+                                    isOpen={cottageModalOpen} // Modal open state
+                                    onClose={() => setCottageModalOpen(false)} // Close modal function
+                                />
                             </div>
 
-                            <div className="bg-gradient-to-r from-[#1089D3] to-[#12B1D1] rounded-lg shadow-xl w-[470px] relative">
-                                <div className="p-4">
-                                    <h1 className="text-lg font-semibold mb-2 text-white">LODGE</h1>
-                                    <p className="text-sm mb-4 text-white">
-                                        Number of Lodges: {totals.total_lodges}
-                                        <br />
-                                        Number Booked: 
-                                        <br />
-                                        Availability: 
-                                    </p>
-                                    <button
-                                        onClick={() => setLodgeModalOpen(true)}
-                                        className="absolute bottom-4 right-4 duration-300 bg-black/0 hover:bg-black/25 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        View More
-                                    </button>
 
-                                    <LodgeModal 
-                                        isOpen={lodgeModalOpen} // Modal open state
-                                        onClose={() => setLodgeModalOpen(false)} // Close modal function
-                                    />
+                            <div 
+                                className="relative rounded-lg shadow-xl w-[470px] cursor-pointer"
+                                style={{ backgroundImage: "url(./src/assets/lodgebg.jpg)", backgroundSize: 'cover', backgroundPosition: 'center' }}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#000] to-[#12B1D1] opacity-50 rounded-lg"></div>
+                                <div className="relative flex h-full items-center gap-2 p-4">
+                                    <div className="flex flex-col p-2">
+                                        <h1 className="text-lg font-bold mb-2 text-white">LODGE</h1>
+                                        <p className="text-white font-semibold line-clamp-3">Total of Lodge: {totals.total_lodges}</p>
+                                        <p className="text-white font-semibold line-clamp-3">Availability:</p>
+                                        <p className="text-white font-semibold line-clamp-3">Booked:</p>
+                                    </div>
                                 </div>
-                            </div>  
+                                <button
+                                    onClick={() => setLodgeModalOpen(true)}
+                                    className="absolute bottom-4 right-4 duration-300 bg-black/0 hover:bg-black/25 text-white font-bold py-2 px-4 rounded"
+                                >
+                                    View More
+                                </button>
+
+                                <LodgeModal 
+                                    isOpen={lodgeModalOpen} // Modal open state
+                                    onClose={() => setLodgeModalOpen(false)} // Close modal function
+                                />
+                            </div>
                         </div>
 
                         <div className="p-6 w-full mx-auto mt-8 bg-white shadow-lg rounded-lg border-gray-200 mb-4 min-h-[610px] dark:bg-[#374151]">

@@ -19,13 +19,6 @@ function ProductList() {
         fetchProducts();
     }, []);
 
-    const calculateTotalProfit = (product) => {
-        // Assuming the product has a 'sellingPrice' and 'acquisitionCost' attributes.
-        if (product.sellingPrice && product.acquisitionCost) {
-            return (product.sellingPrice - product.acquisitionCost) * product.quantity;
-        }
-        return 0; // Return 0 if prices are missing
-    };
 
     return (
         <div className="flex bg-gray-100">
@@ -69,7 +62,6 @@ function ProductList() {
                                 <th scope="col" className="thDesign">Quantity</th>
                                 <th scope="col" className="thDesign">Acquisition cost</th>
                                 <th scope="col" className="thDesign">Selling price</th>
-                                <th scope="col" className="thDesign">Total profit</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -82,7 +74,6 @@ function ProductList() {
                                         <td className="px-6 py-4">{product.quantity}</td>
                                         <td className="px-6 py-4">{product.avgPrice}</td> {/* Updated to 'acquisitionCost' */}
                                         <td className="px-6 py-4">{product.sellingPrice}</td>
-                                        <td className="px-6 py-4">{calculateTotalProfit(product)}</td>
                                     </tr>
                                 ))
                             ) : (

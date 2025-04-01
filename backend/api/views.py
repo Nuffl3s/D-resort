@@ -37,11 +37,17 @@ from rest_framework import status
 from .models import Attendance
 from .serializers import AttendanceSerializer, Account
 from .serializers import CreateAccountSerializer
-from datetime import date
+from datetime import date, timezone
 from django.contrib.auth import get_user_model
 from datetime import timedelta
 import logging
 from .models import PayrollList
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Employee, Payroll, PayrollList
+from .serializers import PayrollSerializer, PayrollListSerializer
+from datetime import timedelta
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -58,7 +64,6 @@ class RegisterUserView(APIView):
             )
             return Response({"message": "User registered successfully!", "user_id": user.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CustomLoginView(APIView):
@@ -422,28 +427,22 @@ class PayrollListCreate(APIView):
 # This view fetches the payroll list
 class PayrollListView(APIView):
     def get(self, request):
-        payroll_list = PayrollList.objects.all()
+        payroll_list = PayrollList.objects.select_related('employee').all()
         serializer = PayrollListSerializer(payroll_list, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    # This view is for posting payroll data
+
     def post(self, request):
         employee_name = request.data.get('employee_name')
-        
-        # Fetch the employee based on the name
         try:
             employee = Employee.objects.get(name=employee_name)
         except Employee.DoesNotExist:
             return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create payroll data with the status 'Not yet' and default net_pay
         payroll_list = PayrollList.objects.create(
             employee=employee,
-            status='Not yet',  # Initially set status to 'Not yet'
-            net_pay=0,  # Default net_pay
+            status='Not yet',
+            net_pay=0,
         )
-        
-        # Return the created payroll data
         serializer = PayrollListSerializer(payroll_list)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -467,66 +466,60 @@ class PayrollDetail(APIView):
 logger = logging.getLogger(__name__)    
 # views.py
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Employee, Payroll, PayrollList
-from .serializers import PayrollSerializer, PayrollListSerializer
 
 class UpdatePayrollView(APIView):
     def put(self, request, name):
         try:
+            # Check if the employee exists
             employee = Employee.objects.get(name=name)
         except Employee.DoesNotExist:
+            logger.error(f"Employee '{name}' not found.")
             return Response({"error": f"Employee '{name}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        # Check if payroll exists, otherwise create a new one
         try:
             payroll = Payroll.objects.get(employee=employee)
         except Payroll.DoesNotExist:
+            logger.info(f"Payroll not found for employee '{name}', creating a new payroll entry.")
             payroll = Payroll.objects.create(
                 employee=employee,
                 rate=request.data.get('rate', 0),
                 total_hours=request.data.get('total_hours', 0),
                 deductions=request.data.get('deductions', 0),
-                cash_advance=request.data.get('cash_advance', 0),
                 status=request.data.get('status', 'Not yet')
             )
 
-        # Update payroll fields from request data
+        # Update payroll fields with data from the request
         if 'rate' in request.data:
             payroll.rate = request.data['rate']
-        
         if 'total_hours' in request.data:
             payroll.total_hours = request.data['total_hours']
-        
         if 'deductions' in request.data:
             payroll.deductions = request.data['deductions']
-        
-        if 'cash_advance' in request.data:
-            payroll.cash_advance = request.data['cash_advance']
 
-        # Automatically set status to 'Calculated' if rate and total_hours are provided
+        # Automatically set the status to 'Calculated' if rate and total_hours are provided
         if payroll.rate and payroll.total_hours:
             payroll.status = 'Calculated'
-        
-        # If there are deductions or cash advance, calculate net pay
-        if payroll.deductions or payroll.cash_advance:
-            payroll.calculate_net_pay()
 
+        # Recalculate net pay and save the payroll
+        payroll.calculate_net_pay()
         payroll.save()
 
-        # Create or update the payroll entry in the PayrollList
+        # Create or update payroll entry in PayrollList
         payroll_list_data = {
-            "employee": employee,  # Pass the actual Employee instance here
+            "employee": employee,
             "net_pay": payroll.net_pay,
             "status": payroll.status
         }
-        
-        # Check if the employee already exists in the PayrollList
+
+        # Check if the payroll entry already exists, otherwise update it
         payroll_list, created = PayrollList.objects.update_or_create(
-            employee=employee,  # This ensures we update the existing payroll list entry
+            employee=employee,
             defaults=payroll_list_data
         )
+
+        # Log successful payroll update
+        logger.info(f"Payroll for employee '{name}' updated successfully.")
 
         # Return the updated payroll details
         serializer = PayrollSerializer(payroll)
@@ -962,6 +955,28 @@ class EmployeeCreateView(APIView):
 class AttendanceView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def calculate_weekly_hours(self, user_id):
+        # Get the date range for the past 7 days
+        today = timezone.now().date()
+        start_date = today - timedelta(days=7)
+
+        # Fetch attendance records for the user within the date range
+        attendances = Attendance.objects.filter(
+            user_id=user_id,
+            time_in__date__gte=start_date,
+            time_in__date__lte=today
+        )
+
+        total_hours = 0
+        for attendance in attendances:
+            if attendance.time_in and attendance.time_out:
+                time_in = attendance.time_in
+                time_out = attendance.time_out
+                duration = (time_out - time_in).total_seconds() / 3600  # Convert seconds to hours
+                total_hours += duration
+
+        return total_hours
+
     def post(self, request):
         if 'user' not in request.data:
             return Response({"detail": "'user' field is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -984,7 +999,7 @@ class AttendanceView(APIView):
 
     def put(self, request, pk=None):
         user_id = request.data.get('user')
-        if not user_id:
+        if 'user' not in request.data:
             return Response({"detail": "'user' field is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get today's date

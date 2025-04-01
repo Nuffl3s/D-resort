@@ -9,7 +9,6 @@ from .models import Attendance
 from .models import Account
 from .models import PayrollList
 
-
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
@@ -101,6 +100,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class PayrollListSerializer(serializers.ModelSerializer):
+    employee = serializers.CharField(source='employee.name')
     class Meta:
         model = PayrollList
         fields = ['id', 'employee', 'net_pay', 'status']
@@ -110,7 +110,7 @@ class PayrollSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payroll
-        fields = ['id', 'employee', 'rate', 'total_hours', 'deductions', 'cash_advance', 'net_pay', 'status']
+        fields = ['id', 'employee', 'rate', 'total_hours', 'deductions', 'net_pay', 'status']
         read_only_fields = ['net_pay']  # Calculated automatically
 
     def update(self, instance, validated_data):

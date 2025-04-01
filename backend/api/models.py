@@ -9,6 +9,7 @@ from datetime import timedelta
 from django.conf import settings
 from decimal import Decimal
 from django.db.models import JSONField
+from django.utils.timezone import now
 
 image_storage = FileSystemStorage(
     # Define where to save the images
@@ -89,41 +90,8 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-    
-# class Payroll(models.Model):
-#     STATUS_CHOICES = [
-#         ('Calculated', 'Calculated'),
-#         ('Not yet', 'Not yet'),
-#     ]
-#     PAYROLL_TYPE_CHOICES = [
-#         ('Weekly', 'Weekly'),
-#         ('Monthly', 'Monthly'),
-#     ]
-
-#     employee = models.OneToOneField(Employee, on_delete=models.CASCADE, default=1)
-#     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-#     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Not yet")
-#     payroll_type = models.CharField(max_length=50, choices=PAYROLL_TYPE_CHOICES, default="Weekly")
-#     last_updated = models.DateTimeField(auto_now=True)
-
-#     def should_reset(self):
-#         """Determine if the payroll status should be reset to 'Not yet'."""
-#         now = timezone.now()
-#         if self.payroll_type == "Weekly":
-#             return (now - self.last_updated).days >= 6
-#         elif self.payroll_type == "Monthly":
-#             next_month = self.last_updated + timedelta(days=30)
-#             reset_day = next_month - timedelta(days=1)
-#             return now >= reset_day
-#         return False
-
-#     def reset_status(self):
-#         """Reset status to 'Not yet' if conditions are met."""
-#         if self.should_reset():
-#             self.status = "Not yet"
-#             self.save()
 class PayrollList(models.Model):
-    employee = models.OneToOneField('Employee', on_delete=models.CASCADE)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="payrolls")
     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(max_length=20, default='Not yet')  # Status can be 'Calculated' or 'Not yet'
 
@@ -140,7 +108,7 @@ class Payroll(models.Model):
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     deductions = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    cash_advance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    last_deduction_reset = models.DateTimeField(default=now)
     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(max_length=50, default='Not yet')
 
@@ -150,10 +118,9 @@ class Payroll(models.Model):
             rate = Decimal(self.rate or 0)  # Default to 0 if rate is None
             total_hours = Decimal(self.total_hours or 0)  # Default to 0 if total_hours is None
             deductions = Decimal(self.deductions or 0)  # Default to 0 if deductions is None
-            cash_advance = Decimal(self.cash_advance or 0)  # Default to 0 if cash_advance is None
             
             # Calculate net pay
-            self.net_pay = (total_hours * rate) - deductions - cash_advance
+            self.net_pay = (total_hours * rate) - deductions
         except Exception as e:
             # Log the exception if there is an error in the calculation
             logger.error(f"Error calculating net_pay: {str(e)}")
@@ -163,6 +130,7 @@ class Payroll(models.Model):
         # Ensure net_pay is calculated before saving
         self.calculate_net_pay()
         super(Payroll, self).save(*args, **kwargs)
+
 
 
 class Log(models.Model):
